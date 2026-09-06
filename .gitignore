@@ -1,0 +1,14 @@
+# 의존성
+node_modules/
+
+# 런타임 데이터 (DB에 비밀번호 해시, JWT 시크릿, 업로드 파일 포함 — 절대 커밋 금지)
+data/
+
+# 로컬 백업 (OneDrive가 없는 PC에서 scripts/backup.js 기본 대상)
+backups/
+
+# 빌드 산출물 (npm install 후 postinstall이 자동 복사)
+public/lib/phaser.min.js
+
+# 로그/임시
+*.log

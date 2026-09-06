@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory World — 관리자 콘솔</title>
+<script>try{var t=localStorage.getItem('fw.theme');if(t==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  html, body { overflow: auto; }
+  body { background: var(--bg); }
+  .admin-wrap { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 200px; flex: none; background: var(--panel); border-right: 1px solid var(--border);
+    padding: 18px 0; position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar .logo { padding: 0 18px 18px; font-weight: 900; letter-spacing: 2px; color: var(--accent); font-size: 14px; border-bottom: 1px solid var(--border); }
+  .sidebar .logo small { display: block; color: var(--muted); font-weight: 400; letter-spacing: 1px; margin-top: 3px; }
+  .nav { margin-top: 10px; }
+  .nav button {
+    display: block; width: 100%; text-align: left; padding: 11px 18px;
+    background: none; border: none; color: var(--muted); font-size: 13px; border-left: 3px solid transparent;
+  }
+  .nav button.active { color: var(--text); background: var(--panel2); border-left-color: var(--accent); }
+  .nav button:hover { color: var(--text); }
+  .sidebar .back { margin: 20px 18px 0; }
+  .sidebar .back a { color: var(--muted); font-size: 12px; text-decoration: none; }
+  .content { flex: 1; padding: 24px 28px; max-width: 1100px; }
+  .content h2 { font-size: 17px; letter-spacing: 2px; margin-bottom: 16px; }
+  .tabview { display: none; }
+  .tabview.active { display: block; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .card .k { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .card .v { font-size: 24px; font-weight: 800; margin-top: 4px; }
+  .card .v small { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 600; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .chip { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .chip.RUN { background: rgba(52,211,153,.15); color: var(--run); }
+  .chip.IDLE { background: rgba(251,191,36,.15); color: var(--idle); }
+  .chip.STOP { background: rgba(248,113,113,.15); color: var(--stop); }
+  .chip.ALARM { background: rgba(239,68,68,.2); color: var(--alarm); }
+  .sbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; min-width: 140px; background: var(--input); }
+  .sbar div { height: 100%; }
+  .sbar .p-RUN { background: var(--run); } .sbar .p-IDLE { background: var(--idle); }
+  .sbar .p-STOP { background: var(--stop); } .sbar .p-ALARM { background: var(--alarm); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters input, .filters select {
+    padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--input); color: var(--text); font-size: 13px;
+  }
+  .filters button, td button, .addrow button {
+    padding: 8px 14px; border-radius: 7px; border: 1px solid var(--accent);
+    background: rgba(79,195,247,.12); color: var(--accent); font-size: 13px; font-weight: 700;
+  }
+  td input, td select { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 13px; width: 100%; }
+  td input.narrow { width: 52px; }
+  .muted { color: var(--muted); }
+  .msg-content { max-width: 420px; word-break: break-word; }
+
+  #gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 10px; }
+  #gate .login-card { width: 320px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="game-title" style="font-size:26px">FACTORY WORLD</div>
+  <div class="game-sub">관리자 콘솔</div>
+  <div class="login-card">
+    <label>사번</label>
+    <input id="g-empno" placeholder="admin" autocomplete="off">
+    <label>이름</label>
+    <input id="g-name" placeholder="관리자" autocomplete="off">
+    <label>비밀번호</label>
+    <input id="g-pw" type="password" autocomplete="off">
+    <button id="g-login" class="btn-primary">로그인</button>
+    <div id="g-error" class="login-error"></div>
+  </div>
+</div>
+
+<div class="admin-wrap hidden" id="console">
+  <div class="sidebar">
+    <div class="logo">FACTORY WORLD<small>관리자 콘솔 (SCR-06)</small></div>
+    <div class="nav">
+      <button data-tab="dashboard" class="active">📊 대시보드</button>
+      <button data-tab="logs">💬 대화 로그</button>
+      <button data-tab="alarms">🚨 알람 리포트</button>
+      <button data-tab="workorders">📜 작업지시</button>
+      <button data-tab="mapeditor">🗺 맵 에디터</button>
+      <button data-tab="equipments">🏭 설비 관리</button>
+      <button data-tab="users">👤 사용자 관리</button>
+    </div>
+    <div class="back"><a href="/">← 공장 맵으로</a></div>
+    <div class="back"><a href="#" id="btn-theme">🌓 테마 전환 (다크/흰 바탕)</a></div>
+  </div>
+
+  <div class="content">
+    <div class="tabview active" id="tab-dashboard">
+      <h2>대시보드 <small class="muted" id="dash-time"></small></h2>
+      <div class="cards" id="kpi-cards"></div>
+      <h2 style="margin-top:24px">가상 PLC 게이트웨이 <small class="muted">Phase 2 데모 — 연동 설정된 설비를 자동 수집</small></h2>
+      <div class="filters" style="align-items:center">
+        <button id="gw-toggle">▶ 게이트웨이 시작</button>
+        <span class="pill" id="gw-state" style="border:1px solid var(--border);border-radius:14px;padding:5px 12px;font-size:12px">중지됨</span>
+      </div>
+      <table style="margin-bottom:8px">
+        <thead><tr><th>설비</th><th>프로토콜</th><th>모드</th><th>태그/주소</th><th>수집 주기</th><th>수집값</th><th>현재 상태</th></tr></thead>
+        <tbody id="gw-rows"><tr><td colspan="7" class="muted">연동 설정된 설비가 없습니다. 맵 에디터에서 설비에 프로토콜을 지정하세요.</td></tr></tbody>
+      </table>
+
+      <h2 style="margin-top:24px">데이터 백업 <small class="muted">NFR-04 — 매일 지정 시각 자동 실행, DB 스냅샷 + 업로드 파일 + 시크릿</small></h2>
+      <div class="filters" style="align-items:center">
+        <button id="bk-run">💾 지금 백업</button>
+        <span class="muted" style="font-size:12px" id="bk-info">-</span>
+      </div>
+
+      <h2 style="margin-top:24px">설비 상태 점유율 (금일)</h2>
+      <table>
+        <thead><tr><th>설비</th><th>현재 상태</th><th>점유율 (가동/대기/정지/알람)</th><th>가동률</th><th>담당자</th></tr></thead>
+        <tbody id="eq-share"></tbody>
+      </table>
+    </div>
+
+    <div class="tabview" id="tab-logs">
+      <h2>대화 로그 검색 <small class="muted">(append-only · 열람 전용)</small></h2>
+      <div class="filters">
+        <select id="f-eq"><option value="">전체 설비</option></select>
+        <input id="f-q" placeholder="키워드 / 발신자">
+        <input id="f-from" type="date">
+        <input id="f-to" type="date">
+        <button id="f-search">검색</button>
+      </div>
+      <table>
+        <thead><tr><th>시각</th><th>채널</th><th>발신자</th><th>유형</th><th>내용</th></tr></thead>
+        <tbody id="log-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="tabview" id="tab-alarms">
+      <h2>알람 대응 리포트 <small class="muted">알람 발생 → 해제까지의 대응 시간과 협업 지표</small></h2>
+      <div class="filters">
+        <select id="al-eq"><option value="">전체 설비</option></select>
+        <input id="al-from" type="date">
+        <input id="al-to" type="date">
+        <button id="al-search">조회</button>
+        <span class="muted" style="align-self:center;font-size:12px">기본: 최근 7일</span>
+      </div>
+      <div class="cards" id="al-cards"></div>
+      <table>
+        <thead><tr><th>설비</th><th>알람 발생</th><th>해제</th><th>대응 시간</th><th>해제자</th><th>대화</th><th>참여</th><th>파일</th></tr></thead>
+        <tbody id="al-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="tabview" id="tab-workorders">
+      <h2>작업지시 (퀘스트) 관리 <small class="muted">FR-12 — 현장에는 게임 퀘스트로 표시됩니다</small></h2>
+      <div class="filters">
+        <select id="wo-eq"></select>
+        <input id="wo-title" placeholder="제목 (예: 금형 교체 후 시운전)" style="width:220px">
+        <input id="wo-qty" type="number" min="0" placeholder="목표수량" style="width:90px">
+        <input id="wo-due" type="date">
+        <button id="wo-add">+ 작업지시 발행</button>
+      </div>
+      <div class="filters">
+        <input id="wo-desc" placeholder="상세 내용 (선택)" style="flex:1;min-width:300px">
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>설비</th><th>제목</th><th>목표</th><th>마감</th><th>상태</th><th>담당</th><th>실적(양/불)</th><th>발행</th><th></th></tr></thead>
+        <tbody id="wo-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="tabview" id="tab-mapeditor">
+      <h2>맵 에디터 <small class="muted">설비 드래그로 이동 · 존 영역은 [영역 그리기] 후 드래그</small></h2>
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div>
+          <div class="filters" style="margin-bottom:8px">
+            <button id="ed-link-mode">🔗 라인 연결 모드</button>
+            <span class="muted" style="align-self:center;font-size:12px">설비 A → 설비 B 순서로 클릭 (연속 클릭으로 체인 연결)</span>
+          </div>
+          <div class="filters" style="margin-bottom:8px;align-items:center">
+            <label class="muted" style="font-size:12px">평면도 <input type="file" id="fp-file" accept=".png,.jpg,.jpeg,.webp,.svg" style="font-size:12px"></label>
+            <label class="muted" style="font-size:12px">투명도 <input type="range" id="fp-opacity" min="0.1" max="1" step="0.05" value="0.6" style="vertical-align:middle;width:90px"></label>
+            <label class="muted" style="font-size:12px"><input type="checkbox" id="fp-show" checked> 게임 맵에도 표시</label>
+            <button id="fp-delete" style="border-color:var(--stop);color:var(--stop);background:rgba(248,113,113,.1)">평면도 제거</button>
+          </div>
+          <div class="filters" style="margin-bottom:8px;align-items:center">
+            <span class="muted" style="font-size:12px">평면도 범위(타일)</span>
+            <input id="fp-x" type="number" min="0" max="23" value="0" style="width:56px" title="X">
+            <input id="fp-y" type="number" min="0" max="15" value="0" style="width:56px" title="Y">
+            <input id="fp-w" type="number" min="1" max="24" value="24" style="width:56px" title="폭">
+            <input id="fp-h" type="number" min="1" max="16" value="16" style="width:56px" title="높이">
+            <button id="fp-apply">범위 적용</button>
+            <span class="muted" style="font-size:12px" id="fp-info">평면도 없음</span>
+          </div>
+          <canvas id="map-canvas" width="720" height="480" style="border:1px solid var(--border);border-radius:8px;background:var(--input);cursor:default"></canvas>
+          <p class="muted" style="font-size:12px;margin-top:6px" id="ed-hint">설비를 클릭하면 우측에서 상세·연동 설정을 편집할 수 있습니다.</p>
+        </div>
+        <div style="flex:1;min-width:300px">
+          <h2 style="font-size:14px">존 (공정 구역)</h2>
+          <div id="ed-zones"></div>
+          <div class="filters" style="margin-top:8px">
+            <input id="ed-newzone-name" placeholder="새 존 이름" style="width:130px">
+            <button id="ed-newzone-add">+ 존 추가</button>
+          </div>
+
+          <h2 style="font-size:14px;margin-top:18px">공정 라인 <small class="muted">부하는 실시간 재공(WIP) 수준</small></h2>
+          <div id="ed-links" class="muted" style="font-size:13px"></div>
+
+          <h2 style="font-size:14px;margin-top:18px">배치 데이터 (JSON) <small class="muted">도면 → Claude/Gemini → JSON → 가져오기</small></h2>
+          <div class="filters" style="align-items:center">
+            <button id="lay-export">⬇ 내보내기</button>
+            <label style="font-size:12px" class="muted">⬆ 가져오기 <input type="file" id="lay-import" accept=".json" style="font-size:12px"></label>
+          </div>
+          <p class="muted" style="font-size:11px;margin-top:4px" id="lay-info">존은 이름, 설비는 코드 기준으로 추가·갱신됩니다(삭제는 하지 않음). 스키마·AI 프롬프트는 docs/도면-AI-연동.md 참조.</p>
+
+          <div id="ed-eq-panel" class="hidden" style="margin-top:20px;border-top:1px solid var(--border);padding-top:14px">
+            <h2 style="font-size:14px">설비: <span id="ed-eq-title"></span></h2>
+            <table style="margin-bottom:8px">
+              <tr><th style="width:90px">명칭</th><td><input id="ed-eq-name"></td></tr>
+              <tr><th>담당자</th><td><input id="ed-eq-manager"></td></tr>
+            </table>
+            <h2 style="font-size:13px;color:var(--accent)">데이터 연동 (Phase 2 게이트웨이 대비)</h2>
+            <table>
+              <tr><th style="width:90px">프로토콜</th><td>
+                <select id="ed-eq-protocol">
+                  <option value="">없음 — 수동 입력 (1단계)</option>
+                  <option value="mqtt">MQTT (LIVE)</option>
+                  <option value="opcua">OPC-UA (node-opcua 설치 시 LIVE)</option>
+                  <option value="modbus">Modbus TCP (modbus-serial 설치 시 LIVE)</option>
+                  <option value="sim">시뮬레이션 (데모)</option>
+                </select></td></tr>
+              <tr><th>주소</th><td><input id="ed-eq-address" placeholder="예: mqtt://192.168.0.5:1883"></td></tr>
+              <tr><th id="ed-eq-tag-label">태그/토픽</th><td><input id="ed-eq-tag" placeholder="예: factory/press3/status"></td></tr>
+              <tr class="ds-modbus"><th>유닛 ID</th><td><input id="ed-eq-unit" type="number" min="0" max="255" value="1"></td></tr>
+              <tr class="ds-modbus"><th>레지스터 종류</th><td>
+                <select id="ed-eq-regtype">
+                  <option value="holding">Holding register (4xxxx)</option>
+                  <option value="input">Input register (3xxxx)</option>
+                  <option value="coil">Coil (0xxxx)</option>
+                  <option value="discrete">Discrete input (1xxxx)</option>
+                </select></td></tr>
+              <tr class="ds-opcua"><th>수치 노드</th><td><input id="ed-eq-valuetag" placeholder="예: ns=2;s=Press3.Temp (선택)"></td></tr>
+              <tr class="ds-map"><th>상태 매핑</th><td><input id="ed-eq-map" placeholder="예: 0=IDLE, 1=RUN, 2=STOP, 3=ALARM (원시값=상태)"></td></tr>
+              <tr><th>수집 주기(ms)</th><td><input id="ed-eq-interval" type="number" value="1000"></td></tr>
+            </table>
+            <div class="filters" style="margin-top:10px">
+              <button id="ed-eq-save">설비 저장</button>
+            </div>
+            <p class="muted" style="font-size:11px;margin-top:6px" id="ed-ds-hint">※ 게이트웨이가 이 설정을 읽어 수동 변경과 동일한 이벤트 규격으로 상태를 발행합니다. 상태 매핑이 없으면 수신값이 RUN/IDLE/STOP/ALARM 문자열이어야 합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabview" id="tab-equipments">
+      <h2>설비 마스터 관리</h2>
+      <table>
+        <thead><tr><th>코드</th><th>명칭</th><th>존</th><th>X</th><th>Y</th><th>담당자</th><th></th></tr></thead>
+        <tbody id="eq-rows"></tbody>
+        <tbody class="addrow"><tr>
+          <td><input id="n-code" placeholder="NEW-01"></td>
+          <td><input id="n-name" placeholder="새 설비"></td>
+          <td><select id="n-zone"></select></td>
+          <td><input id="n-x" class="narrow" type="number" value="5"></td>
+          <td><input id="n-y" class="narrow" type="number" value="5"></td>
+          <td><input id="n-manager" placeholder="담당자"></td>
+          <td><button id="n-add">+ 추가</button></td>
+        </tr></tbody>
+      </table>
+      <p class="muted" style="margin-top:10px;font-size:12px">※ 변경 사항은 접속 중인 사용자의 맵에 즉시 반영됩니다.</p>
+    </div>
+
+    <div class="tabview" id="tab-users">
+      <h2>사용자 관리</h2>
+      <table>
+        <thead><tr><th>ID</th><th>사번</th><th>이름</th><th>역할</th><th>팀</th><th>가입일</th><th>비밀번호</th><th></th></tr></thead>
+        <tbody id="user-rows"></tbody>
+        <tbody class="addrow"><tr>
+          <td class="muted">신규</td>
+          <td><input id="nu-empno" placeholder="사번"></td>
+          <td><input id="nu-name" placeholder="이름"></td>
+          <td><select id="nu-role"><option value="worker">작업자</option><option value="maintainer">보전</option><option value="admin">관리자</option></select></td>
+          <td><input id="nu-team" placeholder="팀명" style="width:90px"></td>
+          <td class="muted" colspan="2" style="font-size:11px">첫 로그인 때 본인이 비밀번호 설정</td>
+          <td><button id="nu-add">+ 사전 등록</button></td>
+        </tr></tbody>
+      </table>
+
+      <h2 style="margin-top:28px">운영 정책 <small class="muted">파일럿 → 운영 전환 시 조정</small></h2>
+      <div class="filters" style="align-items:center;flex-direction:column;gap:12px;align-items:flex-start">
+        <label style="font-size:13px"><input type="checkbox" id="pol-self"> 신규 사번의 첫 로그인 자동 등록 허용
+          <span class="muted" style="font-size:11px">— 끄면 위에서 사전 등록한 사번만 로그인할 수 있습니다 (운영 권장: 끔)</span></label>
+        <label style="font-size:13px">대화·파일 보존 기간
+          <input id="pol-retention" type="number" min="0" max="3650" style="width:80px;margin:0 6px">일
+          <span class="muted" style="font-size:11px">— 0은 무기한. 매일 자동 백업이 성공한 직후 기간이 지난 대화·파일을 정리합니다 (상태 이력·실적은 보존). 개인정보·노무 이슈 대응용 정책(기안서 리스크 항목)</span></label>
+        <div class="filters" style="align-items:center">
+          <button id="pol-save">정책 저장</button>
+          <button id="pol-purge" style="border-color:var(--stop);color:var(--stop);background:rgba(248,113,113,.1)">지금 정리 실행</button>
+          <span class="muted" style="font-size:12px" id="pol-info">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

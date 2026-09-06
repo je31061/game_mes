@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "factory-world",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/index.js"],
+      "port": 3000
+    },
+    {
+      "name": "intro-canvas",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3100", "--directory", "docs/factory-world-intro"],
+      "port": 3100
+    }
+  ]
+}

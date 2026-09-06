@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap">
+  <style>
+    body { margin: 0; background: #f4f6fa; color: #1a2230; font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; line-height: 1.65; font-size: 15px; -webkit-font-smoothing: antialiased; }
+    a { color: #1c7fb5; } a:hover { color: #155f88; }
+    * { box-sizing: border-box; }
+    h1, h2, h3, p { margin: 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; vertical-align: top; }
+  </style>
+</helmet>
+
+<div style="width: 1200px; min-height: 520px; padding: 64px 72px;">
+  
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 34px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #1a2230; color: #ffffff; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;">05</span>
+      <span style="font-size: 12px; letter-spacing: 0.18em; color: #1c7fb5; font-weight: 700;">MVP 기술 선택과 검증</span>
+    </div>
+    <h2 style="font-size: 30px; line-height: 1.3; letter-spacing: -0.01em; font-weight: 700; text-wrap: balance;">빨리 검증하려고 단순하게 골랐고, 전환 경로는 남겨 두었습니다</h2>
+    
+  </div>
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; align-items: start;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px; overflow: hidden;">
+        <table>
+          <tr><th style="font-size: 12px; letter-spacing: 0.06em; color: #5b6478; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid #dde3ee; white-space: nowrap;">기획서 목표 스택</th><th style="font-size: 12px; letter-spacing: 0.06em; color: #5b6478; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid #dde3ee; white-space: nowrap;">MVP 선택</th><th style="font-size: 12px; letter-spacing: 0.06em; color: #5b6478; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid #dde3ee; white-space: nowrap;">이유</th></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; "><b>Next.js</b></td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; ">순수 HTML/JS (빌드 없음)</td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; color: #5b6478; ">빠른 검증</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; "><b>NestJS</b></td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; ">Express 단일 서버</td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; color: #5b6478; ">외부 인프라 0개로 실행</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; "><b>PostgreSQL</b></td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; ">SQLite (Node 내장)</td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; color: #5b6478; ">스키마는 기획서 데이터 모델 유지</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; "><b>Redis</b></td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; ">메모리 Map</td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; color: #5b6478; ">다중 서버 확장 시 도입</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; "><b>MinIO</b></td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; ">로컬 파일 저장</td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; color: #5b6478; ">사전서명 URL로 전환 가능</td></tr>
+          <tr><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; border-bottom: none;"><b>Phaser 3 / Socket.IO</b></td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; border-bottom: none;">동일</td><td style="padding: 11px 14px; border-bottom: 1px solid #dde3ee; font-size: 13.5px; line-height: 1.55; color: #5b6478; border-bottom: none;">그대로</td></tr>
+        </table>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #1a2230; border-radius: 10px;">
+        <code style="font-family: Consolas, 'D2Coding', monospace; font-size: 13.5px; background: #0e1220; border: 1px solid #2c3348; border-radius: 6px; padding: 6px 12px; color: #4fc3f7; white-space: nowrap;">npm install &amp;&amp; npm start</code>
+        <span style="font-size: 14px; color: #c3c9d8;">한 줄로 사내 PC 어디서나 뜹니다. 외부 인프라가 없습니다.</span>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 12px; letter-spacing: 0.16em; color: #5b6478; font-weight: 700; padding: 0 4px;">검증 방식</div>
+      
+  <div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <h3 style="font-size: 15px; font-weight: 700;">브라우저 2개 탭 시나리오 검증</h3>
+    <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">작업자 / 보전·관리자 동시 접속으로 근접 대화 활성화, 실시간 동기화, 권한 차단, 퀘스트 보상, 라인 정체 알림을 확인했습니다.</p>
+  </div>
+      
+  <div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <h3 style="font-size: 15px; font-weight: 700;">MQTT 실제 발행</h3>
+    <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">로컬 브로커를 띄워 실제로 발행하고, 맵 반영과 이력 기록을 확인했습니다.</p>
+  </div>
+      
+  <div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <h3 style="font-size: 15px; font-weight: 700;">인증 경계 케이스</h3>
+    <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">누락(400) / 오류(401) / 권한 우회(403) 케이스를 포함해 확인했습니다.</p>
+  </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

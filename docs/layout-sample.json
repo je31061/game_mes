@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "map": { "w": 24, "h": 16 },
+  "zones": [
+    { "name": "프레스 존", "color": "#2d4a6b", "rect": { "x": 1, "y": 1, "w": 10, "h": 6 } },
+    { "name": "용접 존", "color": "#5b3a5e", "rect": { "x": 13, "y": 1, "w": 10, "h": 6 } },
+    { "name": "조립 존", "color": "#2f5d43", "rect": { "x": 1, "y": 9, "w": 10, "h": 6 } },
+    { "name": "검사/출하 존", "color": "#6b5a2d", "rect": { "x": 13, "y": 9, "w": 10, "h": 6 } }
+  ],
+  "equipments": [
+    { "code": "PRS-01", "name": "프레스 1호기", "zone": "프레스 존", "x": 3, "y": 2, "manager": "김보전" },
+    { "code": "PRS-02", "name": "프레스 2호기", "zone": "프레스 존", "x": 6, "y": 2, "manager": "김보전" },
+    { "code": "PRS-03", "name": "프레스 3호기", "zone": "프레스 존", "x": 9, "y": 2, "manager": "박정비" },
+    { "code": "WLD-01", "name": "용접기 1호", "zone": "용접 존", "x": 15, "y": 2, "manager": "박정비" },
+    { "code": "WLD-02", "name": "용접기 2호", "zone": "용접 존", "x": 18, "y": 2, "manager": "이설비" },
+    { "code": "WLD-03", "name": "용접 로봇", "zone": "용접 존", "x": 21, "y": 4, "manager": "이설비" },
+    { "code": "ASM-01", "name": "조립 라인 A", "zone": "조립 존", "x": 3, "y": 11, "manager": "최라인" },
+    { "code": "ASM-02", "name": "조립 라인 B", "zone": "조립 존", "x": 7, "y": 11, "manager": "최라인" },
+    { "code": "INS-01", "name": "검사기 1호", "zone": "검사/출하 존", "x": 15, "y": 11, "manager": "정품질" },
+    { "code": "PKG-01", "name": "포장기 1호", "zone": "검사/출하 존", "x": 19, "y": 11, "manager": "정품질" }
+  ],
+  "links": [
+    { "from": "PRS-01", "to": "PRS-02" },
+    { "from": "PRS-02", "to": "PRS-03" }
+  ]
+}

@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap">
+  <style>
+    body { margin: 0; background: #f4f6fa; color: #1a2230; font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; line-height: 1.65; font-size: 15px; -webkit-font-smoothing: antialiased; }
+    a { color: #1c7fb5; } a:hover { color: #155f88; }
+    * { box-sizing: border-box; }
+    h1, h2, h3, p { margin: 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; vertical-align: top; }
+  </style>
+</helmet>
+
+<div style="width: 1200px; min-height: 680px; padding: 64px 72px;">
+  
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 34px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #1a2230; color: #ffffff; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;">01</span>
+      <span style="font-size: 12px; letter-spacing: 0.18em; color: #1c7fb5; font-weight: 700;">왜 만들었나</span>
+    </div>
+    <h2 style="font-size: 30px; line-height: 1.3; letter-spacing: -0.01em; font-weight: 700; text-wrap: balance;">표와 그리드 화면을 벗어나, 공장을 한 장의 맵으로</h2>
+    <p style="color: #5b6478; font-size: 16px; max-width: 64ch;">기존 MES가 현장에서 겪는 세 가지 문제에 대해, 게임의 문법을 빌린 네 가지 답을 내놓았습니다.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: 400px 56px minmax(0, 1fr); gap: 0; align-items: start;">
+    <div style="display: flex; flex-direction: column; gap: 22px; padding: 26px 24px; background: #eef2f8; border: 1px solid #dde3ee; border-radius: 12px;">
+      <div style="font-size: 12px; letter-spacing: 0.16em; color: #5b6478; font-weight: 700;">기존 MES의 문제</div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #eef2f8; color: #5b6478; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 3px;">
+      <h3 style="font-size: 16px; font-weight: 700;">낮은 몰입도와 사용률</h3>
+      <p style="font-size: 14px; color: #5b6478; line-height: 1.6;">표·그리드 화면이라 현장 몰입도가 낮습니다. 입력 회피와 형식적 사용이 만연합니다.</p>
+    </div>
+  </div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #eef2f8; color: #5b6478; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/><circle cx="15" cy="18" r="2"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 3px;">
+      <h3 style="font-size: 16px; font-weight: 700;">흩어지는 대응 이력</h3>
+      <p style="font-size: 14px; color: #5b6478; line-height: 1.6;">설비 이슈 대응이 전화·메신저에 흩어져 조직의 자산으로 남지 않습니다.</p>
+    </div>
+  </div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #eef2f8; color: #5b6478; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 3px;">
+      <h3 style="font-size: 16px; font-weight: 700;">가시성 부족</h3>
+      <p style="font-size: 14px; color: #5b6478; line-height: 1.6;">관리자와 현장이 같은 그림을 보지 못합니다.</p>
+    </div>
+  </div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #1c7fb5;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="M13 6l6 6-6 6"/></svg>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 12px; letter-spacing: 0.16em; color: #1c7fb5; font-weight: 700; padding: 0 4px;">해법 · 공장을 게임 맵으로</div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #e3f1f9; color: #1c7fb5; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+        <h3 style="font-size: 16px; font-weight: 700;">공장 = 맵</h3>
+        <span style="font-size: 11.5px; color: #5b6478; border: 1px solid #dde3ee; border-radius: 12px; padding: 1px 9px;">벤치마킹 · 심시티</span>
+      </div>
+      <p style="font-size: 14px; color: #1a2230; line-height: 1.6;">실제 레이아웃을 아이소메트릭(쿼터뷰) 타일맵으로 재현합니다.</p>
+      <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">설비는 건물, 공정 구역은 존(Zone)으로 표현합니다.</p>
+    </div>
+  </div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #e3f1f9; color: #1c7fb5; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+        <h3 style="font-size: 16px; font-weight: 700;">작업자 = 캐릭터</h3>
+        
+      </div>
+      <p style="font-size: 14px; color: #1a2230; line-height: 1.6;">로그인하면 자기 캐릭터로 "출근"합니다.</p>
+      <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">색상·닉네임·직무 뱃지로 누가 어디에 있는지 한눈에 보입니다.</p>
+    </div>
+  </div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #e3f1f9; color: #1c7fb5; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14l2-3 2 2 3-5 3 4"/><path d="M8 21h8"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+        <h3 style="font-size: 16px; font-weight: 700;">설비 상태 = HUD</h3>
+        
+      </div>
+      <p style="font-size: 14px; color: #1a2230; line-height: 1.6;">설비를 클릭하면 게임식 상태창이 열립니다.</p>
+      <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">가동/대기/정지/알람, 지속 시간, 금일 가동률(HP바), 이력, 첨부.</p>
+    </div>
+  </div>
+      
+  <div style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; background: #ffffff; border: 1px solid #dde3ee; border-radius: 10px;">
+    <div style="width: 40px; height: 40px; border-radius: 8px; background: #e3f1f9; color: #1c7fb5; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9h8M8 12h5"/></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+        <h3 style="font-size: 16px; font-weight: 700;">협업 = 근접 대화</h3>
+        <span style="font-size: 11.5px; color: #5b6478; border: 1px solid #dde3ee; border-radius: 12px; padding: 1px 9px;">벤치마킹 · 게더타운</span>
+      </div>
+      <p style="font-size: 14px; color: #1a2230; line-height: 1.6;">두 명 이상이 같은 설비 근처에 모이면 그 설비 이름의 대화방이 자동으로 열립니다.</p>
+      <p style="font-size: 13.5px; color: #5b6478; line-height: 1.6;">대화·파일·조치가 그 설비의 이력으로 자동 기록됩니다.</p>
+    </div>
+  </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

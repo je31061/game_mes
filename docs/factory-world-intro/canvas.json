@@ -1,0 +1,79 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1200,
+      "h": 660,
+      "title": "표지"
+    },
+    {
+      "file": "Problem.dc.html",
+      "x": 0,
+      "y": 780,
+      "w": 1200,
+      "h": 680,
+      "title": "01 왜 만들었나"
+    },
+    {
+      "file": "Scenario.dc.html",
+      "x": 0,
+      "y": 1580,
+      "w": 1200,
+      "h": 640,
+      "title": "02 대표 시나리오"
+    },
+    {
+      "file": "Principles.dc.html",
+      "x": 0,
+      "y": 2340,
+      "w": 1200,
+      "h": 520,
+      "title": "03 설계 원칙"
+    },
+    {
+      "file": "Process.dc.html",
+      "x": 0,
+      "y": 2980,
+      "w": 1200,
+      "h": 780,
+      "title": "04 진행 방식"
+    },
+    {
+      "file": "Stack.dc.html",
+      "x": 0,
+      "y": 3880,
+      "w": 1200,
+      "h": 520,
+      "title": "05 기술 선택과 검증"
+    },
+    {
+      "file": "Floorplan.dc.html",
+      "x": 0,
+      "y": 4520,
+      "w": 1200,
+      "h": 1140,
+      "title": "06 도면으로 우리 공장 만들기"
+    },
+    {
+      "file": "Impact.dc.html",
+      "x": 0,
+      "y": 5780,
+      "w": 1200,
+      "h": 480,
+      "title": "07 기대효과와 측정 근거"
+    },
+    {
+      "file": "Status.dc.html",
+      "x": 0,
+      "y": 6380,
+      "w": 1200,
+      "h": 1120,
+      "title": "08 현재 상태와 다음 단계"
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

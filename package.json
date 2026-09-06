@@ -1,0 +1,21 @@
+{
+  "name": "factory-world",
+  "version": "0.1.0",
+  "description": "게임형 MES MVP (Factory World)",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "postinstall": "node -e \"const fs=require('fs');fs.mkdirSync('public/lib',{recursive:true});fs.copyFileSync('node_modules/phaser/dist/phaser.min.js','public/lib/phaser.min.js')\""
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mqtt": "^5.15.2",
+    "phaser": "^3.87.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "aedes": "^1.1.1",
+    "socket.io-client": "^4.8.3"
+  }
+}

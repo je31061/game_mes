@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory World — 게임형 MES</title>
+<script>/* 테마를 CSS 로드 전에 적용 (깜빡임 방지) */try{var t=localStorage.getItem('fw.theme');if(t==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- SCR-01 타이틀/로그인 -->
+<div id="screen-title" class="screen active">
+  <div class="skyline">🏭</div>
+  <div class="game-title">FACTORY WORLD</div>
+  <div class="game-sub">게임형 MES — 디지털 트윈 협업 플랫폼</div>
+  <div class="login-card">
+    <label>사번 (EMPLOYEE NO.)</label>
+    <input id="login-empno" placeholder="예: 2512003" autocomplete="off">
+    <label>이름 (NAME)</label>
+    <input id="login-name" placeholder="이름을 입력하세요" autocomplete="off">
+    <label>비밀번호 (PASSWORD)</label>
+    <input id="login-pw" type="password" placeholder="신규 사번은 입력한 비밀번호로 등록" autocomplete="off">
+    <button id="login-btn" class="btn-primary">접 속</button>
+    <div id="login-error" class="login-error"></div>
+  </div>
+  <div class="press-start">▶ PRESS START — 사번 · 이름 · 비밀번호로 입장</div>
+</div>
+
+<!-- SCR-02 캐릭터 선택/생성 -->
+<div id="screen-character" class="screen">
+  <div class="char-card">
+    <h2>캐릭터 설정</h2>
+    <div class="char-preview"><div id="char-dot" class="char-dot" style="background:#4fc3f7;color:#4fc3f7"></div></div>
+    <div class="swatches" id="swatches"></div>
+    <label>닉네임</label>
+    <input id="char-nick" maxlength="12">
+    <label>직무 뱃지</label>
+    <select id="char-badge">
+      <option value="작업자">🔧 작업자</option>
+      <option value="보전">⚙️ 설비 보전</option>
+      <option value="관리자">📋 생산 관리자</option>
+      <option value="품질">🔍 품질</option>
+    </select>
+    <button id="enter-btn" class="btn-primary">🏭 출근하기</button>
+  </div>
+</div>
+
+<!-- SCR-03 공장 맵 (메인) -->
+<div id="screen-game" class="screen">
+  <div id="game-container"></div>
+
+  <div class="topbar">
+    <span class="brand">FACTORY WORLD</span>
+    <span class="top-info">파일럿 라인 · 1공장</span>
+    <div class="top-right">
+      <span class="pill" id="pill-user">-</span>
+      <span class="pill" id="pill-level">⭐ Lv.1 · 0P</span>
+      <span class="pill">접속 <b id="online-count">1</b>명</span>
+      <button class="pill" id="btn-theme" style="cursor:pointer" title="테마 전환 — 다크 / 흰 바탕">🌓</button>
+      <button class="pill" id="btn-lowfx" style="cursor:pointer" title="저사양 모드 — 점멸·흐름 애니메이션을 끄고 30fps로 렌더링 (구형 태블릿용)">⚡</button>
+      <button class="pill" id="btn-pw" style="cursor:pointer" title="비밀번호 변경">🔑</button>
+      <a class="pill" id="btn-admin" href="/admin.html" target="_blank" style="display:none;text-decoration:none">⚙ 관리 콘솔</a>
+    </div>
+  </div>
+
+  <div id="online-panel">
+    <div class="panel-head" id="online-head"><span>접속자</span><span>▾</span></div>
+    <div id="online-list"></div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <!-- SCR-04 설비 상태창 -->
+  <div id="eq-window">
+    <div class="eq-head">
+      <div class="status-lamp" id="eq-lamp"></div>
+      <div><h3 id="eq-name">-</h3><div class="code" id="eq-code">-</div></div>
+      <button class="close" id="eq-close">✕</button>
+    </div>
+    <div class="eq-body">
+      <div class="eq-row"><span class="k">위치(존)</span><span id="eq-zone">-</span></div>
+      <div class="eq-row"><span class="k">담당자</span><span id="eq-manager">-</span></div>
+      <div class="eq-row"><span class="k">데이터 연동</span><span id="eq-datasource">-</span></div>
+      <div class="eq-row"><span class="k">상태</span><span id="eq-status">-</span></div>
+      <div class="eq-row"><span class="k">상태 지속</span><span id="eq-duration">-</span></div>
+      <div class="gauge">
+        <div class="glabel"><span>금일 가동률</span><span id="eq-uptime-pct">-</span></div>
+        <div class="gbar"><div class="gfill" id="eq-uptime-bar" style="width:0%"></div></div>
+      </div>
+      <div class="gauge">
+        <div class="glabel"><span>목표 대비 진행률</span><span id="eq-progress-pct">-</span></div>
+        <div class="gbar"><div class="gfill xp" id="eq-progress-bar" style="width:0%"></div></div>
+        <div class="gsub" id="eq-progress-sub">작업지시 없음</div>
+      </div>
+      <div class="eq-section">
+        <h4>상태 변경 (수동 — 1단계)</h4>
+        <div class="status-btns" id="eq-status-btns">
+          <button data-s="RUN">가동</button>
+          <button data-s="IDLE">대기</button>
+          <button data-s="STOP">정지</button>
+          <button data-s="ALARM">알람</button>
+        </div>
+        <input id="eq-reason" placeholder="사유 (선택)" maxlength="100">
+      </div>
+      <div class="eq-section">
+        <h4>최근 이력</h4>
+        <div class="eq-log" id="eq-log"></div>
+      </div>
+      <div class="eq-section">
+        <h4>첨부 문서</h4>
+        <div class="eq-log" id="eq-files"></div>
+      </div>
+      <div class="eq-actions">
+        <button id="eq-open-chat">💬 대화방 열기</button>
+        <button id="eq-call" title="담당자에게 호출 알림을 보내고 설비 이력에 기록합니다">📣 담당자 호출</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCR-05 대화 패널 -->
+  <div id="chat-panel">
+    <div id="chat-drop-hint">파일을 놓으면 업로드됩니다</div>
+    <div id="chat-tabs"></div>
+    <div id="chat-members"></div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <button id="chat-file-btn" title="파일 첨부">📎</button>
+      <input id="chat-input" placeholder="메시지 입력..." maxlength="2000">
+      <button id="chat-send-btn">전송</button>
+      <input type="file" id="chat-file" hidden>
+    </div>
+  </div>
+  <button id="chat-toggle">💬 대화 <span class="unread" id="chat-unread"></span></button>
+  <button id="quest-toggle">📜 임무 <span class="unread" id="quest-open-count"></span></button>
+  <button id="board-toggle">🏆</button>
+
+  <!-- 작업지시(퀘스트) 패널 -->
+  <div id="quest-panel">
+    <div class="qp-head">📜 작업지시 (퀘스트) <button class="close" id="quest-close">✕</button></div>
+    <div id="quest-list"></div>
+  </div>
+
+  <!-- 리더보드 -->
+  <div id="board-panel">
+    <div class="qp-head">🏆 리더보드 <button class="close" id="board-close">✕</button></div>
+    <div id="board-me"></div>
+    <div id="board-list"></div>
+  </div>
+
+  <!-- 비밀번호 변경 -->
+  <div id="pw-panel">
+    <div class="qp-head">🔑 비밀번호 변경 <button class="close" id="pw-close">✕</button></div>
+    <div class="pw-body">
+      <input id="pw-old" type="password" placeholder="현재 비밀번호">
+      <input id="pw-new" type="password" placeholder="새 비밀번호 (4자 이상)">
+      <input id="pw-new2" type="password" placeholder="새 비밀번호 확인">
+      <button id="pw-submit">변경</button>
+      <div id="pw-msg" class="login-error"></div>
+    </div>
+  </div>
+
+  <!-- 출근 브리핑 (SCR-03 입장 시 금일 공지·미확인 알림 요약, 설계서 6.1) -->
+  <div id="brief-panel">
+    <div class="qp-head">☀️ 출근 브리핑 <button class="close" id="brief-close">✕</button></div>
+    <div id="brief-body"></div>
+  </div>
+
+  <!-- 터치 이동 패드 (태블릿, NFR-05) — 터치 기기에서만 표시 -->
+  <div id="dpad">
+    <button data-dir="up" aria-label="위">▲</button>
+    <button data-dir="left" aria-label="왼쪽">◀</button>
+    <button data-dir="right" aria-label="오른쪽">▶</button>
+    <button data-dir="down" aria-label="아래">▼</button>
+  </div>
+
+  <div id="help-hint">이동: 방향키/WASD 또는 클릭(터치) · 설비 클릭: 상태창 · 설비 근처 2인 이상: 대화 자동 활성화</div>
+</div>
+
+<script src="lib/phaser.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/game.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
