@@ -5,14 +5,14 @@
 ## 다른 PC에서 시작하기 (이어서 작업)
 
 1. **Node.js 설치**: https://nodejs.org 에서 LTS(24 권장, 최소 22.5) 설치
-2. **저장소 클론** (비공개 저장소 — GitHub 로그인 필요):
+2. **저장소 클론**:
    ```
-   git clone https://github.com/je31061/factory-world.git
-   cd factory-world
+   git clone https://github.com/je31061/game_mes.git
+   cd game_mes
    npm install
    npm start
    ```
-   git 인증은 GitHub Desktop 또는 `gh auth login`(웹 브라우저 인증)이 가장 간단함
+   push 권한이 필요하면 GitHub Desktop 또는 `gh auth login`(웹 브라우저 인증)이 가장 간단함
 3. http://localhost:3000 접속 — DB가 없으면 자동 생성·시드됨 (관리자: `admin` / `관리자` / `admin1234`)
 4. **기존 파일럿 데이터를 이어가려면**: 백업 폴더(`FactoryWorld-백업\fw-backup-*` 또는 `backups\fw-backup-*`) 중
    최신 폴더에서 `factory.db`, `uploads`, `jwt.secret`을 프로젝트의 `data\` 폴더에 복사한 뒤 서버 시작.
