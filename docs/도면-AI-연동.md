@@ -30,7 +30,7 @@
     { "name": "프레스 존", "color": "#2d4a6b", "rect": { "x": 1, "y": 1, "w": 10, "h": 6 } }
   ],
   "equipments": [
-    { "code": "PRS-01", "name": "프레스 1호기", "zone": "프레스 존", "x": 3, "y": 2, "manager": "김보전" }
+    { "code": "PRS-01", "name": "프레스 1호기", "type": "press", "zone": "프레스 존", "x": 3, "y": 2, "manager": "김보전" }
   ],
   "links": [
     { "from": "PRS-01", "to": "PRS-02" }
@@ -44,6 +44,7 @@
 | `zones[].rect` | 타일 좌표. x 0~23, y 0~15, w 1~24, h 1~16 |
 | `zones[].color` | `#rrggbb`. 생략 시 기존 색 또는 기본색 |
 | `equipments[].code` | 필수. 같은 코드가 있으면 갱신(연동 설정은 유지) |
+| `equipments[].type` | 선택. 설비 유형 `press / welder / robot / assembly / inspector / packer / cnc / generic`. 생략하면 기존 값 유지, 신규는 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추정. 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용 |
 | `equipments[].zone` | 존 이름. 없거나 틀리면 좌표가 속한 존으로 배치 |
 | `equipments[].x, y` | 타일 좌표 (정수) |
 | `links[].from, to` | 설비 코드. 둘 다 있어야 추가 |
@@ -67,13 +68,15 @@
   color는 구역별로 구분되는 어두운 톤의 #rrggbb.
 - equipments: 설비마다 하나. code는 영문 약어-번호(예: PRS-01), name은 도면에 적힌 이름, zone은 속한 존 이름,
   x,y는 설비 중심의 격자 좌표. 같은 칸에 두 설비를 두지 마라. manager는 비워 둬라("").
+  type은 설비 종류로 press(프레스)/welder(용접기)/robot(로봇)/assembly(조립 라인·컨베이어)/inspector(검사기)/packer(포장기)/cnc(CNC 가공기)
+  중 하나, 판단이 안 되면 "generic".
 - links: 공정 흐름(화살표, 컨베이어, 공정 순서)이 보이면 상류→하류 순서로 {from, to} (설비 code).
 - 도면에서 읽을 수 없는 값은 추측하지 말고 생략해라.
 - 설명 없이 JSON만 출력해라. 스키마:
 
 {"version":1,"map":{"w":24,"h":16},
  "zones":[{"name":"","color":"#2d4a6b","rect":{"x":0,"y":0,"w":1,"h":1}}],
- "equipments":[{"code":"","name":"","zone":"","x":0,"y":0,"manager":""}],
+ "equipments":[{"code":"","name":"","type":"generic","zone":"","x":0,"y":0,"manager":""}],
  "links":[{"from":"","to":""}]}
 ```
 

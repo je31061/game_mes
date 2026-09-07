@@ -8,6 +8,23 @@
 
   const FW = (window.FW = window.FW || {});
 
+  // ── 설비 스프라이트 매니페스트 (docs/team/인터페이스.md §2·§3) ──
+  // /assets/equipment/manifest.json 의 types[type] = { file, lamp:{x,y}, labelY } 가 있는 유형만 이미지 스프라이트,
+  // 없거나(404) types가 비면 전부 기존 절차적 큐브. 페이지 로드 시 미리 받아 두고 startGame에서 기다린다.
+  const SPRITE_BASE = '/assets/equipment/';
+  const SPRITE_DEFAULT = { anchor: { x: 96, y: 150 }, tile: { w: 64, h: 32 }, canvas: 192 };
+  const manifestPromise = fetch(SPRITE_BASE + 'manifest.json', { cache: 'no-cache' })
+    .then(r => (r.ok ? r.json() : null))
+    .then(m => (m && m.types && typeof m.types === 'object') ? m : null)
+    .catch(() => null);
+  FW.spriteManifest = null;
+  function spriteDef(type) {
+    const m = FW.spriteManifest;
+    if (!m || !type || type === 'generic') return null;
+    const t = m.types[type];
+    return t && t.file ? t : null;
+  }
+
   function isoX(x, y) { return (x - y) * HW; }
   function isoY(x, y) { return (x + y) * HH; }
   function screenToWorld(sx, sy) {
@@ -118,6 +135,20 @@
 
   class FactoryScene extends Phaser.Scene {
     constructor() { super('factory'); }
+
+    // 매니페스트에 있는 유형의 텍스처 preload. 파일이 없어 실패한 유형은 매니페스트에서 제거 → 큐브 폴백
+    preload() {
+      const m = FW.spriteManifest;
+      if (!m) return;
+      this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file) => {
+        const type = String(file.key || '').replace(/^eq-/, '');
+        if (m.types[type]) { console.warn(`[sprite] ${type}: ${file.src} 로드 실패 — 절차적 큐브로 대체`); delete m.types[type]; }
+      });
+      for (const [type, def] of Object.entries(m.types)) {
+        if (!def || !def.file) { delete m.types[type]; continue; }
+        this.load.image('eq-' + type, SPRITE_BASE + def.file);
+      }
+    }
 
     create() {
       const init = FW.initData;
@@ -253,7 +284,8 @@
       for (const eq of equipments) {
         keep.add(eq.id);
         const cur = this.eqSprites.get(eq.id);
-        const same = cur && cur.eqData.x === eq.x && cur.eqData.y === eq.y && cur.eqData.name === eq.name;
+        const same = cur && cur.eqData.x === eq.x && cur.eqData.y === eq.y && cur.eqData.name === eq.name
+          && (cur.eqData.type || 'generic') === (eq.type || 'generic');   // 유형이 바뀌면 스프라이트 재생성
         if (same) { cur.eqData = eq; this.setEquipmentStatus(eq.id, eq.status); continue; }
         this.removeEquipment(eq.id);
         this.addEquipment(eq);
@@ -270,13 +302,33 @@
 
     addEquipment(eq) {
       const c = this.add.container(isoX(eq.x + 0.5, eq.y + 0.5), isoY(eq.x + 0.5, eq.y + 0.5));
-      c.setDepth(eq.x + eq.y);
+      c.setDepth(eq.x + eq.y);   // 깊이 정렬: isoY 규칙(x+y) — 이미지 스프라이트도 동일
 
-      const body = this.add.graphics();
-      this.drawMachine(body);
-      const lamp = this.add.circle(0, -40, 5, STATUS_COLOR[eq.status] || 0x888888);
-      const glow = this.add.circle(0, -40, 9, STATUS_COLOR[eq.status] || 0x888888, 0.25);
-      const label = this.add.text(0, -58, eq.name, {
+      // 유형별 이미지 스프라이트(매니페스트) 또는 절차적 큐브(폴백)
+      const def = spriteDef(eq.type);
+      const texKey = 'eq-' + eq.type;
+      const useImage = !!def && this.textures.exists(texKey);
+      let body, lampX = 0, lampY = -40, labelY = -58, hit;
+      if (useImage) {
+        const m = FW.spriteManifest;
+        const src = this.textures.get(texKey).getSourceImage();
+        const iw = src.width || SPRITE_DEFAULT.canvas, ih = src.height || SPRITE_DEFAULT.canvas;
+        const anchor = m.anchor || SPRITE_DEFAULT.anchor;     // 바닥 마름모 중심의 이미지 픽셀 좌표
+        body = this.add.image(0, 0, texKey).setOrigin(anchor.x / iw, anchor.y / ih);
+        const lp = def.lamp || { x: anchor.x, y: anchor.y - 100 };
+        lampX = lp.x - anchor.x; lampY = lp.y - anchor.y;   // 이미지 픽셀 → 컨테이너 좌표
+        labelY = (Number.isFinite(def.labelY) ? def.labelY : 0) - anchor.y;
+        // 클릭 영역: 이미지의 불투명 픽셀 (겹치는 이웃 설비와 오클릭 방지)
+        hit = body;
+        body.setInteractive({ pixelPerfect: true, alphaTolerance: 24, useHandCursor: true });
+      } else {
+        body = this.add.graphics();
+        this.drawMachine(body);
+        hit = this.add.zone(0, -18, TW * 1.1, 56).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      }
+      const lamp = this.add.circle(lampX, lampY, 5, STATUS_COLOR[eq.status] || 0x888888);
+      const glow = this.add.circle(lampX, lampY, 9, STATUS_COLOR[eq.status] || 0x888888, 0.25);
+      const label = this.add.text(0, labelY, eq.name, {
         fontSize: '12px', fontStyle: 'bold', color: this.theme.text, stroke: this.theme.stroke, strokeThickness: 3,
       }).setOrigin(0.5);
       const ring = this.add.graphics();
@@ -285,7 +337,7 @@
       ring.setVisible(false);
 
       c.add([ring, body, lamp, glow, label]);
-      c.eqData = eq; c.lamp = lamp; c.glow = glow; c.ring = ring;
+      c.eqData = eq; c.lamp = lamp; c.glow = glow; c.ring = ring; c.body = body; c.isImage = useImage;
 
       // 알람 점멸 — 저사양 모드에서는 점멸 대신 큰 정적 광원으로 표시
       c.alarmTween = this.tweens.add({
@@ -294,12 +346,11 @@
       });
       if (eq.status !== 'ALARM' || FW.lowFx) { lamp.alpha = 1; glow.alpha = eq.status === 'ALARM' ? 0.6 : 0.25; }
 
-      const hit = this.add.zone(0, -18, TW * 1.1, 56).setOrigin(0.5).setInteractive({ useHandCursor: true });
       hit.on('pointerdown', (pointer, lx, ly, event) => {
         event.stopPropagation();
         FW.onOpenEquipment && FW.onOpenEquipment(eq.id);
       });
-      c.add(hit);
+      if (hit !== body) c.add(hit);
 
       this.eqSprites.set(eq.id, c);
     }
@@ -535,20 +586,29 @@
 
   FW.startGame = function (initData) {
     FW.initData = initData;
-    // 저사양 모드(NFR-05): 30fps 제한 + 안티앨리어싱 해제 + 해상도 스케일 축소
-    FW.phaserGame = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: 'game-container',
-      width: window.innerWidth,
-      height: window.innerHeight,
-      pixelArt: true,
-      scene: FactoryScene,
-      scale: { mode: Phaser.Scale.RESIZE },
-      fps: FW.lowFx ? { target: 30, forceSetTimeOut: false } : undefined,
-      render: FW.lowFx ? { antialias: false, powerPreference: 'low-power' } : undefined,
+    if (FW.phaserGame) return;
+    FW.phaserGame = true;   // 매니페스트 대기 중 중복 시작 방지 (app.js는 truthy 여부만 본다)
+    // 스프라이트 매니페스트를 받은 뒤 부팅 (없으면 null → 전부 절차적 큐브). 페이지 로드 시 이미 요청했으므로 지연은 거의 없다.
+    manifestPromise.then((m) => {
+      FW.spriteManifest = m;
+      const n = m ? Object.keys(m.types).length : 0;
+      console.log(`[sprite] 매니페스트 ${m ? `v${m.version ?? '?'} · 유형 ${n}종` : '없음'} — ${n ? '이미지 스프라이트' : '절차적 큐브'}`);
+      // 저사양 모드(NFR-05): 30fps 제한 + 안티앨리어싱 해제 + 해상도 스케일 축소
+      FW.phaserGame = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: 'game-container',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        pixelArt: true,
+        scene: FactoryScene,
+        scale: { mode: Phaser.Scale.RESIZE },
+        fps: FW.lowFx ? { target: 30, forceSetTimeOut: false } : undefined,
+        render: FW.lowFx ? { antialias: false, powerPreference: 'low-power' } : undefined,
+      });
+      FW.scene = () => FW.phaserGame.scene.getScene('factory');
     });
-    FW.scene = () => FW.phaserGame.scene.getScene('factory');
   };
+  FW.scene = () => null;   // 부팅 전 gameApi 호출은 무시
 
   FW.gameApi = {
     addPlayer: (p) => FW.scene()?.addPlayer(p),

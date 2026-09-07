@@ -35,7 +35,8 @@ db.exec(`
     x INTEGER NOT NULL, y INTEGER NOT NULL,
     manager TEXT,
     status TEXT NOT NULL DEFAULT 'IDLE',
-    status_since TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    status_since TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    type TEXT NOT NULL DEFAULT 'generic'    -- 설비 유형 (스프라이트·분석 분류, docs/team/인터페이스.md §1)
   );
 
   CREATE TABLE IF NOT EXISTS equipment_status_log (
@@ -132,11 +133,31 @@ db.exec(`
   );
 `);
 
+// ── 설비 유형 (인터페이스 §1) — 스프라이트(한도윤)·분석(서지안)이 이 값으로 분기 ──
+export const EQUIPMENT_TYPES = ['press', 'welder', 'robot', 'assembly', 'inspector', 'packer', 'cnc', 'generic'];
+export const EQUIPMENT_TYPE_LABELS = {
+  press: '프레스', welder: '용접기', robot: '로봇', assembly: '조립 라인',
+  inspector: '검사기', packer: '포장기', cnc: 'CNC 가공기', generic: '미지정',
+};
+// 설비 코드 접두로 유형 추정 (시드 매핑 규칙: PRS→press, WLD-03→robot, 그 외 WLD→welder, ASM→assembly, INS→inspector, PKG→packer, CNC→cnc)
+export function inferEquipmentType(code) {
+  const c = String(code || '').toUpperCase();
+  if (c === 'WLD-03') return 'robot';
+  if (c.startsWith('PRS-')) return 'press';
+  if (c.startsWith('WLD-')) return 'welder';
+  if (c.startsWith('ASM-')) return 'assembly';
+  if (c.startsWith('INS-')) return 'inspector';
+  if (c.startsWith('PKG-')) return 'packer';
+  if (c.startsWith('CNC-')) return 'cnc';
+  return 'generic';
+}
+
 // ── 시드 데이터 (최초 1회) ─────────────────────────────
 const zoneCount = db.prepare('SELECT COUNT(*) AS c FROM zones').get().c;
 if (zoneCount === 0) {
   const insZone = db.prepare('INSERT INTO zones (name, color, rect_x, rect_y, rect_w, rect_h) VALUES (?, ?, ?, ?, ?, ?)');
-  const insEq = db.prepare('INSERT INTO equipments (zone_id, code, name, x, y, manager) VALUES (?, ?, ?, ?, ?, ?)');
+  const insEqRaw = db.prepare('INSERT INTO equipments (zone_id, code, name, x, y, manager, type) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  const insEq = { run: (zone, code, name, x, y, manager) => insEqRaw.run(zone, code, name, x, y, manager, inferEquipmentType(code)) };
 
   const press = insZone.run('프레스 존', '#2d4a6b', 1, 1, 10, 6).lastInsertRowid;
   const weld = insZone.run('용접 존', '#5b3a5e', 13, 1, 10, 6).lastInsertRowid;
@@ -178,6 +199,18 @@ if (!db.prepare("PRAGMA table_info(equipments)").all().some(c => c.name === 'dat
 // 마이그레이션: 공정 라인 부하(재공 %) 영속화 — 재시작 시 정체 상태 유지
 if (!db.prepare("PRAGMA table_info(equipment_links)").all().some(c => c.name === 'load')) {
   db.exec('ALTER TABLE equipment_links ADD COLUMN load REAL NOT NULL DEFAULT 0');
+}
+
+// 마이그레이션: 설비 유형 (스프린트 1) — 기존 DB는 컬럼 추가 후 코드 접두로 1회 매핑 (이후 관리자가 바꾼 값은 유지)
+if (!db.prepare("PRAGMA table_info(equipments)").all().some(c => c.name === 'type')) {
+  db.exec("ALTER TABLE equipments ADD COLUMN type TEXT NOT NULL DEFAULT 'generic'");
+  const setType = db.prepare('UPDATE equipments SET type = ? WHERE id = ?');
+  let mapped = 0;
+  for (const eq of db.prepare('SELECT id, code FROM equipments').all()) {
+    const t = inferEquipmentType(eq.code);
+    if (t !== 'generic') { setType.run(t, eq.id); mapped++; }
+  }
+  console.log(`[db] equipments.type 컬럼 추가 — 코드 접두로 ${mapped}대 유형 매핑`);
 }
 
 // 관리자 계정 시드 (idempotent — 매 부팅 시 확인)
@@ -242,8 +275,8 @@ export const queries = {
   deleteFilesBefore: db.prepare("DELETE FROM files WHERE created_at < datetime('now','localtime', ?)"),
   deleteMessagesBefore: db.prepare("DELETE FROM messages WHERE created_at < datetime('now','localtime', ?)"),
   setUserRole: db.prepare('UPDATE users SET role = ? WHERE id = ?'),
-  createEquipment: db.prepare('INSERT INTO equipments (zone_id, code, name, x, y, manager) VALUES (?, ?, ?, ?, ?, ?)'),
-  updateEquipment: db.prepare('UPDATE equipments SET zone_id = ?, code = ?, name = ?, x = ?, y = ?, manager = ?, data_source = ? WHERE id = ?'),
+  createEquipment: db.prepare('INSERT INTO equipments (zone_id, code, name, x, y, manager, type) VALUES (?, ?, ?, ?, ?, ?, ?)'),
+  updateEquipment: db.prepare('UPDATE equipments SET zone_id = ?, code = ?, name = ?, x = ?, y = ?, manager = ?, data_source = ?, type = ? WHERE id = ?'),
   findZoneByName: db.prepare('SELECT * FROM zones WHERE name = ?'),
   findEquipmentByCode: db.prepare('SELECT * FROM equipments WHERE code = ?'),
   createZone: db.prepare('INSERT INTO zones (name, color, rect_x, rect_y, rect_w, rect_h) VALUES (?, ?, ?, ?, ?, ?)'),

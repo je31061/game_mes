@@ -2,6 +2,14 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const STATUS_LABEL = { RUN: '가동', IDLE: '대기', STOP: '정지', ALARM: '알람' };
+  // 설비 유형 (docs/team/인터페이스.md §1) — 서버 /api/admin/equipments 의 types 로 목록을 덮어쓴다
+  const TYPE_LABEL = {
+    press: '프레스', welder: '용접기', robot: '로봇', assembly: '조립 라인',
+    inspector: '검사기', packer: '포장기', cnc: 'CNC 가공기', generic: '미지정 (기본 큐브)',
+  };
+  let eqTypes = Object.keys(TYPE_LABEL);
+  const typeOpts = (sel) => eqTypes.map(t =>
+    `<option value="${t}"${t === (sel || 'generic') ? ' selected' : ''}>${esc(TYPE_LABEL[t] || t)}</option>`).join('');
   let token = localStorage.getItem('fw.adminToken') || localStorage.getItem('fw.token');
   let zones = [];
 
@@ -68,8 +76,21 @@
       if (b.dataset.tab === 'mapeditor') loadEditor();
       if (b.dataset.tab === 'alarms') loadAlarmReport().catch(() => {});
       if (b.dataset.tab === 'workorders') loadWorkOrders().catch(() => {});
+      if (b.dataset.tab === 'analytics') mountAnalytics();
     };
   });
+
+  // ── 실적 분석 탭 훅 (서지안, 인터페이스 §5): js/analytics.js 가 window.FWAnalytics.mount(container, api) 를 제공 ──
+  function mountAnalytics() {
+    const box = $('tab-analytics');
+    if (window.FWAnalytics && typeof window.FWAnalytics.mount === 'function') {
+      try { window.FWAnalytics.mount(box, api); }
+      catch (e) { console.error('[analytics] mount 실패:', e); box.innerHTML = `<h2>실적 분석</h2><p class="muted">분석 화면을 불러오지 못했습니다: ${esc(e.message)}</p>`; }
+      return;
+    }
+    box.innerHTML = `<h2>실적 분석 <small class="muted">OEE · 일별 생산실적 · 게이트웨이 연결 품질</small></h2>
+      <p class="muted">분석 모듈(js/analytics.js)이 아직 배치되지 않았습니다. 라운드 2에서 추가됩니다.</p>`;
+  }
 
   // ── 대시보드 ───────────────────────────
   async function loadDashboard() {
@@ -280,14 +301,17 @@
   async function loadEquipments() {
     const d = await api('/api/admin/equipments');
     zones = d.zones;
+    if (Array.isArray(d.types) && d.types.length) eqTypes = d.types;
     const zoneOpts = (sel) => zones.map(z =>
       `<option value="${z.id}"${z.id === sel ? ' selected' : ''}>${esc(z.name)}</option>`).join('');
     $('f-eq').innerHTML = '<option value="">전체 설비</option>' +
       d.equipments.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('');
     $('n-zone').innerHTML = zoneOpts(zones[0]?.id);
+    if (!$('n-type').options.length) $('n-type').innerHTML = typeOpts('generic');
     $('eq-rows').innerHTML = d.equipments.map(eq => `<tr data-id="${eq.id}">
       <td><input class="e-code" value="${esc(eq.code)}"></td>
       <td><input class="e-name" value="${esc(eq.name)}"></td>
+      <td><select class="e-type">${typeOpts(eq.type)}</select></td>
       <td><select class="e-zone">${zoneOpts(eq.zone_id)}</select></td>
       <td><input class="e-x narrow" type="number" value="${eq.x}"></td>
       <td><input class="e-y narrow" type="number" value="${eq.y}"></td>
@@ -304,6 +328,7 @@
             body: JSON.stringify({
               code: tr.querySelector('.e-code').value.trim(),
               name: tr.querySelector('.e-name').value.trim(),
+              type: tr.querySelector('.e-type').value,
               zoneId: Number(tr.querySelector('.e-zone').value),
               x: Number(tr.querySelector('.e-x').value),
               y: Number(tr.querySelector('.e-y').value),
@@ -324,13 +349,14 @@
         body: JSON.stringify({
           code: $('n-code').value.trim(),
           name: $('n-name').value.trim(),
+          type: $('n-type').value,
           zoneId: Number($('n-zone').value),
           x: Number($('n-x').value),
           y: Number($('n-y').value),
           manager: $('n-manager').value.trim(),
         }),
       });
-      $('n-code').value = ''; $('n-name').value = ''; $('n-manager').value = '';
+      $('n-code').value = ''; $('n-name').value = ''; $('n-manager').value = ''; $('n-type').value = 'generic';
       loadEquipments();
     } catch (e) { alert(e.message); }
   };
@@ -776,6 +802,7 @@
     $('ed-eq-panel').classList.remove('hidden');
     $('ed-eq-title').textContent = `${eq.name} (${eq.code})`;
     $('ed-eq-name').value = eq.name;
+    $('ed-eq-type').innerHTML = typeOpts(eq.type);
     $('ed-eq-manager').value = eq.manager || '';
     let ds = null;
     try { ds = eq.data_source ? JSON.parse(eq.data_source) : null; } catch {}
@@ -840,6 +867,7 @@
         method: 'PUT',
         body: JSON.stringify({
           name: $('ed-eq-name').value.trim(),
+          type: $('ed-eq-type').value,
           manager: $('ed-eq-manager').value.trim(),
           dataSource,
         }),

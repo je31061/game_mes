@@ -80,7 +80,9 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
    - 대화 로그: 설비/기간/키워드 검색 (열람 전용)
    - 알람 리포트: 알람 발생→해제 에피소드별 대응 시간·해제자·협업 지표(대화/참여자/파일),
      기간·설비 필터, 평균/최장 대응 시간 요약 — 기대효과 "대응 시간 단축" 측정 근거
-   - 설비 마스터: 추가·수정 (접속 중인 사용자의 맵에 새로고침 없이 즉시 반영)
+   - 설비 마스터: 추가·수정 (접속 중인 사용자의 맵에 새로고침 없이 즉시 반영). **설비 유형**(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC/미지정)
+     선택 — 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용. 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추가하면 자동 추정
+   - 📈 실적 분석: 설비별 OEE(가동률·성능·품질)와 일별 생산실적, 게이트웨이 연결 품질 (스프린트 1 — `public/js/analytics.js` 배치 시 활성)
    - 사용자 관리: 역할(작업자/보전/관리자)·팀 변경, 비밀번호 초기화, **사전 등록**(사번·이름·역할·팀 — 비밀번호는 본인 첫 로그인 때 설정)
    - 운영 정책: **신규 사번 자동 등록 허용** 토글(운영 전환 시 끄고 사전 등록만 허용),
      **대화·파일 보존 기간**(0=무기한, 매일 자동 백업 성공 직후 기간 초과분 정리 — 상태 이력·실적은 보존)
@@ -110,7 +112,12 @@ public/
   js/game.js  Phaser 3 — 아이소메트릭 맵, 캐릭터, 설비 오브젝트, 보간, 저사양 모드
   js/app.js   로그인 흐름, 소켓 핸들링, HUD/채팅/퀘스트/브리핑 UI
   admin.html, js/admin.js  관리자 콘솔 (SCR-06)
+  js/analytics.js, css/analytics.css  실적 분석 화면 (window.FWAnalytics.mount — 없으면 서버가 빈 파일로 대체)
+  assets/equipment/  설비 유형별 아이소메트릭 스프라이트 PNG + manifest.json (없거나 비면 절차적 큐브)
+assets/blender/  설비 3D 모델 생성·렌더 스크립트 (Blender 5.2, 산출물은 public/assets/equipment/)
+server/analytics.js  실적 분석 API — registerAnalytics(app, {requireAdmin, db, queries, settings}) (없으면 건너뜀)
 docs/         기획 브리프, 구축 경과 보고, 운영 전환 가이드, 소개 캔버스 작업 파일
+docs/team/    세 에이전트(한도윤·서지안·최민준) 협업 규약·인터페이스 계약·작업보드·협업로그·핸드오프
 data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 ```
 
@@ -201,6 +208,19 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 - **리더보드**: 🏆 버튼 — 개인 Top 10 (레벨/포인트/뱃지 수) + 팀 순위(합산 포인트),
   내 순위·다음 레벨까지 필요 포인트. 팀 지정은 관리자 콘솔 → 사용자 관리
 - 캐릭터 머리 위에 접속 시점 레벨 표시(Lv.N), 상단 바에 실시간 포인트/레벨 표시
+
+## 스프린트 1: 실사형 설비 스프라이트 · 실적 분석 (진행 중)
+
+- **설비 유형** `equipments.type`(기본 `generic`): press / welder / robot / assembly / inspector / packer / cnc.
+  기존 DB는 서버 첫 기동 시 컬럼이 추가되고 코드 접두로 1회 매핑됨(이후 관리자가 바꾼 값 유지).
+  설비 API(POST/PUT `type`), 배치 JSON `equipments[].type`, `init`·`world:refresh`의 equipment 객체에 포함
+- **스프라이트 로더** (`public/js/game.js`): 부팅 시 `/assets/equipment/manifest.json`을 읽어 유형별 PNG(192×192, 앵커 (96,150))를
+  preload. 매니페스트에 있는 유형은 이미지 스프라이트 + 매니페스트 좌표의 상태 램프 + 라벨, 없는 유형·`generic`은 절차적 큐브.
+  클릭은 이미지의 불투명 픽셀 기준(pixelPerfect). 유형을 바꾸면 접속자 맵에서 즉시 재생성.
+  제작 파이프라인(Blender 절차 모델 → 렌더 → 앵커 정렬)은 `assets/blender/`, 규격은 `docs/team/인터페이스.md` §2
+- **실적 분석 탭** (관리자 콘솔 📈): `server/analytics.js`가 `/api/admin/analytics/{oee,production,gateway}`를 등록하고
+  `public/js/analytics.js`가 화면을 그림. 두 파일이 없어도 서버·콘솔은 정상 동작(탭에는 미배치 안내). 정의는 `docs/분석-정의.md`
+- 팀 운영: `docs/team/운영규약.md`(역할·라운드), `인터페이스.md`(계약), `작업보드.md`, `협업로그.md`, `handoff-*.md`
 
 ## 다음 단계 후보
 

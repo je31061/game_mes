@@ -6,6 +6,7 @@
 <title>Factory World — 관리자 콘솔</title>
 <script>try{var t=localStorage.getItem('fw.theme');if(t==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/analytics.css"><!-- 실적 분석 화면 스타일 (서지안, 인터페이스 §5) -->
 <style>
   html, body { overflow: auto; }
   body { background: var(--bg); }
@@ -94,6 +95,7 @@
       <button data-tab="logs">💬 대화 로그</button>
       <button data-tab="alarms">🚨 알람 리포트</button>
       <button data-tab="workorders">📜 작업지시</button>
+      <button data-tab="analytics">📈 실적 분석</button>
       <button data-tab="mapeditor">🗺 맵 에디터</button>
       <button data-tab="equipments">🏭 설비 관리</button>
       <button data-tab="users">👤 사용자 관리</button>
@@ -178,6 +180,9 @@
       </table>
     </div>
 
+    <!-- 실적 분석 (서지안): js/analytics.js 의 window.FWAnalytics.mount(container, api) 가 이 컨테이너를 채운다 -->
+    <div class="tabview" id="tab-analytics"></div>
+
     <div class="tabview" id="tab-mapeditor">
       <h2>맵 에디터 <small class="muted">설비 드래그로 이동 · 존 영역은 [영역 그리기] 후 드래그</small></h2>
       <div style="display:flex;gap:18px;flex-wrap:wrap">
@@ -226,6 +231,8 @@
             <h2 style="font-size:14px">설비: <span id="ed-eq-title"></span></h2>
             <table style="margin-bottom:8px">
               <tr><th style="width:90px">명칭</th><td><input id="ed-eq-name"></td></tr>
+              <tr><th>유형</th><td><select id="ed-eq-type" class="eq-type-select"></select>
+                <div class="muted" style="font-size:11px;margin-top:3px">게임 맵의 실사형 스프라이트와 실적 분석 분류에 쓰입니다. 미지정은 기본 큐브로 표시</div></td></tr>
               <tr><th>담당자</th><td><input id="ed-eq-manager"></td></tr>
             </table>
             <h2 style="font-size:13px;color:var(--accent)">데이터 연동 (Phase 2 게이트웨이 대비)</h2>
@@ -264,11 +271,12 @@
     <div class="tabview" id="tab-equipments">
       <h2>설비 마스터 관리</h2>
       <table>
-        <thead><tr><th>코드</th><th>명칭</th><th>존</th><th>X</th><th>Y</th><th>담당자</th><th></th></tr></thead>
+        <thead><tr><th>코드</th><th>명칭</th><th>유형</th><th>존</th><th>X</th><th>Y</th><th>담당자</th><th></th></tr></thead>
         <tbody id="eq-rows"></tbody>
         <tbody class="addrow"><tr>
           <td><input id="n-code" placeholder="NEW-01"></td>
           <td><input id="n-name" placeholder="새 설비"></td>
+          <td><select id="n-type" class="eq-type-select"></select></td>
           <td><select id="n-zone"></select></td>
           <td><input id="n-x" class="narrow" type="number" value="5"></td>
           <td><input id="n-y" class="narrow" type="number" value="5"></td>
@@ -276,7 +284,7 @@
           <td><button id="n-add">+ 추가</button></td>
         </tr></tbody>
       </table>
-      <p class="muted" style="margin-top:10px;font-size:12px">※ 변경 사항은 접속 중인 사용자의 맵에 즉시 반영됩니다.</p>
+      <p class="muted" style="margin-top:10px;font-size:12px">※ 변경 사항은 접속 중인 사용자의 맵에 즉시 반영됩니다. 유형(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC)을 고르면 게임 맵에 해당 실사형 스프라이트가 표시됩니다(스프라이트가 준비된 유형만, 나머지는 기본 큐브). 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추가하면 유형이 자동 추정됩니다.</p>
     </div>
 
     <div class="tabview" id="tab-users">
@@ -313,5 +321,6 @@
 </div>
 
 <script src="js/admin.js"></script>
+<script src="js/analytics.js"></script><!-- 실적 분석 화면 (서지안): window.FWAnalytics = { mount(container, api) } -->
 </body>
 </html>

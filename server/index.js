@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { db, queries, settings, DATA_DIR } from './db.js';
+import { db, queries, settings, DATA_DIR, EQUIPMENT_TYPES, inferEquipmentType } from './db.js';
 import { createGateway } from './gateway.js';
 import { signToken, verifyToken, hashPassword, verifyPassword } from './auth.js';
 import { runBackup, listBackups, defaultBackupRoot } from './backup.js';
@@ -30,6 +30,10 @@ const io = new Server(server, { maxHttpBufferSize: 1e6 });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
+// 분석 화면 파일(서지안, 인터페이스 §5)이 아직 없을 때의 대체 응답 — 콘솔 404 없이 빈 스크립트/스타일 제공.
+// 실제 파일이 public/에 놓이면 위 static이 먼저 응답하므로 이 라우트는 자동으로 비활성화된다.
+app.get('/js/analytics.js', (req, res) => res.type('application/javascript').send('// analytics.js 미배치 — public/js/analytics.js 를 추가하면 대체됩니다\n'));
+app.get('/css/analytics.css', (req, res) => res.type('text/css').send('/* analytics.css 미배치 */\n'));
 
 // ── 인증 (사번 + 비밀번호 → JWT, NFR-03) ──────────────
 // admin 초기 비밀번호 시드 (미설정 시 admin1234 — 최초 로그인 후 변경 권장)
@@ -220,7 +224,7 @@ app.get('/api/admin/layout', requireAdmin, (req, res) => {
     map: { w: MAP_W, h: MAP_H },
     zones: zones.map(z => ({ name: z.name, color: z.color, rect: { x: z.rect_x, y: z.rect_y, w: z.rect_w, h: z.rect_h } })),
     equipments: queries.listEquipments.all().map(e => ({
-      code: e.code, name: e.name, zone: zoneName.get(e.zone_id) || null, x: e.x, y: e.y, manager: e.manager || '',
+      code: e.code, name: e.name, type: e.type || 'generic', zone: zoneName.get(e.zone_id) || null, x: e.x, y: e.y, manager: e.manager || '',
     })),
     links: queries.listLinks.all().map(l => ({ from: l.from_code, to: l.to_code })),
   });
@@ -264,8 +268,14 @@ app.post('/api/admin/layout', requireAdmin, (req, res) => {
       if (e.zone && !zoneByName.has(String(e.zone))) result.warnings.push(`${code}: 존 '${e.zone}'이 없어 좌표 기준 존(${zone.name})으로 배치`);
       const name = String(e.name || cur?.name || code).trim().slice(0, 40);
       const manager = String(e.manager ?? cur?.manager ?? '').trim().slice(0, 30);
-      if (cur) { queries.updateEquipment.run(zone.id, code, name, x, y, manager, cur.data_source, cur.id); result.equipments.updated++; }
-      else { queries.createEquipment.run(zone.id, code, name, x, y, manager); result.equipments.created++; }
+      // 유형(선택): 지정되면 검증, 없으면 기존 값 유지(신규는 코드 접두로 추정)
+      let type = cur?.type || inferEquipmentType(code);
+      if (e.type !== undefined && e.type !== null && e.type !== '') {
+        if (EQUIPMENT_TYPES.includes(String(e.type))) type = String(e.type);
+        else result.warnings.push(`${code}: 알 수 없는 유형 '${e.type}' — ${type}(으)로 유지`);
+      }
+      if (cur) { queries.updateEquipment.run(zone.id, code, name, x, y, manager, cur.data_source, type, cur.id); result.equipments.updated++; }
+      else { queries.createEquipment.run(zone.id, code, name, x, y, manager, type); result.equipments.created++; }
     }
     for (const l of linksIn) {
       const a = queries.findEquipmentByCode.get(String(l.from || '')), b = queries.findEquipmentByCode.get(String(l.to || ''));
@@ -443,13 +453,17 @@ app.put('/api/admin/users/:id/role', requireAdmin, (req, res) => {
 });
 
 app.get('/api/admin/equipments', requireAdmin, (req, res) =>
-  res.json({ equipments: queries.listEquipments.all(), zones: queries.listZones.all() }));
+  res.json({ equipments: queries.listEquipments.all(), zones: queries.listZones.all(), types: EQUIPMENT_TYPES }));
 
 app.post('/api/admin/equipments', requireAdmin, (req, res) => {
-  const { zoneId, code, name, x, y, manager } = req.body || {};
+  const { zoneId, code, name, x, y, manager, type } = req.body || {};
   if (!code || !name || !Number.isInteger(x) || !Number.isInteger(y)) return res.status(400).json({ error: '입력값을 확인해 주세요.' });
+  if (type !== undefined && type !== '' && !EQUIPMENT_TYPES.includes(type)) {
+    return res.status(400).json({ error: `설비 유형은 ${EQUIPMENT_TYPES.join(' / ')} 중 하나여야 합니다.` });
+  }
   try {
-    const r = queries.createEquipment.run(Number(zoneId), String(code), String(name), x, y, String(manager || ''));
+    const r = queries.createEquipment.run(Number(zoneId), String(code), String(name), x, y, String(manager || ''),
+      type || inferEquipmentType(code));
     emitWorldRefresh();
     gateway.reload();
     res.json({ ok: true, id: r.lastInsertRowid });
@@ -461,7 +475,10 @@ app.post('/api/admin/equipments', requireAdmin, (req, res) => {
 app.put('/api/admin/equipments/:id', requireAdmin, (req, res) => {
   const eq = queries.getEquipment.get(Number(req.params.id));
   if (!eq) return res.status(404).json({ error: '설비를 찾을 수 없습니다.' });
-  const { zoneId, code, name, x, y, manager, dataSource } = req.body || {};
+  const { zoneId, code, name, x, y, manager, dataSource, type } = req.body || {};
+  if (type !== undefined && !EQUIPMENT_TYPES.includes(type)) {
+    return res.status(400).json({ error: `설비 유형은 ${EQUIPMENT_TYPES.join(' / ')} 중 하나여야 합니다.` });
+  }
   // 연동 설정 검증 (Phase 2 게이트웨이 규격, server/drivers/common.js 참조)
   let ds = dataSource === undefined ? eq.data_source : null;
   if (dataSource && typeof dataSource === 'object' && dataSource.protocol) {
@@ -495,7 +512,8 @@ app.put('/api/admin/equipments/:id', requireAdmin, (req, res) => {
   try {
     queries.updateEquipment.run(
       Number(zoneId ?? eq.zone_id), String(code ?? eq.code), String(name ?? eq.name),
-      Number.isInteger(x) ? x : eq.x, Number.isInteger(y) ? y : eq.y, String(manager ?? eq.manager ?? ''), ds, eq.id);
+      Number.isInteger(x) ? x : eq.x, Number.isInteger(y) ? y : eq.y, String(manager ?? eq.manager ?? ''), ds,
+      type ?? eq.type ?? 'generic', eq.id);
     emitWorldRefresh();
     gateway.reload();
     res.json({ ok: true });
@@ -880,6 +898,24 @@ app.post('/api/admin/backup', requireAdmin, (req, res) => {
   const info = doBackup('manual');
   res.status(info.ok ? 200 : 500).json(info);
 });
+
+// ── 실적 분석 API (서지안, 인터페이스 §4) — server/analytics.js 가 있으면 라우트 등록, 없으면 건너뜀 ──
+// 시그니처: export function registerAnalytics(app, { requireAdmin, db, queries, settings })
+try {
+  const mod = await import('./analytics.js');
+  if (typeof mod.registerAnalytics === 'function') {
+    mod.registerAnalytics(app, { requireAdmin, db, queries, settings });
+    console.log('[analytics] server/analytics.js 로드 — /api/admin/analytics/* 등록');
+  } else {
+    console.warn('[analytics] server/analytics.js 에 registerAnalytics export가 없어 건너뜀');
+  }
+} catch (e) {
+  if (e?.code === 'ERR_MODULE_NOT_FOUND' && /analytics\.js/.test(String(e.message))) {
+    console.log('[analytics] server/analytics.js 없음 — 분석 API 미등록 (라운드 2에서 추가 예정)');
+  } else {
+    console.error('[analytics] server/analytics.js 로드 실패 — 분석 API 미등록:', e?.message || e);
+  }
+}
 
 // ── 게임 상태 (메모리) ────────────────────────────────
 const players = new Map(); // socketId -> {userId, name, empNo, color, badge, x, y, moving}
