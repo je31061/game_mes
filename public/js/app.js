@@ -429,6 +429,8 @@
   function openChat(key) {
     if (key) activeChannel = channels.has(key) ? key : 'all';
     $('chat-panel').classList.add('open');
+    document.body.classList.add('chat-open'); // 하단 버튼을 패널 왼쪽으로 비킴 (입력줄 겹침 방지)
+    $('chat-toggle').innerHTML = '✕ 닫기 <span class="unread" id="chat-unread"></span>';
     const ch = channels.get(activeChannel);
     if (ch) ch.unread = 0;
     renderTabs(); renderMessages(); renderMembers(); renderUnreadTotal();
@@ -471,9 +473,14 @@
     $('chat-unread').textContent = n > 0 ? `(${n})` : '';
   }
 
+  function closeChat() {
+    $('chat-panel').classList.remove('open');
+    document.body.classList.remove('chat-open');
+    $('chat-toggle').innerHTML = '💬 대화 <span class="unread" id="chat-unread"></span>';
+    renderUnreadTotal();
+  }
   $('chat-toggle').onclick = () => {
-    const p = $('chat-panel');
-    if (p.classList.contains('open')) p.classList.remove('open');
+    if ($('chat-panel').classList.contains('open')) closeChat();
     else openChat();
   };
 

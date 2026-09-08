@@ -284,6 +284,11 @@ input, select { font-family: inherit; }
 }
 #quest-toggle { right: 118px; }
 #board-toggle { right: 218px; }
+/* 대화 패널이 열리면 하단 버튼을 패널(330px) 왼쪽으로 비켜 입력줄과 겹치지 않게 */
+#chat-toggle, #quest-toggle, #board-toggle { transition: right .22s ease; }
+body.chat-open #chat-toggle { right: 342px; }
+body.chat-open #quest-toggle { right: 448px; }
+body.chat-open #board-toggle { right: 548px; }
 #quest-toggle .unread { color: var(--idle); }
 
 #quest-panel, #board-panel {
@@ -413,6 +418,9 @@ input, select { font-family: inherit; }
   #chat-toggle { right: 10px; bottom: 10px; padding: 10px 13px; }
   #quest-toggle { right: 104px; bottom: 10px; padding: 10px 13px; }
   #board-toggle { right: 196px; bottom: 10px; padding: 10px 13px; }
+  /* 좁은 화면: 패널이 전체 폭이므로 닫기 버튼만 패널 상단에, 나머지는 숨김 */
+  body.chat-open #chat-toggle { right: 10px; bottom: auto; top: 8px; z-index: 27; }
+  body.chat-open #quest-toggle, body.chat-open #board-toggle { display: none; }
   .status-btns button { padding: 11px 0; }
   .eq-actions button, .quest-card .q-actions button { padding: 12px; }
   #toasts { right: 8px; left: 8px; align-items: stretch; }

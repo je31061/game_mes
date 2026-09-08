@@ -4,8 +4,8 @@
 
 | 파일 | 역할 |
 |---|---|
-| `build.mjs` | 아트보드 9장의 HTML과 `canvas.json`을 생성하는 스크립트. 내용 수정은 여기서 |
-| `*.dc.html` | 아트보드 9장 (Main 표지, Problem, Scenario, Principles, Process, Stack, Floorplan, Impact, Status) |
+| `build.mjs` | 아트보드 10장의 HTML과 `canvas.json`을 생성하는 스크립트. 내용 수정은 여기서. 07 보드의 설비 스프라이트는 `public/assets/equipment/*.png`를 읽어 data URI로 임베드하므로 그 PNG가 있어야 한다 |
+| `*.dc.html` | 아트보드 10장 (Main 표지, Problem, Scenario, Principles, Process, Stack, Floorplan, Team, Impact, Status) |
 | `canvas.json` | 아트보드 배치와 캔버스 시작 옵션 |
 | `factory-world-intro.html` | 캔버스 편집기가 포함된 게시용 단일 HTML (design 스킬이 생성) |
 
@@ -35,3 +35,4 @@ node build.mjs
 
 - 버전 `1788695958-294a` (2026-09-06): 사용자가 캔버스에서 `02 대표 시나리오` 아트보드를 오른쪽으로 9px 옮김. `build.mjs`의 `xOffsets`에 반영. 편집기는 기본값인 `print: "fixed"`를 저장 시 생략하므로 `build.mjs`도 생략하도록 맞춤. 아트보드 내용(`*.dc.html`) 변경은 없음.
 - 버전 `1788698263-fd17` (2026-09-06): 요청에 따라 `02 대표 시나리오`의 9px 오프셋을 되돌려 모든 아트보드를 x=0에 정렬. `build.mjs`의 `xOffsets`를 비움. 재게시 전 읽은 게시본은 `1788695958-294a` 그대로였고(사용자 추가 편집 없음), 아트보드 내용 변경은 없음.
+- 버전 `1788873139-0866` (2026-09-08): 스프린트 1 반영. 되가져온 사용자 편집은 버전 `1788698681-5491`에서 `08 현재 상태` 프레임 높이를 1120→1186으로 늘린 것 하나(아트보드 내용 변경 없음). 이번 갱신으로 그 보드에 스프린트 1 완료 띠가 들어가 내용이 약 1240px가 되어 프레임을 1260으로 잡았다(사용자 의도인 "잘리지 않게"를 유지). 새 아트보드 `Team.dc.html`(07 세 에이전트가 만든 실사형 공장)을 06 뒤에 삽입하고 기대효과→08, 현재 상태→09로 번호를 밀었다. `04 진행 방식`에 구축 순서 8번(스프린트 1) 추가. 렌더 높이를 실측해 프레임을 맞춤: Process 780→1020(원래부터 내용이 ~1008px이었음), Team 1980. 세 보드(Process·Team·Status) 외 아트보드는 변경 없음.

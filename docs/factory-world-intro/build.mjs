@@ -1,7 +1,16 @@
 // Generates the Factory World intro artboards (.dc.html) + canvas.json
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 const W = 1200;
+const here = dirname(fileURLToPath(import.meta.url));
+// 실사형 설비 스프라이트(스프린트 1, 한도윤 렌더). 저장소의 실제 PNG를 data URI로 임베드한다.
+const SPRITES = [
+  ['press', '프레스'], ['welder', '용접기'], ['robot', '로봇'], ['assembly', '조립 라인'],
+  ['inspector', '검사기'], ['packer', '포장기'], ['cnc', 'CNC'],
+];
+const spriteUri = (type) => 'data:image/png;base64,' + readFileSync(resolve(here, '../../public/assets/equipment', `${type}.png`)).toString('base64');
 
 // ── palette (lifted from public/css/style.css and docs/구축경과보고.html)
 const D = { bg: '#0d0f17', panel: '#161a26', panel2: '#1e2333', border: '#2c3348', text: '#e6e9f2', muted: '#8b93a8', accent: '#4fc3f7' };
@@ -290,8 +299,8 @@ const tStep = (n, tag, title, desc) => `
     </div>
   </div>`;
 const Process = head(false) + `
-<div style="width: ${W}px; min-height: 780px; padding: 64px 72px;">
-  ${sectionHead('04', '어떻게 진행했나', '3단계 로드맵을 세우고, 일곱 번에 나눠 쌓았습니다', '기획서의 단계별 범위와 실제 결과를 나란히 두었습니다. 아래는 구축 경과 보고 기준의 진행 순서입니다.')}
+<div style="width: ${W}px; min-height: 1020px; padding: 64px 72px;">
+  ${sectionHead('04', '어떻게 진행했나', '3단계 로드맵을 세우고, 여덟 번에 나눠 쌓았습니다', '기획서의 단계별 범위와 실제 결과를 나란히 두었습니다. 아래는 구축 경과 보고 기준의 진행 순서입니다.')}
   <div style="background: ${L.surface}; border: 1px solid ${L.line}; border-radius: 10px; overflow: hidden; margin-bottom: 36px;">
     <table>
       <tr>${th('단계')}${th('기획 범위')}${th('실제 결과')}</tr>
@@ -309,6 +318,7 @@ const Process = head(false) + `
     ${tStep(5, 'NFR-03', '인증 강화', 'scrypt 비밀번호, JWT 세션, 역할 3종(작업자 / 보전 / 관리자). 서버와 UI에서 이중 차단.')}
     ${tStep(6, 'PHASE 3 게임성', '퀘스트 · 포인트 · 리더보드', '작업지시가 현장에는 퀘스트로 표시. 수락·완료가 설비 이력에 자동 기록. 포인트·레벨·뱃지, 개인·팀 리더보드.')}
     ${tStep(7, '공정 라인 부하', '심시티식 라인 연결 · 정체 관리', '설비 간 라인을 연결하고 재공 부하를 모델링. 하류 정지 시 라인이 녹→황→적으로 변하고 정체 알림.')}
+    ${tStep(8, '스프린트 1 · 2026-09-08', '실사형 설비 스프라이트 · 실적 분석 · 세 에이전트 협업', '설비 유형 7종을 Blender로 렌더한 실사형 스프라이트, 관리자 콘솔의 실적 분석(OEE), 역할을 나눈 세 에이전트 협업. 07 보드에서 자세히.')}
   </div>
 </div>
 ` + tail;
@@ -498,7 +508,137 @@ const Floorplan = head(false) + `
 </div>
 ` + tail;
 
-// ── 07 Impact + measurement
+// ── 07 Team (스프린트 1: 세 에이전트 협업 · 실사형 설비 스프라이트 · 실적 분석)
+const IT = {
+  cube: ico('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>'),
+  chart: ico('<path d="M4 20h16"/><path d="M6 16v-5M11 16V7M16 16v-3"/><path d="M4 8l5-3 4 3 7-5"/>'),
+  gear: ico('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>'),
+  contract: ico('<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h6"/>'),
+  board: ico('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/><path d="M5 9h2M11 9h2M11 13h2M17 9h2"/>'),
+  log: ico('<path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/>'),
+  handoff: ico('<path d="M4 12h9"/><path d="M10 8l4 4-4 4"/><rect x="15" y="6" width="5" height="12" rx="1.5"/>'),
+  lamp: ico('<path d="M9 21h6M10 18h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1.3-1 2.1h-5c0-.8-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/>'),
+  pointer: ico('<path d="M5 3l14 8-6 2-3 6z"/>'),
+};
+const persona = (icon, name, role, duty, owns) => `
+  <div style="display: flex; flex-direction: column; gap: 12px; background: ${L.surface}; border: 1px solid ${L.line}; border-radius: 12px; padding: 20px 20px 22px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 42px; height: 42px; border-radius: 50%; background: ${L.soft}; color: ${L.accent}; display: flex; align-items: center; justify-content: center; flex: none;">${icon}</div>
+      <div style="display: flex; flex-direction: column; gap: 1px;">
+        <h3 style="font-size: 17px; font-weight: 700;">${name}</h3>
+        <div style="font-size: 12.5px; color: ${L.muted};">${role}</div>
+      </div>
+    </div>
+    <p style="font-size: 13.5px; color: ${L.ink}; line-height: 1.6; text-wrap: pretty;">${duty}</p>
+    <div style="font-size: 12px; color: ${L.muted}; border-top: 1px solid ${L.line}; padding-top: 10px;"><b style="color: ${L.ink};">담당 파일</b> · ${owns}</div>
+  </div>`;
+const roundCard = (tag, who, items, accent) => `
+  <div style="display: flex; flex-direction: column; gap: 6px; background: ${accent ? L.ink : L.surface}; color: ${accent ? '#ffffff' : L.ink}; border: 1px solid ${accent ? L.ink : L.line}; border-radius: 10px; padding: 14px 16px; flex: 1;">
+    <div style="font-size: 11px; letter-spacing: 0.12em; font-weight: 700; color: ${accent ? D.accent : L.accent};">${tag}</div>
+    <div style="font-size: 14.5px; font-weight: 700;">${who}</div>
+    <p style="font-size: 12.5px; color: ${accent ? '#c3c9d8' : L.muted}; line-height: 1.55;">${items}</p>
+  </div>`;
+const roundArrow = `<div style="display: flex; align-items: center; justify-content: center; color: ${L.accent};"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="M13 6l6 6-6 6"/></svg></div>`;
+const device = (icon, title, desc) => `
+  <div style="display: flex; gap: 10px; align-items: flex-start;">
+    <div style="width: 34px; height: 34px; border-radius: 8px; background: ${L.chip}; color: ${L.ink}; display: flex; align-items: center; justify-content: center; flex: none;">${icon}</div>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <h3 style="font-size: 14px; font-weight: 700;">${title}</h3>
+      <p style="font-size: 12.5px; color: ${L.muted}; line-height: 1.5;">${desc}</p>
+    </div>
+  </div>`;
+const spriteTile = (type, label) => `
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0;">
+    <img src="${spriteUri(type)}" alt="${label} 스프라이트" width="132" height="132" style="display: block; width: 132px; height: 132px; image-rendering: auto;">
+    <div style="font-size: 13px; font-weight: 700; color: ${D.text};">${label}</div>
+    <div style="font-family: Consolas, 'D2Coding', monospace; font-size: 11px; color: ${D.muted};">${type}</div>
+  </div>`;
+const oeeTile = (name, formula, desc) => `
+  <div style="display: flex; flex-direction: column; gap: 6px; background: ${L.surface}; border: 1px solid ${L.line}; border-radius: 10px; padding: 14px 16px 16px;">
+    <div style="font-size: 12px; letter-spacing: 0.1em; color: ${L.accent}; font-weight: 700;">${name}</div>
+    <div style="font-size: 15px; font-weight: 700; line-height: 1.4; font-variant-numeric: tabular-nums;">${formula}</div>
+    <p style="font-size: 12.5px; color: ${L.muted}; line-height: 1.5;">${desc}</p>
+  </div>`;
+const subLabel = (t, color = L.muted) => `<div style="font-size: 12px; letter-spacing: 0.16em; color: ${color}; font-weight: 700; margin-bottom: 14px;">${t}</div>`;
+const Team = head(false) + `
+<div style="width: ${W}px; min-height: 1980px; padding: 64px 72px;">
+  ${sectionHead('07', '스프린트 1 · 세 에이전트가 만든 실사형 공장', '한 명이 다 만들지 않고, 역할이 다른 셋이 규약으로 나눠 만들었습니다', '설비를 실사형으로 바꾸고 실적 분석을 더한 스프린트 1은 인격이 다른 세 에이전트가 각자 담당을 맡고, 문서로 계약하고, 실제 결과물로 검증했습니다.')}
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+    ${persona(IT.cube, '한도윤', '설비 3D 아티스트 · Blender', '설비 유형 7종의 3D 모델을 Blender 스크립트로 만들고, 게임용 아이소메트릭 스프라이트를 렌더합니다. 실제 공장 설비를 만져 본 경험으로 형태를 잡습니다.', '3D 모델 · 스프라이트 PNG · 매니페스트 · 설비 유형 체계')}
+    ${persona(IT.chart, '서지안', '설비 연동 · 생산실적 분석가', '게이트웨이 연동 데이터와 상태 이력·실적을 바탕으로 OEE·생산 분석 API와 분석 화면을 만듭니다. 근거 없는 지표는 내지 않습니다.', '분석 정의 · 분석 API · 실적 분석 화면')}
+    ${persona(IT.gear, '최민준', 'MES 운영 리더 · 통합', '스키마·게임 클라이언트·관리자 콘솔을 통합하고 검증·문서·배포를 맡습니다. 두 사람의 요청을 받아 공용 파일을 고칩니다.', '서버 · 게임 · 관리자 콘솔 등 공용 파일 · 스키마 · 커밋')}
+  </div>
+  <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: ${L.soft}; border: 1px solid ${L.line}; border-radius: 8px; font-size: 13.5px;">
+    <span style="color: ${L.accent}; display: flex;">${IT.handoff}</span>
+    <span><b style="color: ${L.accent};">공용 파일은 최민준만</b> 고칩니다. 한도윤·서지안은 필요한 연결 지점(훅)을 요청하고, 자기 담당 파일만 편집합니다. 다른 사람이 정한 계약(파일명·API·좌표 규약)은 임의로 바꾸지 않습니다.</span>
+  </div>
+
+  <div style="margin-top: 32px;">
+    ${subLabel('작업 사이클 · 라운드')}
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1.25fr) 28px minmax(0, 1fr); gap: 8px; align-items: stretch;">
+      ${roundCard('라운드 1 · 기반', '최민준', '설비 유형 컬럼, 스프라이트 로더, 분석 탭 연결 지점을 먼저 깔고 핸드오프 노트를 남깁니다.', true)}
+      ${roundArrow}
+      <div style="display: flex; flex-direction: column; gap: 8px; position: relative;">
+        <div style="position: absolute; top: -9px; right: 12px; font-size: 10.5px; letter-spacing: 0.1em; font-weight: 700; color: ${L.accent}; background: ${L.bg}; padding: 0 6px;">병행</div>
+        ${roundCard('라운드 2 · 구현', '한도윤', '유형 7종 모델 · 렌더 파이프라인 · 스프라이트 PNG와 매니페스트', false)}
+        ${roundCard('라운드 2 · 구현', '서지안', '분석 지표 정의 · 분석 API · 실적 분석 화면', false)}
+      </div>
+      ${roundArrow}
+      ${roundCard('라운드 3 · 통합', '최민준', '두 사람의 요청을 반영하고 통합 · 검증 · 문서 · 커밋까지 마칩니다. 다음 라운드는 이 순서를 반복합니다.', true)}
+    </div>
+  </div>
+
+  <div style="margin-top: 26px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px;">
+    ${device(IT.contract, '인터페이스 계약', '파일명 · API · 좌표 규약의 원천. 바꾸려면 협업로그에 제안과 영향을 적습니다.')}
+    ${device(IT.board, '작업보드', '라운드별 할 일과 상태(대기 · 진행 · 완료 · 막힘).')}
+    ${device(IT.log, '협업로그', '질문 · 답변 · 결정을 날짜 · 발신 · 수신으로 남깁니다. 구두 합의는 없습니다.')}
+    ${device(IT.handoff, '핸드오프 노트', '한 일, 만든 파일, 다른 사람이 해 줄 일, 검증 방법. 다음 사람은 이 노트로 이어받습니다.')}
+  </div>
+  <p style="margin-top: 14px; font-size: 13px; color: ${L.muted}; line-height: 1.6;"><b style="color: ${L.ink};">검증 없이 완료라 하지 않는다</b>가 규약입니다. 스프라이트는 실제 렌더 파일, API는 실제 호출 결과, 통합은 실제 화면으로 확인한 뒤에야 완료로 표시했습니다.</p>
+
+  <div style="margin-top: 34px;">
+    ${subLabel('실사형 설비 스프라이트 · 유형 7종')}
+    <div style="background: ${D.panel}; border: 1px solid ${D.border}; border-radius: 12px; padding: 18px 20px 14px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px;">
+      ${SPRITES.map(([t, l]) => spriteTile(t, l)).join('')}
+    </div>
+    <div style="margin-top: 14px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+      ${fpChip('Blender 스크립트로 절차 모델', false)}${fpArrowSm}${fpChip('2:1 아이소메트릭 직교 렌더', false)}${fpArrowSm}${fpChip('앵커 정렬 · 그림자 · 매니페스트', false)}${fpArrowSm}${fpChip('게임은 유형만 보고 그린다', true)}
+      <span style="font-size: 12px; color: ${L.muted}; margin-left: 6px;">명령 하나로 7장을 렌더합니다. 결과 PNG는 저장소에 들어 있어 Blender 없는 PC에서도 게임이 뜹니다.</span>
+    </div>
+    <div style="margin-top: 14px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch;">
+      <div style="padding: 14px 18px; background: ${L.ink}; color: #ffffff; border-radius: 10px; display: flex; align-items: center;">
+        <p style="font-size: 15.5px; font-weight: 700; line-height: 1.5;">새 설비는 유형만 고르면 스프라이트가 따라온다.</p>
+      </div>
+      ${device(IT.lamp, '상태 램프는 경광등 위에', '가동 녹 · 대기 황 · 정지/알람 적 램프가 모델의 경광등 위치에 얹힙니다. 유형에 없는 설비는 기존 큐브로 그립니다.')}
+      ${device(IT.pointer, '그림자는 클릭이 통과', '바닥 그림자를 눌러도 뒤 설비·바닥으로 통과해 태블릿 오클릭을 막습니다.')}
+    </div>
+  </div>
+
+  <div style="margin-top: 34px;">
+    ${subLabel('실적 분석 · OEE')}
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start;">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+        ${oeeTile('가동률', 'RUN 시간 ÷ 계획 가동 시간', '설비가 실제로 가동한 시간의 비율. 계획 시간은 운영 정책 "1일 계획 가동 시간"으로 정하고, 없으면 24시간으로 봅니다.')}
+        ${oeeTile('성능', '실적(양품 + 불량) ÷ 목표 수량', '작업지시 목표 대비 생산한 수량의 비율.')}
+        ${oeeTile('품질', '양품 ÷ (양품 + 불량)', '생산한 것 중 양품의 비율.')}
+        ${oeeTile('OEE', '가동률 × 성능 × 품질', '셋을 곱한 종합 설비 효율. 설비별로 보고, 요약은 합계로 다시 계산합니다.')}
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: ${L.chip}; border: 1px solid ${L.line}; border-radius: 10px;">
+        <h3 style="font-size: 15px; font-weight: 700;">근거 없는 숫자는 내지 않습니다</h3>
+        <p style="font-size: 13px; color: ${L.ink}; line-height: 1.6;">목표가 없으면 <b>"—"</b>로 비웁니다. 첫 로그 이전 시간은 추정하지 않고 <b>"상태 미확인"</b>으로 따로 보고합니다. 셋 중 하나라도 없으면 OEE도 비웁니다.</p>
+        <p style="font-size: 12.5px; color: ${L.muted}; line-height: 1.6;">같은 탭에서 일별 생산실적과 게이트웨이 연결 품질도 봅니다. 외부 차트 라이브러리 없이 인라인 SVG로 그립니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px; padding: 18px 22px; background: ${L.ink}; color: #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+    <p style="font-size: 17px; font-weight: 700; line-height: 1.5;">실사형으로 바꿔도 이벤트 규격·관리자 동선은 그대로다.</p>
+    <p style="font-size: 13.5px; color: #c3c9d8; line-height: 1.6; text-align: right;">설비 하나 늘릴 때 코드가 아니라 유형 하나를 고릅니다.</p>
+  </div>
+</div>
+` + tail;
+
+// ── 08 Impact + measurement
 const effect = (title, desc) => `
   <div style="display: flex; flex-direction: column; gap: 6px; padding: 20px 20px 22px; background: ${L.surface}; border: 1px solid ${L.line}; border-radius: 12px;">
     <h3 style="font-size: 16px; font-weight: 700; line-height: 1.4;">${title}</h3>
@@ -508,7 +648,7 @@ const colHead = (t) => `<div style="font-size: 11.5px; color: ${L.muted}; font-w
 const ghostRow = () => `<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid ${L.line};">${[64, 40, 48, 70].map(w => `<div style="padding: 10px 10px;"><div style="height: 8px; width: ${w}%; border-radius: 4px; background: ${L.line};"></div></div>`).join('')}</div>`;
 const Impact = head(false) + `
 <div style="width: ${W}px; min-height: 480px; padding: 64px 72px;">
-  ${sectionHead('07', '기대효과와 측정 근거', '"대응 시간 30% 단축"은 리포트로 확인합니다', '기대효과는 네 가지이고, 첫 번째 효과는 관리자 콘솔의 알람 대응 리포트가 숫자로 뒷받침합니다.')}
+  ${sectionHead('08', '기대효과와 측정 근거', '"대응 시간 30% 단축"은 리포트로 확인합니다', '기대효과는 네 가지이고, 첫 번째 효과는 관리자 콘솔의 알람 대응 리포트가 숫자로 뒷받침합니다.')}
   <div style="display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 32px; align-items: start;">
     <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
       ${effect('이슈 대응 시간 단축', '파일럿 목표: 평균 30% 단축')}
@@ -529,7 +669,7 @@ const Impact = head(false) + `
 </div>
 ` + tail;
 
-// ── 08 Status + next
+// ── 09 Status + next
 const covRow = (id, req, st, ok, note, last) => `<tr>${td(`<span style="font-variant-numeric: tabular-nums; white-space: nowrap;">${id}</span>`, last ? 'border-bottom: none;' : '')}${td(req, last ? 'border-bottom: none;' : '')}${td(`<span style="color: ${ok ? L.ok : L.warn}; font-weight: 700; white-space: nowrap;">${st}</span>`, last ? 'border-bottom: none;' : '')}${td(note, `color: ${L.muted}; ${last ? 'border-bottom: none;' : ''}`)}</tr>`;
 const task = (title, desc) => `
   <div style="display: flex; gap: 12px; align-items: flex-start;">
@@ -547,22 +687,26 @@ const statCard = (label, big, unit, sub, subColor) => `
   </div>`;
 const usabilityChip = (t) => `<span style="font-size: 12px; color: ${L.ink}; background: ${L.chip}; border: 1px solid ${L.line}; border-radius: 14px; padding: 3px 11px; white-space: nowrap;">${t}</span>`;
 const Status = head(false) + `
-<div style="width: ${W}px; min-height: 1120px; padding: 64px 72px;">
-  ${sectionHead('08', '현재 상태와 다음 단계', '기능 요구사항 13개가 모두 동작하고 운영 기반을 갖췄습니다. 파일럿 라인을 기다리고 있습니다', '')}
+<div style="width: ${W}px; min-height: 1260px; padding: 64px 72px;">
+  ${sectionHead('09', '현재 상태와 다음 단계', '기능 요구사항 13개가 모두 동작하고, 스프린트 1까지 마쳤습니다. 파일럿 라인을 기다리고 있습니다', '')}
   <div style="display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: start;">
     <div style="display: flex; flex-direction: column; gap: 16px;">
       <div style="display: flex; gap: 12px;">
         ${statCard('기능 요구사항', '13', '/ 13', 'FR-11은 MQTT 실연동, OPC-UA / Modbus는 드라이버 준비(라이브러리 설치 시 연결)', L.muted)}
         ${statCard('외부 인프라', '0', '개', '단일 Node.js 서버로 실행', L.muted)}
-        ${statCard('부하 테스트 (동시 50명)', '통과', '', '이동 동기화 p95 20ms · 채팅 12ms<br>(기준 200ms / 1초)', L.ok)}
+        ${statCard('부하 테스트 (동시 50명)', '통과', '', '이동 동기화 p95 21ms · 채팅 p95 10ms<br>(기준 200ms / 1초 · 2026-09-08 재확인)', L.ok)}
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: ${L.soft}; border: 1px solid ${L.line}; border-radius: 10px;">
+        <span style="font-size: 11px; letter-spacing: 0.12em; font-weight: 700; color: #ffffff; background: ${L.accent}; border-radius: 6px; padding: 4px 9px; white-space: nowrap; margin-top: 2px;">스프린트 1 완료 · 2026-09-08</span>
+        <p style="font-size: 13.5px; line-height: 1.6; color: ${L.ink};">설비 유형 7종 <b>실사형 스프라이트</b>(Blender 파이프라인, 결과 PNG 저장소 포함) · 관리자 콘솔 <b>실적 분석</b>(OEE · 일별 실적 · 게이트웨이 연결 품질) · <b>세 에이전트 협업 규약</b>. 자세한 내용은 07 보드.</p>
       </div>
       <div style="background: ${L.surface}; border: 1px solid ${L.line}; border-radius: 10px; overflow: hidden;">
         <table>
           <tr>${th('ID')}${th('요구사항')}${th('상태')}${th('비고')}</tr>
-          ${covRow('FR-01~03', '게임형 로그인 · 캐릭터 · 공장 맵', '완료', true, '맵 에디터(평면도 · 배치 JSON), 도트 캐릭터 절차 생성', false)}
+          ${covRow('FR-01~03', '게임형 로그인 · 캐릭터 · 공장 맵', '완료', true, '맵 에디터(평면도 · 배치 JSON), 도트 캐릭터 절차 생성, 실사형 설비 스프라이트 7종', false)}
           ${covRow('FR-04~05', '설비 상태창 · 다중 접속', '완료', true, '수동 변경 + 자동 수집, 진행률 게이지, 담당자 호출', false)}
           ${covRow('FR-06~09', '근접 대화 · 파일 · 기록 · 알림', '완료', true, '서버 근접 판정, append-only, 출근 브리핑', false)}
-          ${covRow('FR-10', '관리자 콘솔', '완료', true, 'KPI · 로그 검색 · 마스터 · 맵 에디터 · 알람 리포트 · 백업', false)}
+          ${covRow('FR-10', '관리자 콘솔', '완료', true, 'KPI · 로그 검색 · 마스터 · 맵 에디터 · 알람 리포트 · 백업 · 실적 분석(OEE)', false)}
           ${covRow('FR-11', '설비 연동 (Phase 2)', '완료', true, 'MQTT 실연동. OPC-UA / Modbus 드라이버 준비(실 장비 검증 남음)', false)}
           ${covRow('FR-12~13', '생산관리 · 게이미피케이션 (Phase 3)', 'MVP 완료', true, '작업지시 퀘스트 · 실적 · 포인트/레벨/뱃지/리더보드', false)}
           ${covRow('NFR-01 · 04', '성능 · 운영', '완료', true, '동시 50명 부하 테스트 통과, 매일 자동 백업, 자동 재기동 · 재접속, HTTPS 옵션', false)}
@@ -581,6 +725,7 @@ const Status = head(false) + `
       ${task('OPC-UA / Modbus 실 장비 검증', '드라이버는 준비되어 있어, 라이브러리 설치 후 실 장비로 연결을 확인합니다.')}
       ${task('파일럿 라인 1개 선정 후 실사용 피드백', '선정된 라인에서 피드백을 모아 다음 단계 범위를 정합니다.')}
       ${task('사용자 사전 등록 정책', '지금은 신규 사번이 첫 로그인 때 자동 등록되는 파일럿 정책입니다.')}
+      <p style="font-size: 12.5px; color: ${L.muted}; line-height: 1.55; padding: 0 4px;">스프린트 2 후보(설비 방향·애니메이션 프레임, 유형별 OEE 집계, 게이트웨이 폴링 카운트 등)는 팀 작업보드에 정리되어 있으며, 세 명의 의견을 모아 정합니다.</p>
       <div style="margin-top: 6px; padding: 18px 20px; background: ${L.ink}; color: #ffffff; border-radius: 12px; display: flex; flex-direction: column; gap: 6px;">
         <div style="font-size: 12px; letter-spacing: 0.16em; color: ${D.accent}; font-weight: 700;">협조 요청</div>
         <p style="font-size: 15px; font-weight: 700; line-height: 1.5;">파일럿 라인 1개 선정에 협조를 부탁드립니다.</p>
@@ -597,13 +742,17 @@ const boards = [
   ['Problem', Problem, 680],
   ['Scenario', Scenario, 640],
   ['Principles', Principles, 520],
-  ['Process', Process, 780],
+  // Frame heights were measured from the rendered artboards (Noto Sans KR loaded) plus a little slack.
+  // Process content had always been ~1008px tall; the old 780 frame was too short and is corrected here.
+  ['Process', Process, 1020],
   ['Stack', Stack, 520],
   ['Floorplan', Floorplan, 1140],
+  ['Team', Team, 1980],
   ['Impact', Impact, 480],
-  ['Status', Status, 1120],
+  // Status: the user set 1186 by hand (saved version 1788698681-5491); the sprint 1 strip pushed content to ~1240, so 1260.
+  ['Status', Status, 1260],
 ];
-const titles = { Main: '표지', Problem: '01 왜 만들었나', Scenario: '02 대표 시나리오', Principles: '03 설계 원칙', Process: '04 진행 방식', Stack: '05 기술 선택과 검증', Floorplan: '06 도면으로 우리 공장 만들기', Impact: '07 기대효과와 측정 근거', Status: '08 현재 상태와 다음 단계' };
+const titles = { Main: '표지', Problem: '01 왜 만들었나', Scenario: '02 대표 시나리오', Principles: '03 설계 원칙', Process: '04 진행 방식', Stack: '05 기술 선택과 검증', Floorplan: '06 도면으로 우리 공장 만들기', Team: '07 세 에이전트가 만든 실사형 공장', Impact: '08 기대효과와 측정 근거', Status: '09 현재 상태와 다음 단계' };
 // Per-board x offsets. A hand-drag of Scenario (9px, saved version 1788695958-294a)
 // was reverted on request so every board sits at x=0; add an entry here only when a
 // deliberate offset should survive rebuilds. The editor also drops the default
