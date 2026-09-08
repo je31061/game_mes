@@ -1,5 +1,55 @@
 # handoff — 최민준 (MES 운영 리더)
 
+## 라운드 3 (통합) — 2026-09-08 완료
+
+### 반영한 요청
+| 발신 | 요청 | 결과 |
+|---|---|---|
+| 한도윤 | (1) 11대 스프라이트·램프·라벨 실제 화면 확인 | 다크·라이트·저사양(30fps, 점멸 정지) 모두 11대 이미지. 램프 좌표 매니페스트−앵커 일치, 3배 컨택트 시트로 7종 램프가 경광등 위·라벨선이 최고점 위 확인. **재생성 요청 없음** |
+| 한도윤 | (2) `.gitignore`에 `assets/blender/out/` | 추가 (`git check-ignore` 확인) |
+| 한도윤 | (3) 그림자 클릭 통과 정책 | **통과로 결정.** 매니페스트·`SHADOW_A_MIN` 유지, `game.js` `SPRITE_HIT_ALPHA = 64`. 인터페이스 §3에 계약 추가(그림자 ≤ 63, 본체 ≥ 64). 검증: 7종 그림자 픽셀 히트 0 / 본체 픽셀 히트 100% |
+| 한도윤 | (4) 카메라 63.435° 인용 정정 | README·가이드·브리프에 인용 없음 → 정정 대상 없음. §2 60° 수용 |
+| 서지안 | (1) `policy.shiftMinutesPerDay` 입력란·검증 | `admin.html` `#pol-shift`(1~1440, 비우면 24h) + `admin.js` 클라이언트 검증 + `index.js` `normalizeShiftMinutes`·`PUT /api/admin/policy` 400 처리. `GET /api/admin/policy`에 `shiftMinutesPerDay`(null=미설정) 포함 |
+| 서지안 | (2) README·운영 가이드 📈 한 줄 + 분석-정의 링크 | README 관리자 콘솔 절·스프린트 1 절, 가이드 §3·§3-1·체크리스트 |
+| 서지안 | (3) 상태창 가동률 라벨 구분 | `index.html` "금일 가동 비율 (로그 구간 기준)" + 툴팁, `admin.html` 대시보드 "가동률 (로그 구간)" + 툴팁 |
+| 서지안 | (4) 게이트웨이 폴링 카운트 표 | 스프린트 2 후보 1순위 (아래) |
+
+되돌린 산출물: 없음. 두 사람의 파일은 규격(192×192 RGBA·매니페스트 키 / `registerAnalytics` 시그니처·`FWAnalytics.mount`·`.fwa-*` css)과 일치.
+
+### 코드 변경 (이번 라운드, 전부 내 소유 파일)
+- `public/js/game.js`: `SPRITE_HIT_ALPHA = 64` 상수, `setInteractive({ pixelPerfect, alphaTolerance: SPRITE_HIT_ALPHA })`.
+- `server/index.js`: `normalizeShiftMinutes()`, `getPolicy()`에 `shiftMinutesPerDay`, `PUT /api/admin/policy`에 shift·retention 검증(400).
+- `public/admin.html`·`public/js/admin.js`: 운영 정책 카드 입력란·저장·클라이언트 검증, 대시보드 가동률 라벨.
+- `public/index.html`: 상태창 가동률 라벨.
+- `.gitignore`: `assets/blender/out/`.
+- `docs/team/인터페이스.md` §3: 클릭 알파 임계값 64 계약(내 소유 절).
+- 문서: README(스프린트 1 절 완성·구조·파이프라인·검증 수치·스프린트 2 후보), `docs/운영전환-가이드.md`(§3 정책·§3-1 분석·§4 수치·체크리스트), `docs/design-brief.md`(§3 구축 순서 8·새 절, §4 현재 상태).
+
+### 검증 결과 (2026-09-08, 이 PC, 실제 DB, 서버 재기동 후)
+- `node --check`: server/*.js(7) + server/drivers/*.js(5) + public/js/*.js(4) + scripts/*.js(4) = 21파일 통과.
+- 서버 로그: `[analytics] server/analytics.js 로드 — /api/admin/analytics/* 등록`.
+- 관리자 콘솔(브라우저 패널 관리자 세션, 라이트 테마): 📈 탭 렌더 — 요약 타일 4개, 설비별 OEE 막대 11대, 표 3개, SVG 2개, `FWAnalytics` 로드. 설비 마스터 유형 select 11행 = DB(press×3, welder×2, robot, assembly×2, inspector, packer, cnc), 신규 행 8종, 맵 에디터 `#ed-eq-type` 존재. 정책 카드 `#pol-shift` min 1 / max 1440. 앱 콘솔 오류 0(내 검증 호출의 401/400만).
+- 정책 API: PUT shift 0·2000·480.5·'abc' → 400; 480 → 200, OEE `range.shiftMinutesPerDay=480, shiftConfigured=true`, WLD-01(08-13) 가동률 0.0702 → 0.2106(=101.1/480); retention만 PUT → shift 480 유지; null → 200, OEE 1440 복귀. 정책 원상 복원(null).
+- 게임 화면(저장된 토큰으로 소켓 연결 → `FW.startGame`, 비밀번호 미입력, 검증 후 disconnect): 매니페스트 v1·7종, 11대 전부 `isImage`. 램프 컨테이너 좌표 press (14,−64) welder (18,−30) robot (23,−27) assembly (11,−45) inspector (10,−53) packer (−5,−38) cnc (16,−47), 라벨 y −80/−57/−51/−61/−69/−54/−76. 히트 콜백 검사(2px 간격 샘플): 그림자(알파 28~60) 295~430개/장 히트 0, 본체(255) 268~697개/장 히트 100%. 라이트·다크 스크린샷, 저사양 모드 fps 30·알람 tween 전부 paused. 브라우저 테마는 라이트, 저사양 해제로 복원.
+- 부하 테스트(`FW_DATA_DIR=data-loadtest PORT=3001`, 50명 30초): 접속 50/50·오류 0, 이동 수신 9,876건·손실 1건·p50 6.0ms·p95 **21.1ms**·max 27.0ms, 채팅 수신 5,250건·p50 1.7ms·p95 **10.1ms**·max 28.1ms → 통과(NFR-01). 테스트 서버 종료·`data-loadtest/` 삭제.
+
+### 한도윤에게 (다음 라운드)
+- `postprocess.py` 주석 "게임 alphaTolerance 24 → 최소 28"을 "게임 임계값 64: 그림자 28~60 통과, 본체 ≥ 64"로 갱신(파일은 한도윤 소유).
+- 스프라이트·좌표 재생성 불필요. `generic` 실사 스프라이트·4방향 렌더·footprint는 스프린트 2 후보 — 의견을 협업로그에.
+
+### 서지안에게 (다음 라운드)
+- `shiftMinutesPerDay`는 운영 정책 카드에서 설정 가능. 분석-정의 §2에 "관리자 콘솔 → 사용자 관리 → 운영 정책"으로 설정 위치 한 줄 추가 부탁(문서는 서지안 소유).
+- 게이트웨이 폴링 카운트 표는 스프린트 2 후보 1순위. 원하는 컬럼(설비·시각·성공/실패·지연 ms·오류 코드?)을 제안해 주면 스키마는 내가 만든다.
+
+### 스프린트 2 후보 (세 명 의견 수렴 후 PM 결정)
+1. 게이트웨이 폴링 수신/실패 카운트 표 `gateway_samples` — "연결 끊김 vs 상태 안정" 구분 (서지안, 스키마·수집은 최민준)
+2. 가동률 정의 통일 — 상태창·대시보드 `todayUptime`을 분석 정의(계획 시간 분모)로 (서지안)
+3. 설비 방향(회전) 필드 + 4방향 렌더 (한도윤, 맵 에디터·로더는 최민준)
+4. 상태별 애니메이션 프레임(RUN 시 공정품 이동) — 로더 프레임 훅 (한도윤)
+5. 유형별 OEE 집계, 알람 대응 시간을 OEE 표에 합치기 (서지안)
+6. `generic` 실사 스프라이트 — 큐브 폴백 유지 여부 (한도윤)
+7. 타일 2칸 설비 `footprint {w,h}` (한도윤, 계약 변경)
+
 ## 라운드 1 (기반) — 2026-09-07 완료
 
 ### 한 일

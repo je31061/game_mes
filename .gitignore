@@ -10,5 +10,8 @@ backups/
 # 빌드 산출물 (npm install 후 postinstall이 자동 복사)
 public/lib/phaser.min.js
 
+# 설비 스프라이트 중간 렌더 (assets/blender/render.cmd 가 만듦 — 최종 PNG는 public/assets/equipment/ 에 커밋)
+assets/blender/out/
+
 # 로그/임시
 *.log

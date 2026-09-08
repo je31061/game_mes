@@ -55,6 +55,7 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
 ```
 
 이동 동기화(p95 ≤ 200ms)·채팅 전달(p95 ≤ 1초) 지연과 손실을 측정해 기준 충족 여부를 판정합니다.
+최근 결과(2026-09-08, 50명 30초): 접속 50/50 · 이동 p50 6.0ms / p95 21.1ms / max 27.0ms(손실 1건) · 채팅 p50 1.7ms / p95 10.1ms → 통과.
 
 ## 사용법
 
@@ -82,10 +83,12 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
      기간·설비 필터, 평균/최장 대응 시간 요약 — 기대효과 "대응 시간 단축" 측정 근거
    - 설비 마스터: 추가·수정 (접속 중인 사용자의 맵에 새로고침 없이 즉시 반영). **설비 유형**(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC/미지정)
      선택 — 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용. 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추가하면 자동 추정
-   - 📈 실적 분석: 설비별 OEE(가동률·성능·품질)와 일별 생산실적, 게이트웨이 연결 품질 (스프린트 1 — `public/js/analytics.js` 배치 시 활성)
+   - 📈 실적 분석: 설비별 OEE(가동률·성능·품질)와 일별 생산실적, 게이트웨이 연결 품질 — 기간·설비 필터, 요약 타일, 인라인 SVG 막대.
+     모든 지표의 정의·분모·한계는 [docs/분석-정의.md](docs/분석-정의.md) (대시보드·상태창의 "가동률(로그 구간)"과는 분모가 다름)
    - 사용자 관리: 역할(작업자/보전/관리자)·팀 변경, 비밀번호 초기화, **사전 등록**(사번·이름·역할·팀 — 비밀번호는 본인 첫 로그인 때 설정)
    - 운영 정책: **신규 사번 자동 등록 허용** 토글(운영 전환 시 끄고 사전 등록만 허용),
-     **대화·파일 보존 기간**(0=무기한, 매일 자동 백업 성공 직후 기간 초과분 정리 — 상태 이력·실적은 보존)
+     **대화·파일 보존 기간**(0=무기한, 매일 자동 백업 성공 직후 기간 초과분 정리 — 상태 이력·실적은 보존),
+     **1일 계획 가동 시간(분, 1~1440)** — 📈 실적 분석 가동률의 분모(계획 시간). 비우면 24시간/일
    - 맵 에디터: 설비 드래그 배치, 존 추가/영역 드래그 지정/색상 변경,
      🔗 라인 연결 모드(설비 A→B 클릭, 연속 클릭 체인 연결, 목록에서 삭제),
      설비별 데이터 연동 설정(OPC-UA/Modbus/MQTT 프로토콜·주소·태그·상태 매핑·수집 주기)
@@ -113,10 +116,10 @@ public/
   js/app.js   로그인 흐름, 소켓 핸들링, HUD/채팅/퀘스트/브리핑 UI
   admin.html, js/admin.js  관리자 콘솔 (SCR-06)
   js/analytics.js, css/analytics.css  실적 분석 화면 (window.FWAnalytics.mount — 없으면 서버가 빈 파일로 대체)
-  assets/equipment/  설비 유형별 아이소메트릭 스프라이트 PNG + manifest.json (없거나 비면 절차적 큐브)
-assets/blender/  설비 3D 모델 생성·렌더 스크립트 (Blender 5.2, 산출물은 public/assets/equipment/)
+  assets/equipment/  설비 유형 7종 아이소메트릭 스프라이트 PNG(192×192) + manifest.json (없는 유형·generic은 절차적 큐브)
+assets/blender/  설비 3D 모델 생성·렌더 파이프라인 (build_equipment.py · render.cmd · postprocess.py, Blender 5.2; out/은 커밋 제외)
 server/analytics.js  실적 분석 API — registerAnalytics(app, {requireAdmin, db, queries, settings}) (없으면 건너뜀)
-docs/         기획 브리프, 구축 경과 보고, 운영 전환 가이드, 소개 캔버스 작업 파일
+docs/         기획 브리프, 구축 경과 보고, 운영 전환 가이드, 분석-정의(OEE 지표 정의), 도면-AI-연동, 소개 캔버스 작업 파일
 docs/team/    세 에이전트(한도윤·서지안·최민준) 협업 규약·인터페이스 계약·작업보드·협업로그·핸드오프
 data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 ```
@@ -209,17 +212,29 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
   내 순위·다음 레벨까지 필요 포인트. 팀 지정은 관리자 콘솔 → 사용자 관리
 - 캐릭터 머리 위에 접속 시점 레벨 표시(Lv.N), 상단 바에 실시간 포인트/레벨 표시
 
-## 스프린트 1: 실사형 설비 스프라이트 · 실적 분석 (진행 중)
+## 스프린트 1: 실사형 설비 스프라이트 · 실적 분석 (2026-09-08 완료)
+
+세 에이전트(한도윤 — 설비 3D/스프라이트, 서지안 — 실적 분석, 최민준 — 통합·운영)가 `docs/team/`의 규약·인터페이스 계약으로 분업했다.
 
 - **설비 유형** `equipments.type`(기본 `generic`): press / welder / robot / assembly / inspector / packer / cnc.
   기존 DB는 서버 첫 기동 시 컬럼이 추가되고 코드 접두로 1회 매핑됨(이후 관리자가 바꾼 값 유지).
   설비 API(POST/PUT `type`), 배치 JSON `equipments[].type`, `init`·`world:refresh`의 equipment 객체에 포함
+- **실사형 스프라이트 7종** (`public/assets/equipment/*.png` + `manifest.json`, 합계 36 KB — 커밋되어 있어 Blender 없이도 동작):
+  프레스(C-프레임·램·플라이휠), 용접기(전원 캐비닛·토치·차광막), 로봇(6축 팔·펜스), 조립 라인(컨베이어·갠트리), 검사기(비전 게이트),
+  포장기(투입 터널·상자), CNC(밀폐 외장·툴 매거진). 전 유형에 경광등 몸통·비상정지·황색 가드 포함, 바닥 그림자(반투명)로 라이트 테마 대비 확보
+- **제작 파이프라인** (`assets/blender/`): `render.cmd` 한 번에 `build_equipment.py`(bpy 절차 모델 + 직교 카메라 (60°,0,45°) → 2:1 마름모 64×32,
+  EEVEE 약 15초) → `postprocess.py`(PIL: 캘리브레이션 실측·앵커 (96,150) 정렬·윤곽·그림자 알파 밴드·검증·매니페스트 생성).
+  옵션 `--types press,cnc`, `--engine cycles`. 요구: Blender 5.2 + python(PIL, numpy). 중간 렌더 `assets/blender/out/`은 커밋 제외
 - **스프라이트 로더** (`public/js/game.js`): 부팅 시 `/assets/equipment/manifest.json`을 읽어 유형별 PNG(192×192, 앵커 (96,150))를
   preload. 매니페스트에 있는 유형은 이미지 스프라이트 + 매니페스트 좌표의 상태 램프 + 라벨, 없는 유형·`generic`은 절차적 큐브.
-  클릭은 이미지의 불투명 픽셀 기준(pixelPerfect). 유형을 바꾸면 접속자 맵에서 즉시 재생성.
-  제작 파이프라인(Blender 절차 모델 → 렌더 → 앵커 정렬)은 `assets/blender/`, 규격은 `docs/team/인터페이스.md` §2
+  클릭은 이미지의 불투명 픽셀 기준(pixelPerfect, 알파 64 미만은 통과 → **바닥 그림자를 눌러도 뒤 설비·바닥으로 통과**, 태블릿 오클릭 방지).
+  유형을 바꾸면 접속자 맵에서 즉시 재생성. 규격은 `docs/team/인터페이스.md` §2·§3
 - **실적 분석 탭** (관리자 콘솔 📈): `server/analytics.js`가 `/api/admin/analytics/{oee,production,gateway}`를 등록하고
-  `public/js/analytics.js`가 화면을 그림. 두 파일이 없어도 서버·콘솔은 정상 동작(탭에는 미배치 안내). 정의는 `docs/분석-정의.md`
+  `public/js/analytics.js`가 화면을 그림(외부 라이브러리 없이 인라인 SVG). 두 파일이 없어도 서버·콘솔은 정상 동작(탭에는 미배치 안내).
+  가동률 = RUN/계획 시간(운영 정책 **1일 계획 가동 시간**, 없으면 24h), 성능 = 실적/목표, 품질 = 양품/(양품+불량), OEE = 곱.
+  첫 로그 이전은 "상태 미확인"으로 따로 보고하고 추정하지 않음. 정의·한계 전문은 [docs/분석-정의.md](docs/분석-정의.md)
+- **검증(2026-09-08)**: 11대 전부 이미지 스프라이트(다크·라이트·저사양 30fps), 그림자 픽셀 히트 0/본체 히트 100%(7종),
+  정책 API 경계값(0·2000·소수·문자 → 400), 부하 테스트 50명 30초 통과(이동 p95 21.1ms, 채팅 p95 10.1ms)
 - 팀 운영: `docs/team/운영규약.md`(역할·라운드), `인터페이스.md`(계약), `작업보드.md`, `협업로그.md`, `handoff-*.md`
 
 ## 다음 단계 후보
@@ -227,3 +242,5 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 - 사내 계정 연동(SSO/AD) — 현재 사내 인증 서버 없음, 필요 시 LDAP/OIDC 모듈 추가
 - OPC-UA/Modbus 실 장비 연결 검증 — 드라이버는 준비됨, 라이브러리 설치 후 파일럿 설비 1대로 확인
 - 심시티식 라인 증설 시뮬레이션 뷰 (Phase 3 확장)
+- 스프린트 2 후보(`docs/team/handoff-최민준.md` 참조): 게이트웨이 폴링 수신/실패 카운트 표(연결 끊김 vs 상태 안정 구분),
+  가동률 정의 통일(상태창·대시보드 → 분석 정의), 설비 방향(회전) 필드 + 4방향 렌더, 상태별 애니메이션 프레임, 유형별 OEE 집계

@@ -13,6 +13,7 @@
   // 없거나(404) types가 비면 전부 기존 절차적 큐브. 페이지 로드 시 미리 받아 두고 startGame에서 기다린다.
   const SPRITE_BASE = '/assets/equipment/';
   const SPRITE_DEFAULT = { anchor: { x: 96, y: 150 }, tile: { w: 64, h: 32 }, canvas: 192 };
+  const SPRITE_HIT_ALPHA = 64;      // 이 값 미만 알파 픽셀은 클릭 통과 (그림자 28~60 통과, 본체 255 히트) — 인터페이스 §3
   const manifestPromise = fetch(SPRITE_BASE + 'manifest.json', { cache: 'no-cache' })
     .then(r => (r.ok ? r.json() : null))
     .then(m => (m && m.types && typeof m.types === 'object') ? m : null)
@@ -319,8 +320,10 @@
         lampX = lp.x - anchor.x; lampY = lp.y - anchor.y;   // 이미지 픽셀 → 컨테이너 좌표
         labelY = (Number.isFinite(def.labelY) ? def.labelY : 0) - anchor.y;
         // 클릭 영역: 이미지의 불투명 픽셀 (겹치는 이웃 설비와 오클릭 방지)
+        // alphaTolerance 64: 바닥 그림자(알파 28~60, 한도윤 postprocess)는 클릭이 통과해 뒤 설비·바닥으로 간다.
+        // 본체(255)·윤곽(225)만 히트 — 태블릿에서 그림자를 눌러 엉뚱한 설비가 열리는 오클릭 방지 (협업로그 2026-09-08 결정)
         hit = body;
-        body.setInteractive({ pixelPerfect: true, alphaTolerance: 24, useHandCursor: true });
+        body.setInteractive({ pixelPerfect: true, alphaTolerance: SPRITE_HIT_ALPHA, useHandCursor: true });
       } else {
         body = this.add.graphics();
         this.drawMachine(body);

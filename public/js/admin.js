@@ -431,16 +431,25 @@
   function renderPolicy(p) {
     $('pol-self').checked = !!p.allowSelfRegister;
     $('pol-retention').value = p.retentionDays ?? 0;
+    $('pol-shift').value = p.shiftMinutesPerDay ?? '';   // null = 미설정(24h)
     $('pol-info').textContent = p.lastPurge
       ? `마지막 정리 ${p.lastPurge.at} — 메시지 ${p.lastPurge.removedMessages}건 · 파일 ${p.lastPurge.removedFiles}건 (${p.lastPurge.retentionDays}일 기준)`
       : '아직 정리 실행 기록이 없습니다';
   }
   async function loadPolicy() { renderPolicy(await api('/api/admin/policy')); }
   $('pol-save').onclick = async () => {
+    const shiftRaw = $('pol-shift').value.trim();
+    if (shiftRaw !== '' && !(Number.isInteger(Number(shiftRaw)) && Number(shiftRaw) >= 1 && Number(shiftRaw) <= 1440)) {
+      return alert('1일 계획 가동 시간은 1~1440 사이의 정수(분)여야 합니다. 24시간 기준으로 두려면 비워 두세요.');
+    }
     try {
       renderPolicy(await api('/api/admin/policy', {
         method: 'PUT',
-        body: JSON.stringify({ allowSelfRegister: $('pol-self').checked, retentionDays: Number($('pol-retention').value) || 0 }),
+        body: JSON.stringify({
+          allowSelfRegister: $('pol-self').checked,
+          retentionDays: Number($('pol-retention').value) || 0,
+          shiftMinutesPerDay: shiftRaw === '' ? null : Number(shiftRaw),
+        }),
       }));
       $('pol-save').textContent = '저장됨 ✓'; setTimeout(() => $('pol-save').textContent = '정책 저장', 1500);
     } catch (e) { if (e.message !== 'auth') alert(e.message); }

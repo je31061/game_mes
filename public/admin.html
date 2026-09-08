@@ -126,7 +126,7 @@
 
       <h2 style="margin-top:24px">설비 상태 점유율 (금일)</h2>
       <table>
-        <thead><tr><th>설비</th><th>현재 상태</th><th>점유율 (가동/대기/정지/알람)</th><th>가동률</th><th>담당자</th></tr></thead>
+        <thead><tr><th>설비</th><th>현재 상태</th><th>점유율 (가동/대기/정지/알람)</th><th title="금일 상태 로그 구간 중 가동(RUN) 점유율. 📈 실적 분석의 가동률(계획 시간 분모)과 정의가 다름">가동률 <small class="muted">(로그 구간)</small></th><th>담당자</th></tr></thead>
         <tbody id="eq-share"></tbody>
       </table>
     </div>
@@ -310,6 +310,9 @@
         <label style="font-size:13px">대화·파일 보존 기간
           <input id="pol-retention" type="number" min="0" max="3650" style="width:80px;margin:0 6px">일
           <span class="muted" style="font-size:11px">— 0은 무기한. 매일 자동 백업이 성공한 직후 기간이 지난 대화·파일을 정리합니다 (상태 이력·실적은 보존). 개인정보·노무 이슈 대응용 정책(기안서 리스크 항목)</span></label>
+        <label style="font-size:13px">1일 계획 가동 시간
+          <input id="pol-shift" type="number" min="1" max="1440" step="1" placeholder="1440" style="width:80px;margin:0 6px">분
+          <span class="muted" style="font-size:11px">— 📈 실적 분석의 가동률 분모(계획 시간). 비우면 24시간(1440분)/일. 교대 시작 시각은 없으므로 하루 총량만 적용 (정의: docs/분석-정의.md §2)</span></label>
         <div class="filters" style="align-items:center">
           <button id="pol-save">정책 저장</button>
           <button id="pol-purge" style="border-color:var(--stop);color:var(--stop);background:rgba(248,113,113,.1)">지금 정리 실행</button>

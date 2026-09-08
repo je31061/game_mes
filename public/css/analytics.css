@@ -1,0 +1,89 @@
+/* 실적 분석 화면 (서지안, 인터페이스 §5) — 테마 변수는 css/style.css (--text --muted --panel --panel2 --border --run --idle --stop --alarm --accent --input) */
+.fwa { color: var(--text); }
+.fwa h2 small { font-size: 12px; letter-spacing: 0; font-weight: 400; color: var(--muted); margin-left: 8px; }
+.fwa h3 { font-size: 13px; letter-spacing: 1px; color: var(--muted); font-weight: 600; margin: 22px 0 10px; text-transform: uppercase; }
+.fwa h3 span { color: var(--text); font-weight: 400; letter-spacing: 0; text-transform: none; margin-left: 8px; font-size: 12px; }
+
+/* 필터 — 한 줄, 프리셋은 텍스트 버튼 */
+.fwa-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.fwa-filters label { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-right: -2px; }
+.fwa-filters input, .fwa-filters select { padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 13px; }
+.fwa-filters .fwa-presets { display: flex; gap: 2px; margin-left: 2px; }
+.fwa-filters .fwa-presets button { padding: 6px 9px; border-radius: 6px; border: 1px solid transparent; background: none; color: var(--muted); font-size: 12px; font-weight: 600; }
+.fwa-filters .fwa-presets button:hover { color: var(--text); background: var(--panel2); }
+.fwa-filters .fwa-presets button.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.fwa-filters .fwa-go { padding: 7px 14px; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700; }
+.fwa-filters .fwa-go:disabled { opacity: .5; cursor: default; }
+.fwa-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 6px 0 4px; }
+.fwa-note b { color: var(--text); font-weight: 600; }
+.fwa-warn { border-left: 3px solid var(--idle); padding: 6px 10px; background: var(--panel); border-radius: 0 6px 6px 0; }
+.fwa-err { border-left: 3px solid var(--stop); padding: 6px 10px; background: var(--panel); border-radius: 0 6px 6px 0; color: var(--text); }
+
+/* 요약 타일 */
+.fwa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 6px; }
+.fwa-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.fwa-card .k { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+.fwa-card .v { font-size: 24px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.fwa-card .v.na { color: var(--muted); font-weight: 600; font-size: 16px; }
+.fwa-card .s { font-size: 11px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+/* 표 */
+.fwa table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fwa th, .fwa td { padding: 7px 9px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+.fwa th { color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 600; }
+.fwa td.num, .fwa th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.fwa td.na { color: var(--muted); }
+.fwa td.notes { white-space: normal; font-size: 11px; color: var(--muted); min-width: 200px; max-width: 320px; line-height: 1.45; }
+.fwa .tag { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 11px; font-weight: 700; background: var(--panel2); color: var(--muted); }
+.fwa .tag.gateway { color: var(--accent); background: var(--accent-soft); }
+.fwa .tag.mixed { color: var(--accent); }
+.fwa .tag.sim { color: var(--idle); }
+.fwa .tag.live { color: var(--run); }
+.fwa .tag.ALARM { color: var(--alarm); }
+.fwa .tag.RUN { color: var(--run); }
+.fwa .tag.STOP { color: var(--stop); }
+.fwa .tag.IDLE { color: var(--idle); }
+.fwa-scroll { overflow-x: auto; }
+
+/* 표 안 미니 막대 (값 + 막대) — 얇게, 텍스트는 텍스트 색 */
+.fwa-mb { display: inline-flex; align-items: center; gap: 7px; min-width: 96px; }
+.fwa-mb i { display: block; width: 56px; height: 5px; border-radius: 3px; background: var(--input); overflow: hidden; flex: none; }
+.fwa-mb i b { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.fwa-mb i b.a { background: var(--run); }
+.fwa-mb i b.p { background: var(--accent); }
+.fwa-mb i b.q { background: var(--muted); }
+.fwa-mb i b.o { background: var(--text); }
+.fwa-mb span { font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+
+/* 차트 (인라인 SVG) */
+.fwa-chart { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px 8px; position: relative; }
+.fwa-chart svg { display: block; width: 100%; height: auto; overflow: visible; font-family: inherit; }
+.fwa-chart .axis { stroke: var(--border); stroke-width: 1; }
+.fwa-chart .grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; opacity: .7; }
+.fwa-chart .lbl { fill: var(--muted); font-size: 11px; }
+.fwa-chart .lbl.strong { fill: var(--text); font-weight: 600; }
+.fwa-chart .val { fill: var(--text); font-size: 11px; font-variant-numeric: tabular-nums; }
+.fwa-chart .bar-a { fill: var(--run); }
+.fwa-chart .bar-p { fill: var(--accent); }
+.fwa-chart .bar-q { fill: var(--muted); }
+.fwa-chart .bar-good { fill: var(--run); }
+.fwa-chart .bar-defect { fill: var(--stop); }
+.fwa-chart .target { stroke: var(--text); stroke-width: 2; stroke-linecap: round; }
+.fwa-chart .oee-dot { fill: var(--panel); stroke: var(--text); stroke-width: 2; }
+.fwa-chart .hit { fill: transparent; }
+.fwa-chart .hit:hover { fill: var(--accent-soft); }
+.fwa-chart .cap { stroke: var(--panel); stroke-width: 2; }
+.fwa-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin: 0 0 8px; }
+.fwa-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; }
+.fwa-legend i.line { height: 2px; width: 14px; border-radius: 1px; vertical-align: 3px; }
+.fwa-legend i.a { background: var(--run); } .fwa-legend i.p { background: var(--accent); } .fwa-legend i.q { background: var(--muted); }
+.fwa-legend i.good { background: var(--run); } .fwa-legend i.defect { background: var(--stop); } .fwa-legend i.target { background: var(--text); }
+.fwa-legend i.o { background: var(--panel); border: 2px solid var(--text); width: 7px; height: 7px; border-radius: 50%; }
+.fwa-tip { position: absolute; pointer-events: none; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 6px 9px; font-size: 12px; line-height: 1.5; box-shadow: var(--shadow); white-space: nowrap; z-index: 5; transform: translate(-50%, calc(-100% - 10px)); }
+.fwa-tip .m { color: var(--muted); }
+.fwa-empty { padding: 26px 12px; text-align: center; color: var(--muted); font-size: 13px; background: var(--panel); border: 1px dashed var(--border); border-radius: 10px; }
+.fwa-empty b { color: var(--text); display: block; margin-bottom: 4px; }
+
+.fwa-chart[data-chart="oee"] svg { max-height: 420px; }
+.fwa-foot { font-size: 11px; color: var(--muted); margin-top: 18px; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 10px; }
+.fwa-foot a { color: var(--accent); }

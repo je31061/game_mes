@@ -1,6 +1,69 @@
 {
   "version": 1,
-  "tile": { "w": 64, "h": 32 },
-  "anchor": { "x": 96, "y": 150 },
-  "types": {}
+  "tile": {
+    "w": 64,
+    "h": 32
+  },
+  "anchor": {
+    "x": 96,
+    "y": 150
+  },
+  "types": {
+    "press": {
+      "file": "press.png",
+      "lamp": {
+        "x": 110,
+        "y": 86
+      },
+      "labelY": 70
+    },
+    "welder": {
+      "file": "welder.png",
+      "lamp": {
+        "x": 114,
+        "y": 120
+      },
+      "labelY": 93
+    },
+    "robot": {
+      "file": "robot.png",
+      "lamp": {
+        "x": 119,
+        "y": 123
+      },
+      "labelY": 99
+    },
+    "assembly": {
+      "file": "assembly.png",
+      "lamp": {
+        "x": 107,
+        "y": 105
+      },
+      "labelY": 89
+    },
+    "inspector": {
+      "file": "inspector.png",
+      "lamp": {
+        "x": 106,
+        "y": 97
+      },
+      "labelY": 81
+    },
+    "packer": {
+      "file": "packer.png",
+      "lamp": {
+        "x": 91,
+        "y": 112
+      },
+      "labelY": 96
+    },
+    "cnc": {
+      "file": "cnc.png",
+      "lamp": {
+        "x": 112,
+        "y": 103
+      },
+      "labelY": 74
+    }
+  }
 }

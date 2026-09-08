@@ -45,11 +45,18 @@ app.get('/css/analytics.css', (req, res) => res.type('text/css').send('/* analyt
 // ── 파일럿 운영 정책 (settings.policy) ──
 //  allowSelfRegister: 신규 사번이 첫 로그인으로 자동 등록되는지 (운영 전환 시 false 권장 → 관리자 사전 등록)
 //  retentionDays: 대화·파일 보존 일수 (0 = 무기한). 백업 직후 하루 1회 정리 (FR-08 보존 기간 정책)
+//  shiftMinutesPerDay: 1일 계획 가동 시간(분, 1~1440). 실적 분석(OEE 가동률 분모)이 읽는다 — 없으면(null) 24h. docs/분석-정의.md §2
+function normalizeShiftMinutes(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 1 && n <= 1440 ? n : undefined; // undefined = 잘못된 값
+}
 function getPolicy() {
   const p = settings.get('policy', {}) || {};
   return {
     allowSelfRegister: p.allowSelfRegister !== false,
     retentionDays: Math.max(0, Math.min(3650, Math.floor(Number(p.retentionDays) || 0))),
+    shiftMinutesPerDay: normalizeShiftMinutes(p.shiftMinutesPerDay) ?? null,
   };
 }
 app.get('/api/policy', (req, res) => res.json({ allowSelfRegister: getPolicy().allowSelfRegister }));
@@ -389,7 +396,16 @@ app.put('/api/admin/policy', requireAdmin, (req, res) => {
   const next = {
     allowSelfRegister: req.body?.allowSelfRegister !== undefined ? !!req.body.allowSelfRegister : cur.allowSelfRegister,
     retentionDays: req.body?.retentionDays !== undefined ? Number(req.body.retentionDays) : cur.retentionDays,
+    shiftMinutesPerDay: cur.shiftMinutesPerDay,
   };
+  if (!Number.isFinite(next.retentionDays) || next.retentionDays < 0 || next.retentionDays > 3650) {
+    return res.status(400).json({ error: '보존 기간은 0~3650 사이의 일수여야 합니다.' });
+  }
+  if (req.body?.shiftMinutesPerDay !== undefined) {
+    const shift = normalizeShiftMinutes(req.body.shiftMinutesPerDay);
+    if (shift === undefined) return res.status(400).json({ error: '1일 계획 가동 시간은 1~1440 사이의 정수(분)여야 합니다. 비우면 24시간 기준.' });
+    next.shiftMinutesPerDay = shift;
+  }
   settings.set('policy', next);
   res.json({ ...getPolicy(), lastPurge: settings.get('last_purge', null) });
 });
