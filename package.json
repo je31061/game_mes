@@ -4,6 +4,7 @@
   "description": "게임형 MES MVP (Factory World)",
   "type": "module",
   "main": "server/index.js",
+  "engines": { "node": ">=22.5" },
   "scripts": {
     "start": "node server/index.js",
     "postinstall": "node -e \"const fs=require('fs');fs.mkdirSync('public/lib',{recursive:true});fs.copyFileSync('node_modules/phaser/dist/phaser.min.js','public/lib/phaser.min.js')\""

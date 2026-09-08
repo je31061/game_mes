@@ -8,7 +8,10 @@ import { DATA_DIR } from './paths.js';
 const SECRET_PATH = path.join(DATA_DIR, 'jwt.secret');
 
 let SECRET;
-if (fs.existsSync(SECRET_PATH)) {
+if (process.env.FW_JWT_SECRET) {
+  // 클라우드 배포(디스크가 재배포마다 초기화되는 환경): 환경변수로 시크릿을 고정해 세션 유지
+  SECRET = String(process.env.FW_JWT_SECRET).trim();
+} else if (fs.existsSync(SECRET_PATH)) {
   SECRET = fs.readFileSync(SECRET_PATH, 'utf8').trim();
 } else {
   SECRET = crypto.randomBytes(32).toString('hex');

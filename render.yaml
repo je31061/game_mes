@@ -1,0 +1,25 @@
+# Render Blueprint — Factory World 무료 웹 배포
+# 사용: https://dashboard.render.com → New → Blueprint → 이 저장소 선택 (또는 README의 Deploy to Render 버튼)
+# 무료 플랜 특성: 15분 미접속 시 절전(첫 접속 약 30~60초 지연), 디스크는 재배포·재시작 때 초기화
+#   → DB는 시드 데이터로 다시 시작. 데이터를 남기려면 유료 디스크(disk:)를 붙이거나 Fly.io 볼륨 사용 (docs/배포-가이드.md)
+services:
+  - type: web
+    name: factory-world
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: FW_JWT_SECRET
+        generateValue: true          # 재배포에도 로그인 세션 유지
+      - key: FW_ADMIN_PASSWORD
+        sync: false                  # 배포 화면에서 입력 — 공개 배포이므로 admin1234 사용 금지
+      - key: FW_SELF_REGISTER
+        value: "false"               # 사전 등록된 사번만 로그인 (콘솔 운영 정책에서 변경 가능)
+      - key: FW_BACKUP_HOUR
+        value: "3"

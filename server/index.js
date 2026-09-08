@@ -36,10 +36,13 @@ app.get('/js/analytics.js', (req, res) => res.type('application/javascript').sen
 app.get('/css/analytics.css', (req, res) => res.type('text/css').send('/* analytics.css 미배치 */\n'));
 
 // ── 인증 (사번 + 비밀번호 → JWT, NFR-03) ──────────────
-// admin 초기 비밀번호 시드 (미설정 시 admin1234 — 최초 로그인 후 변경 권장)
+// admin 초기 비밀번호 시드 — 환경변수 FW_ADMIN_PASSWORD가 있으면 그 값(클라우드 배포용), 없으면 admin1234 (최초 로그인 후 변경 권장)
 {
   const adminRow = queries.findUserByEmpNo.get('admin');
-  if (adminRow && !adminRow.password_hash) queries.setPassword.run(hashPassword('admin1234'), adminRow.id);
+  if (adminRow && !adminRow.password_hash) {
+    queries.setPassword.run(hashPassword(process.env.FW_ADMIN_PASSWORD || 'admin1234'), adminRow.id);
+    if (process.env.FW_ADMIN_PASSWORD) console.log('[auth] 관리자 초기 비밀번호를 FW_ADMIN_PASSWORD로 설정');
+  }
 }
 
 // ── 파일럿 운영 정책 (settings.policy) ──
@@ -53,8 +56,10 @@ function normalizeShiftMinutes(v) {
 }
 function getPolicy() {
   const p = settings.get('policy', {}) || {};
+  // 콘솔에서 정한 값이 없으면 환경변수 FW_SELF_REGISTER(기본 true)로 초기값 결정 — 공개 배포 시 false 권장
+  const envSelf = process.env.FW_SELF_REGISTER !== 'false';
   return {
-    allowSelfRegister: p.allowSelfRegister !== false,
+    allowSelfRegister: p.allowSelfRegister === undefined ? envSelf : p.allowSelfRegister !== false,
     retentionDays: Math.max(0, Math.min(3650, Math.floor(Number(p.retentionDays) || 0))),
     shiftMinutesPerDay: normalizeShiftMinutes(p.shiftMinutesPerDay) ?? null,
   };
