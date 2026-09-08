@@ -47,9 +47,11 @@ npm start
 
 ## 외부에서 접속하게 하기
 
-- **무료 웹 배포 (Render)**: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/je31061/game_mes)
-  버튼을 누르고 `FW_ADMIN_PASSWORD`만 정하면 `https://factory-world-xxxx.onrender.com` 주소가 생깁니다.
-  무료 플랜은 15분 미접속 시 절전, 재배포 때 DB 초기화(시드로 재시작) — 절차와 한계는 [docs/배포-가이드.md](docs/배포-가이드.md)
+- **무료 웹 배포 (Koyeb, 카드 불필요)**:
+  [![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/je31061/game_mes&branch=main&name=factory-world&builder=dockerfile&instance_type=free&regions=was&ports=3000;http;/&env[FW_SELF_REGISTER]=false&env[FW_ADMIN_PASSWORD]=CHANGE-ME&env[FW_JWT_SECRET]=CHANGE-ME-TO-A-LONG-RANDOM-STRING)
+  버튼을 누르고 `FW_ADMIN_PASSWORD`·`FW_JWT_SECRET` 두 값을 바꾼 뒤 Deploy → `https://factory-world-<계정>.koyeb.app` 주소가 생깁니다.
+  무료 인스턴스는 미접속 시 절전(첫 접속 수십 초), 재배포 때 DB 초기화(시드로 재시작) — 절차와 한계, Render 등 대안은 [docs/배포-가이드.md](docs/배포-가이드.md)
+- Render를 쓰려면 저장소의 `render.yaml`(Blueprint)로 같은 방식 배포 가능
 - **사내망**: 서버 PC에서 실행해 두고 `http://<서버 IP>:3000`으로 접속. Windows 방화벽에서 3000 포트 인바운드 허용
 - **임시 외부 공개(시연용)**: `tunnel.cmd` 실행 → 출력되는 `https://xxxx.trycloudflare.com` 주소를 공유
   (Cloudflare Quick Tunnel, 계정 불필요, 창을 닫으면 주소가 사라짐. 설치: `winget install Cloudflare.cloudflared`)
