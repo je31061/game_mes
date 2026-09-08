@@ -16,6 +16,10 @@
 
 되돌린 산출물: 없음. 두 사람의 파일은 규격(192×192 RGBA·매니페스트 키 / `registerAnalytics` 시그니처·`FWAnalytics.mount`·`.fwa-*` css)과 일치.
 
+### 커밋·push
+- `97445eb` 스프린트 1 라운드 3: 실사형 설비 스프라이트 7종·실적 분석(OEE) 통합 — 30파일(스프라이트 PNG 7장·매니페스트, blender 스크립트 3개, analytics 3파일, 분석-정의, 공용 파일·문서). `data/`·`assets/blender/out/` 제외.
+- push: `origin/main` `10b2b48..97445eb` (라운드 1 커밋 `ffa966e` 포함). 이후 `git status` 클린.
+
 ### 코드 변경 (이번 라운드, 전부 내 소유 파일)
 - `public/js/game.js`: `SPRITE_HIT_ALPHA = 64` 상수, `setInteractive({ pixelPerfect, alphaTolerance: SPRITE_HIT_ALPHA })`.
 - `server/index.js`: `normalizeShiftMinutes()`, `getPolicy()`에 `shiftMinutesPerDay`, `PUT /api/admin/policy`에 shift·retention 검증(400).
