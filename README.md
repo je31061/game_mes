@@ -45,6 +45,15 @@ npm start
 - 환경 변수(`PORT`, `FW_DATA_DIR`, `FW_TLS_CERT/KEY` 등), HTTPS, 복구 절차, PostgreSQL/MinIO 전환 경로는
   [docs/운영전환-가이드.md](docs/운영전환-가이드.md) 참조
 
+## 외부에서 접속하게 하기
+
+- **사내망**: 서버 PC에서 실행해 두고 `http://<서버 IP>:3000`으로 접속. Windows 방화벽에서 3000 포트 인바운드 허용
+- **임시 외부 공개(시연용)**: `tunnel.cmd` 실행 → 출력되는 `https://xxxx.trycloudflare.com` 주소를 공유
+  (Cloudflare Quick Tunnel, 계정 불필요, 창을 닫으면 주소가 사라짐. 설치: `winget install Cloudflare.cloudflared`)
+- 공개 전에 관리자 비밀번호를 바꾸고, 필요하면 운영 정책에서 "신규 사번 자동 등록"을 끄세요.
+  정식 외부 공개(HTTPS·상시 가동)는 [docs/운영전환-가이드.md](docs/운영전환-가이드.md) 참조
+- 소개 페이지·문서는 GitHub Pages로 공개: https://je31061.github.io/game_mes/
+
 ## 부하 테스트 (NFR-01)
 
 ```
