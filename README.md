@@ -83,6 +83,9 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
 3. 이동: 방향키/WASD 또는 맵 클릭
 4. 설비 클릭 → 상태창(HUD): 상태/지속시간/금일 가동률(HP바)/목표 대비 진행률(경험치바, 작업지시 목표수량 대비 금일 양품)/이력/첨부,
    상태 수동 변경, 📣 담당자 호출(담당자 이름과 같은 접속자에게 알림 + 설비 이력 기록)
+   - **공정 · 단품**(스프린트 2): 설비에 공정(BOP)이 연결되어 있으면 공정번호·공정명·라인·C/T·공정유형(표준/병목/배치/QC/완성)·품질 관리 항목과
+     **투입 단품 표**(서브어셈블리 썸네일·P/N·품명·규격·수량/단위), 산출물이 표시된다. **🔩 분해도** 버튼은 제품 분해도 9단계를
+     조립 순서대로 가로 스크롤로 보여 주고 이 설비의 단계를 강조(완성품 공정은 전체 강조). 공정이 없는 설비는 섹션이 숨겨진다
    - 출근 시 "출근 브리핑" 팝업: 진행 중 알람, 모집 중 작업지시, 오늘의 전체 공지 (알릴 것이 없으면 뜨지 않음)
    - 상단 ⚡ 저사양 모드: 점멸·자재 흐름 애니메이션 끄고 30fps — 구형 태블릿용. 터치 기기에서는 좌하단 방향 패드 표시
    - 상단 🌓 테마: 다크 / 흰 바탕(라이트) 전환. 맵 바닥·존 색·라벨이 테마에 맞게 바뀜
@@ -95,8 +98,10 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
    - 대화 로그: 설비/기간/키워드 검색 (열람 전용)
    - 알람 리포트: 알람 발생→해제 에피소드별 대응 시간·해제자·협업 지표(대화/참여자/파일),
      기간·설비 필터, 평균/최장 대응 시간 요약 — 기대효과 "대응 시간 단축" 측정 근거
-   - 설비 마스터: 추가·수정 (접속 중인 사용자의 맵에 새로고침 없이 즉시 반영). **설비 유형**(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC/미지정)
-     선택 — 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용. 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추가하면 자동 추정
+   - 설비 마스터: 추가·수정 (접속 중인 사용자의 맵에 새로고침 없이 즉시 반영). **설비 유형** 15종(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC +
+     적층기/와인더/함침조/건조로/착자기/밸런싱 머신/디스펜서/SMT, 미지정) 선택 — 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용.
+     코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-, STK-, WND-, VPI-, OVN-, MAG-, BAL-, DSP-, SMT-)나 공정번호(OP-A40 등)로 추가하면 자동 추정.
+     **공정** select로 제품 공정(BOP)에 연결(현장 상태창에 단품 표시), **숨김/복원** — 라인 전환 시 설비를 지우지 않고 맵·분석·게이트웨이에서 제외(이력 보존)
    - 📈 실적 분석: 설비별 OEE(가동률·성능·품질)와 일별 생산실적, 게이트웨이 연결 품질 — 기간·설비 필터, 요약 타일, 인라인 SVG 막대.
      모든 지표의 정의·분모·한계는 [docs/분석-정의.md](docs/분석-정의.md) (대시보드·상태창의 "가동률(로그 구간)"과는 분모가 다름)
    - 사용자 관리: 역할(작업자/보전/관리자)·팀 변경, 비밀번호 초기화, **사전 등록**(사번·이름·역할·팀 — 비밀번호는 본인 첫 로그인 때 설정)
@@ -108,8 +113,10 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
      설비별 데이터 연동 설정(OPC-UA/Modbus/MQTT 프로토콜·주소·태그·상태 매핑·수집 주기)
      - **평면도 배경(옵션)**: 건축 배치도·설계도 이미지(PNG/JPG/WEBP/SVG)를 올려 격자 아래에 깔고
        투명도·범위를 조정. "게임 맵에도 표시"를 켜면 현장 화면 바닥에 아이소메트릭으로 투영
-     - **배치 JSON 내보내기/가져오기**: 존(이름)·설비(코드)·라인을 JSON으로 주고받음.
+     - **배치 JSON 내보내기/가져오기**: 존(이름)·설비(코드·유형·공정 `op`)·라인을 JSON으로 주고받음. `"replace": true`면 파일에 없는 설비·존을 숨김.
        Claude/Gemini에 도면 이미지와 프롬프트를 주어 JSON 초안을 받는 절차는 [docs/도면-AI-연동.md](docs/도면-AI-연동.md)
+     - **제품 라인 적용**(스프린트 2): [🔩 제품 라인 적용 (BLDC 500W)] 버튼 한 번으로 `docs/bldc/bldc-500w-48v.json`(BOP·BOM) →
+       `docs/bldc/layout-bldc-500w.json`(배치, replace) 순서로 적용. 다른 제품은 [BOP JSON 가져오기] → 배치 JSON 가져오기 순서로 같은 절차
    - 🌓 테마 전환: 다크(기본) / 흰 바탕 — 게임 화면과 콘솔에 함께 적용, 브라우저에 저장
 
 ## 구조
@@ -130,10 +137,13 @@ public/
   js/app.js   로그인 흐름, 소켓 핸들링, HUD/채팅/퀘스트/브리핑 UI
   admin.html, js/admin.js  관리자 콘솔 (SCR-06)
   js/analytics.js, css/analytics.css  실적 분석 화면 (window.FWAnalytics.mount — 없으면 서버가 빈 파일로 대체)
-  assets/equipment/  설비 유형 7종 아이소메트릭 스프라이트 PNG(192×192) + manifest.json (없는 유형·generic은 절차적 큐브)
+  assets/equipment/  설비 유형 아이소메트릭 스프라이트 PNG(192×192) + manifest.json (없는 유형·generic은 절차적 큐브)
+  assets/parts/      제품 분해도 서브어셈블리 이미지 <PN>.png (325×484, 흰 카드) — 상태창 단품 썸네일·분해도 모달
 assets/blender/  설비 3D 모델 생성·렌더 파이프라인 (build_equipment.py · render.cmd · postprocess.py, Blender 5.2; out/은 커밋 제외)
 server/analytics.js  실적 분석 API — registerAnalytics(app, {requireAdmin, db, queries, settings}) (없으면 건너뜀)
 docs/         기획 브리프, 구축 경과 보고, 운영 전환 가이드, 분석-정의(OEE 지표 정의), 도면-AI-연동, 소개 캔버스 작업 파일
+docs/bldc/    BLDC 500W 제품 라인 원천 — bldc-500w-48v.json(BOP·BOM·분해도 단계), layout-bldc-500w.json(배치), source/(xlsx·PDF 원본)
+scripts/bldc/ extract.py — xlsx/PDF → bldc-500w-48v.json + public/assets/parts/*.png 생성
 docs/team/    세 에이전트(한도윤·서지안·최민준) 협업 규약·인터페이스 계약·작업보드·협업로그·핸드오프
 data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 ```
@@ -250,6 +260,27 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 - **검증(2026-09-08)**: 11대 전부 이미지 스프라이트(다크·라이트·저사양 30fps), 그림자 픽셀 히트 0/본체 히트 100%(7종),
   정책 API 경계값(0·2000·소수·문자 → 400), 부하 테스트 50명 30초 통과(이동 p95 21.1ms, 채팅 p95 10.1ms)
 - 팀 운영: `docs/team/운영규약.md`(역할·라운드), `인터페이스.md`(계약), `작업보드.md`, `협업로그.md`, `handoff-*.md`
+
+## 스프린트 2: BLDC 500W 모터 라인 — 공정(BOP)·단품(BOM)·분해도 (진행 중, 라운드 1 2026-09-09)
+
+첨부 자료(BLDC_500W_48V BOM/BOP 마스터 xlsx, 분해도 PDF)의 24공정을 맵으로 표현하고, **설비를 클릭하면 그 공정에 투입되는 단품**이 보인다.
+계약은 `docs/team/인터페이스.md` §7(데이터 모델·API)·§8(단품 HUD)·§9(새 유형 8종).
+
+- **데이터 모델** (`server/db.js`, 기존 DB는 기동 시 자동 마이그레이션): `products`(code, name, spec_json — 사양·분해도 단계·라인 밸런스 기준값 원문),
+  `processes`(product_code+op 유일, seq/line/name/equipment_hint/input_text/output/ct_sec/kind/qc/note/stage_pn), `parts`(pn PK, level L1~L3, parent, 수량, image),
+  `process_inputs`(process_id, pn, qty). `equipments.op`(공정 연결), `equipments.hidden`·`zones.hidden`(라인 전환 숨김).
+- **API**: `POST /api/admin/bop/import`(BOP JSON upsert), `GET /api/admin/bop`(공정별 투입 수·연결 설비·미연결 공정), `GET /api/bop/exploded`(로그인 사용자, 분해도 9단계+단계별 공정),
+  `POST /api/admin/bop/apply-sample`(docs/bldc 두 파일 순서 적용), 배치 JSON `equipments[].op`·`replace`, 설비 API `op`·`hidden`, `equipment:detail`의 `process` 블록.
+- **숨김 규칙**: `hidden=1` 설비·존은 `init`·`world:refresh`·근접 판정·라인 부하 틱·대시보드·알람 리포트·실적 분석·게이트웨이·배치 내보내기에서 제외
+  (`queries.listEquipments/listZones/listLinks`가 거름). 설비 마스터에서 [복원](속한 존도 함께)·[숨김], 맵 에디터 존 목록에 숨긴 존 복원. 이력·실적·라인 레코드는 그대로 남는다.
+- **적용 절차** (관리자 콘솔 → 맵 에디터 → 제품 라인): [🔩 제품 라인 적용 (BLDC 500W)] → 확인. 서버가 `docs/bldc/bldc-500w-48v.json`을 가져온 뒤 `docs/bldc/layout-bldc-500w.json`을
+  `replace`로 적용한다(존 2·설비 24·라인 23, 기존 파일럿 11대·4존은 숨김). 다른 제품: [BOP JSON 가져오기] → 배치 JSON [가져오기](설비마다 `op` 지정) 순서.
+  원천 JSON은 `python scripts/bldc/extract.py`로 xlsx/PDF에서 재생성.
+- **현장 화면**: 상태창 "공정 · 단품" 섹션 + 🔩 분해도 모달(사용법 4 참조). 새 유형 8종은 `EQUIPMENT_TYPES`·콘솔 라벨에 등록되어 있고, 스프라이트가 없는 유형은 큐브로 폴백.
+- **적용 결과(이 PC, 2026-09-09)**: 설비 35대 중 24대 표시·11대 숨김, 존 2 표시·4 숨김, 공정 24·단품 56(서브어셈블리 9 포함)·투입 36·라인 23, 24/24 공정에 설비 연결.
+  게임에서 OP-A40(니들 와인더) 클릭 → 병목 공정·C/T 90초·MW-1030 Magnet Wire 180 g(SA-1000 썸네일) 표시, 분해도 1단계 강조 확인(다크·라이트).
+  근접 대화(2인 자동 활성화)·상태 변경·라인 부하(A40→A50 16%)가 새 설비에서 그대로 동작.
+- 참고: 다크 테마의 `--input/--overlay/--toast-bg`가 자기 참조로 무효 처리되어 상태창·패널 배경이 투명하던 문제를 함께 수정(`public/css/style.css`).
 
 ## 다음 단계 후보
 

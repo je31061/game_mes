@@ -182,6 +182,7 @@
       FW.initData.floorplan = floorplan;
       FW.gameApi.reloadWorld(zones, equipments);
       FW.gameApi.setFloorplan(floorplan);
+      explodedCache = null;   // BOP 재가져오기·라인 전환 시 분해도 다시 읽기
       if (currentEqId) {
         if (equipments.some(e => e.id === currentEqId)) loadEquipmentDetail(currentEqId);
         else { $('eq-window').classList.remove('open'); currentEqId = null; }
@@ -251,7 +252,7 @@
     $('eq-window').classList.add('open');
     loadEquipmentDetail(eqId);
   }
-  $('eq-close').onclick = () => { $('eq-window').classList.remove('open'); currentEqId = null; };
+  $('eq-close').onclick = () => { $('eq-window').classList.remove('open'); $('exploded-panel').classList.remove('open'); currentEqId = null; };
 
   function loadEquipmentDetail(eqId) {
     socket.emit('equipment:detail', { equipmentId: eqId }, (res) => {
@@ -301,8 +302,103 @@
             `<div class="lrow">📎 <a class="file-link" href="/api/files/${f.id}">${esc(f.original_name)}</a></div>`
           ).join('')
         : '<div class="lrow">첨부 없음</div>';
+      renderProcess(res.process || null);
     });
   }
+
+  // ── 공정 · 단품 (스프린트 2, 인터페이스 §8) ──
+  // equipment:detail 의 process 블록: { op, seq, line, name, equipmentHint, ctSec, kind, qc, note, output, inputText,
+  //   inputs:[{pn,name,spec,qty,unit,parentPn,parentName,image}], stage:{stage,pn,file,label,group}|null }
+  let currentProc = null;
+  const PARTS_BASE = '/assets/parts/';
+  const KIND_CLASS = { '병목': 'bottleneck', '배치': 'batch', 'QC': 'qc', '완성': 'final' };
+  const fmtQty = (q, unit) => (q === null || q === undefined) ? '-' : `${Number.isInteger(q) ? q : Number(q).toFixed(2)} ${unit || ''}`.trim();
+
+  function renderProcess(proc) {
+    const sec = $('eq-proc-section');
+    currentProc = proc;
+    if (!proc) { sec.hidden = true; return; }   // 공정이 연결되지 않은 설비는 섹션을 감춘다
+    sec.hidden = false;
+    const kindEl = $('eq-proc-kind');
+    kindEl.textContent = proc.kind || '';
+    kindEl.className = 'proc-kind' + (KIND_CLASS[proc.kind] ? ` k-${KIND_CLASS[proc.kind]}` : '');
+    const rows = [
+      ['공정', `<b>${esc(proc.op)}</b> · ${esc(proc.name || '')}`],
+      ['라인', `${esc(proc.line || '-')}${proc.seq ? ` · ${proc.seq}번째` : ''}`],
+      ['C/T', proc.ctSec !== null && proc.ctSec !== undefined ? `${proc.ctSec}초${proc.kind === '배치' ? ' (배치 환산)' : ''}` : '-'],
+      ['설비(BOP)', esc(proc.equipmentHint || '-')],
+      ['품질 관리', esc(proc.qc || '-')],
+    ];
+    if (proc.note) rows.push(['비고', esc(proc.note)]);
+    $('eq-proc-info').innerHTML = rows.map(([k, v]) => `<span class="k">${k}</span><span class="v">${v}</span>`).join('');
+    // 투입 단품 표 — 썸네일은 단품 이미지 → 없으면 부모 서브어셈블리 → 없으면 이 공정의 분해도 단계 이미지
+    const stageFile = proc.stage?.file || null;
+    if (proc.inputs && proc.inputs.length) {
+      $('eq-proc-parts').innerHTML = `<table>
+        <thead><tr><th></th><th>P/N · 품명</th><th>규격</th><th style="text-align:right">수량</th></tr></thead>
+        <tbody>${proc.inputs.map(i => {
+          const img = i.image || stageFile;
+          return `<tr>
+            <td style="width:38px">${img ? `<img class="pthumb" src="${PARTS_BASE}${esc(img)}" alt="" loading="lazy">` : ''}</td>
+            <td><div class="ppn">${esc(i.pn)}</div><div class="pname">${esc(i.name || '')}</div>${i.parentName && i.level !== 'L1' ? `<div class="pparent">↳ ${esc(i.parentName)}</div>` : ''}</td>
+            <td class="pspec">${esc(i.spec || '')}</td>
+            <td class="pqty">${fmtQty(i.qty, i.unit)}</td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    } else {
+      $('eq-proc-parts').innerHTML = `<div class="proc-empty">투입 단품 없음 — 전공정 산출물을 가공${proc.inputText ? ` (${esc(proc.inputText)})` : ''}</div>`;
+    }
+    $('eq-proc-output').innerHTML = `산출물 → <b>${esc(proc.output || '-')}</b>`
+      + (proc.stage ? ` · 분해도 ${proc.stage.stage ?? '?'}단계 ${esc(proc.stage.label || proc.stage.pn)}` : ' · <b>완성품</b> 공정');
+  }
+
+  // ── 🔩 분해도 모달: GET /api/bop/exploded → 9단계 가로 스크롤, 현재 설비의 단계 강조 (완성품 공정은 전체 강조) ──
+  let explodedCache = null;
+  async function openExploded() {
+    if (!currentProc) return;
+    try {
+      if (!explodedCache) {
+        const res = await fetch('/api/bop/exploded', { headers: { 'X-Auth-Token': token } });
+        if (!res.ok) throw new Error('분해도를 불러오지 못했습니다');
+        explodedCache = await res.json();
+      }
+      renderExploded(explodedCache, currentProc);
+      $('exploded-panel').classList.add('open');
+      const cur = $('exploded-strip').querySelector('.ex-card.cur');
+      if (cur) cur.scrollIntoView({ inline: 'center', block: 'nearest' });
+    } catch (e) { toast('⚠ ' + e.message, true); }
+  }
+  function renderExploded(data, proc) {
+    const isFinal = !proc.stage;                       // 완성품 공정(시험·포장): 전체를 같은 강조
+    const curPn = proc.stage?.pn || null;
+    $('exploded-title').textContent = data.product ? `${data.product.name} (${data.product.code})` : '';
+    $('exploded-sub').innerHTML = isFinal
+      ? `<b>${esc(proc.op)} ${esc(proc.name || '')}</b> — 완성품 공정: 전 단계가 조립된 상태입니다`
+      : `<b>${esc(proc.op)} ${esc(proc.name || '')}</b> — 강조된 단계(${esc(curPn)})가 이 설비의 공정이 만드는 서브어셈블리입니다`;
+    const opTag = (op) => `<b class="${op === proc.op ? 'me' : ''}">${esc(op)}</b>`;
+    const cards = (data.stages || []).map(s => `
+      <div class="ex-card${isFinal || s.pn === curPn ? ' cur' : ''}" data-pn="${esc(s.pn)}">
+        ${s.file ? `<img src="${PARTS_BASE}${esc(s.file)}" alt="${esc(s.pn)}" loading="lazy">` : '<div class="ex-noimg">이미지 없음</div>'}
+        <div class="ex-step">STAGE ${s.stage ?? '?'}</div>
+        <div class="ex-pn">${esc(s.pn)}</div>
+        <div class="ex-label">${esc(s.label || '')}</div>
+        ${s.group ? `<span class="ex-group">${esc(s.group)}</span>` : ''}
+        <div class="ex-ops">${(s.processes || []).length ? (s.processes || []).map(opTag).join(' ') : '<span>공정 미정</span>'}</div>
+      </div>`);
+    // 완성품 카드 (시험·포장 공정)
+    cards.push(`
+      <div class="ex-card final${isFinal ? ' cur' : ''}">
+        <div class="ex-noimg">🏁<br>완성품</div>
+        <div class="ex-step">FINAL</div>
+        <div class="ex-pn">${esc(data.product?.code || '')}</div>
+        <div class="ex-label">${esc(data.product?.name || '')}</div>
+        <div class="ex-ops">${(data.final || []).length ? (data.final || []).map(opTag).join(' ') : ''}</div>
+      </div>`);
+    $('exploded-strip').innerHTML = cards.join('<div class="ex-arrow">→</div>');
+  }
+  $('eq-exploded').onclick = openExploded;
+  $('exploded-close').onclick = () => $('exploded-panel').classList.remove('open');
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('exploded-panel').classList.remove('open'); });
 
   [...$('eq-status-btns').children].forEach(btn => {
     btn.onclick = () => {

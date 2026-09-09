@@ -1,0 +1,1215 @@
+{
+  "version": 1,
+  "source": {
+    "xlsx": "BLDC_500W_48V_BOM_BOP_Master.xlsx",
+    "pdf": "BLDC_500W_48V_Exploded_View.pdf",
+    "rev": "1.0",
+    "date": "2026-09-09"
+  },
+  "product": {
+    "code": "BLDC-500W-48V",
+    "name": "BLDC 모터 500W 48V",
+    "spec": {
+      "모델명": "BLDC-500W-48V",
+      "정격 출력": "500 W",
+      "정격 전압": "48 VDC",
+      "정격 회전수": "3,000 RPM",
+      "극/슬롯 구조": "8-Pole / 12-Slot (Inner Rotor)",
+      "센서": "Hall Sensor 3ea (120° 배치)",
+      "냉각": "자연 공랭",
+      "보호등급": "IP54 (Cable Gland 조립 시 IP65)",
+      "용도": "산업용 서보 / 전동공구",
+      "완성품 P/N": "BLDC-500W-48V",
+      "서브 어셈블리 수": "9",
+      "총 공정 수": "22"
+    }
+  },
+  "subassemblies": [
+    {
+      "pn": "SA-1000",
+      "name": "Stator (Armature) Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "아마추어 라인",
+      "sheet": "04_BOM_L2_Stator",
+      "note": "권선/함침 완료품"
+    },
+    {
+      "pn": "RA-2000",
+      "name": "Rotor Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인 (전공정)",
+      "sheet": "05_BOM_L2_Rotor",
+      "note": "착자/밸런싱 완료품"
+    },
+    {
+      "pn": "HA-3000",
+      "name": "Housing Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인",
+      "sheet": "06_BOM_L2_Housing",
+      "note": "하우징+베어링플레이트"
+    },
+    {
+      "pn": "PE-6000",
+      "name": "Power Electronics Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인",
+      "sheet": "07_BOM_L2_PE",
+      "note": "인버터/제어 PCB"
+    },
+    {
+      "pn": "FS-7010",
+      "name": "Main Flange Shaft No.1",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인 (동력전달부)",
+      "sheet": "08_BOM_L2_Drive",
+      "note": "메인 출력축"
+    },
+    {
+      "pn": "FS-7020",
+      "name": "Flange Shaft No.2 Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인 (동력전달부)",
+      "sheet": "08_BOM_L2_Drive",
+      "note": "하부 지지축"
+    },
+    {
+      "pn": "GB-8000",
+      "name": "Gearbox Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인 (감속부)",
+      "sheet": "08_BOM_L2_Drive",
+      "note": "스퍼기어 2단"
+    },
+    {
+      "pn": "PL-9000",
+      "name": "Parking Lock Assy",
+      "qty": 1.0,
+      "unit": "EA",
+      "line": "조립 라인 (안전장치)",
+      "sheet": "08_BOM_L2_Drive",
+      "note": "래칫+파울"
+    },
+    {
+      "pn": "EX-5000",
+      "name": "External Parts Set",
+      "qty": 1.0,
+      "unit": "SET",
+      "line": "조립 라인",
+      "sheet": "06_BOM_L2_Housing",
+      "note": "네임플레이트/오링/글랜드"
+    }
+  ],
+  "parts": [
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "SC-1010",
+      "name": "Stator Core",
+      "spec": "규소강판 50W470",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L3",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "SC-1011",
+      "name": "규소강판 원소재",
+      "spec": "POSCO 50W470",
+      "qtyPerParent": 0.85,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 0.85,
+      "unit": "kg"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "IN-1020U",
+      "name": "Insulator Upper",
+      "spec": "PBT+GF30",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "IN-1020L",
+      "name": "Insulator Lower",
+      "spec": "PBT+GF30",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "MW-1030",
+      "name": "Magnet Wire",
+      "spec": "동선 φ0.80",
+      "qtyPerParent": 180.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 180.0,
+      "unit": "g"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "IP-1040",
+      "name": "Insulation Paper",
+      "spec": "Nomex 410",
+      "qtyPerParent": 12.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 12.0,
+      "unit": "매"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "LW-1050",
+      "name": "Lead Wire",
+      "spec": "AWG18 L300",
+      "qtyPerParent": 3.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 3.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "TM-1060",
+      "name": "Terminal Lug",
+      "spec": "φ3.2",
+      "qtyPerParent": 3.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 3.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "IV-1070",
+      "name": "Impregnation Varnish",
+      "spec": "에폭시",
+      "qtyPerParent": 15.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 15.0,
+      "unit": "g"
+    },
+    {
+      "level": "L2",
+      "parentName": "Stator Assy",
+      "parentPn": "SA-1000",
+      "pn": "LC-1080",
+      "name": "Lacing Cord",
+      "spec": "폴리에스터",
+      "qtyPerParent": 0.5,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 0.5,
+      "unit": "m"
+    },
+    {
+      "level": "L2",
+      "parentName": "Rotor Assy",
+      "parentPn": "RA-2000",
+      "pn": "SH-2010",
+      "name": "Shaft",
+      "spec": "SCM440 QT",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Rotor Assy",
+      "parentPn": "RA-2000",
+      "pn": "RC-2020",
+      "name": "Rotor Core",
+      "spec": "규소강판 적층",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Rotor Assy",
+      "parentPn": "RA-2000",
+      "pn": "PM-2030",
+      "name": "Permanent Magnet",
+      "spec": "NdFeB N42SH",
+      "qtyPerParent": 8.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 8.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Rotor Assy",
+      "parentPn": "RA-2000",
+      "pn": "AD-2040",
+      "name": "Adhesive",
+      "spec": "락타이트 638",
+      "qtyPerParent": 0.5,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 0.5,
+      "unit": "g"
+    },
+    {
+      "level": "L2",
+      "parentName": "Rotor Assy",
+      "parentPn": "RA-2000",
+      "pn": "BW-2050",
+      "name": "Balancing Weight",
+      "spec": "Fe계",
+      "qtyPerParent": 2.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 2.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "HS-3010",
+      "name": "Housing Frame",
+      "spec": "AL6061-T6",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "BP-3020F",
+      "name": "Bearing Plate Front",
+      "spec": "AL6061",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "BP-3020R",
+      "name": "Bearing Plate Rear",
+      "spec": "AL6061",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "BF-3040",
+      "name": "Bearing Front",
+      "spec": "6002ZZ",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "BR-3050",
+      "name": "Bearing Rear",
+      "spec": "6001ZZ",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "WW-3060",
+      "name": "Wave Washer",
+      "spec": "SUS304 φ12",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "BT-3070",
+      "name": "Bolt",
+      "spec": "M4×20 SUS304",
+      "qtyPerParent": 8.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 8.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "NP-5010",
+      "name": "Name Plate",
+      "spec": "AL 에칭",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "OR-5020",
+      "name": "O-Ring",
+      "spec": "NBR P24",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Housing/External",
+      "parentPn": "HA-3000/EX-5000",
+      "pn": "CG-5030",
+      "name": "Cable Gland",
+      "spec": "PG9",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "PC-4010",
+      "name": "Main PCB",
+      "spec": "FR-4 4L",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "PC-4011",
+      "name": "Hall PCB",
+      "spec": "FR-4 2L",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "HS-4020",
+      "name": "Hall Sensor",
+      "spec": "SS41F",
+      "qtyPerParent": 3.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 3.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "MO-4030",
+      "name": "Power MOSFET",
+      "spec": "100V/60A",
+      "qtyPerParent": 6.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 6.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "GD-4040",
+      "name": "Gate Driver IC",
+      "spec": "Half-Bridge",
+      "qtyPerParent": 3.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 3.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "CP-4050",
+      "name": "Electrolytic Cap",
+      "spec": "470uF/63V",
+      "qtyPerParent": 4.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 4.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "HK-4060",
+      "name": "Heatsink",
+      "spec": "AL 방열",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "BB-4070",
+      "name": "Bus Bar",
+      "spec": "동 3.0t",
+      "qtyPerParent": 3.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 3.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "CN-4030",
+      "name": "Signal Connector",
+      "spec": "JST XH 5P",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Power Electronics",
+      "parentPn": "PE-6000",
+      "pn": "SP-4040",
+      "name": "Solder Paste",
+      "spec": "SAC305",
+      "qtyPerParent": 0.5,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 0.5,
+      "unit": "g"
+    },
+    {
+      "level": "L2",
+      "parentName": "Main Flange Shaft No.1",
+      "parentPn": "FS-7010",
+      "pn": "FS-7010",
+      "name": "Main Flange Shaft No.1",
+      "spec": "SCM440",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Flange Shaft No.2 Assy",
+      "parentPn": "FS-7020",
+      "pn": "FS-7020",
+      "name": "Flange Base",
+      "spec": "AL 다이캐스트",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Flange Shaft No.2 Assy",
+      "parentPn": "FS-7020",
+      "pn": "FS-7021",
+      "name": "Top Bushing",
+      "spec": "황동",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Flange Shaft No.2 Assy",
+      "parentPn": "FS-7020",
+      "pn": "FS-7022",
+      "name": "Internal Shaft",
+      "spec": "SCM415",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Flange Shaft No.2 Assy",
+      "parentPn": "FS-7020",
+      "pn": "OR-7025",
+      "name": "O-Ring",
+      "spec": "NBR",
+      "qtyPerParent": 2.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 2.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Gearbox Assy",
+      "parentPn": "GB-8000",
+      "pn": "GB-8010",
+      "name": "Gearbox Housing",
+      "spec": "AL 다이캐스트",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Gearbox Assy",
+      "parentPn": "GB-8000",
+      "pn": "GB-8020",
+      "name": "Input Spur Gear",
+      "spec": "Z=18",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Gearbox Assy",
+      "parentPn": "GB-8000",
+      "pn": "GB-8030",
+      "name": "Output Spur Gear",
+      "spec": "Z=90",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Gearbox Assy",
+      "parentPn": "GB-8000",
+      "pn": "GB-8040",
+      "name": "Gearbox Bearing",
+      "spec": "6003ZZ",
+      "qtyPerParent": 2.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 2.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Gearbox Assy",
+      "parentPn": "GB-8000",
+      "pn": "GB-8050",
+      "name": "Gear Oil/Grease",
+      "spec": "리튬계",
+      "qtyPerParent": 25.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 25.0,
+      "unit": "g"
+    },
+    {
+      "level": "L2",
+      "parentName": "Parking Lock Assy",
+      "parentPn": "PL-9000",
+      "pn": "PL-9010",
+      "name": "Parking Gear Ring",
+      "spec": "SCM440",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Parking Lock Assy",
+      "parentPn": "PL-9000",
+      "pn": "PL-9020",
+      "name": "Parking Pawl",
+      "spec": "SCM435",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Parking Lock Assy",
+      "parentPn": "PL-9000",
+      "pn": "PL-9030",
+      "name": "Return Spring",
+      "spec": "SUS304",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    },
+    {
+      "level": "L2",
+      "parentName": "Parking Lock Assy",
+      "parentPn": "PL-9000",
+      "pn": "PL-9040",
+      "name": "Actuator Rod",
+      "spec": "솔레노이드봉",
+      "qtyPerParent": 1.0,
+      "parentPerProduct": 1.0,
+      "qtyPerProduct": 1.0,
+      "unit": "EA"
+    }
+  ],
+  "processes": [
+    {
+      "op": "OP-A10",
+      "seq": 1,
+      "line": "아마추어 라인",
+      "name": "규소강판 블랭킹",
+      "equipment": "300t 프레스, 순차이송금형",
+      "inputText": "SC-1011",
+      "inputs": [
+        "SC-1011"
+      ],
+      "output": "스테이터 편(片)",
+      "ctSec": 0.5,
+      "kind": "표준",
+      "qc": "치수 ±0.02, Burr ≤10㎛",
+      "note": "",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A20",
+      "seq": 2,
+      "line": "아마추어 라인",
+      "name": "코어 적층/결합",
+      "equipment": "자동 적층기 (Self-bonding)",
+      "inputText": "블랭킹편 ×80",
+      "inputs": [],
+      "output": "SC-1010",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "qc": "적층높이 40±0.1, 동심도 0.03",
+      "note": "",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A30",
+      "seq": 3,
+      "line": "아마추어 라인",
+      "name": "인슐레이터 조립",
+      "equipment": "반자동 지그",
+      "inputText": "IN-1020U/L, SC-1010",
+      "inputs": [
+        "IN-1020U",
+        "IN-1020L",
+        "SC-1010"
+      ],
+      "output": "인슐레이터 결합코어",
+      "ctSec": 20.0,
+      "kind": "표준",
+      "qc": "삽입 완료, 크랙 無",
+      "note": "",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A40",
+      "seq": 4,
+      "line": "아마추어 라인",
+      "name": "Needle Winding (권선)",
+      "equipment": "니들 와인더",
+      "inputText": "MW-1030",
+      "inputs": [
+        "MW-1030"
+      ],
+      "output": "3상 권선 스테이터",
+      "ctSec": 90.0,
+      "kind": "병목",
+      "qc": "U/V/W 각 45T, 장력 250gf",
+      "note": "병렬 2대 권장",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A50",
+      "seq": 5,
+      "line": "아마추어 라인",
+      "name": "결선/포밍",
+      "equipment": "결선지그, 포밍툴",
+      "inputText": "-",
+      "inputs": [],
+      "output": "결선 완료품",
+      "ctSec": 40.0,
+      "kind": "표준",
+      "qc": "상간 절연, U-V-W 순서",
+      "note": "",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A60",
+      "seq": 6,
+      "line": "아마추어 라인",
+      "name": "리드선 납땜",
+      "equipment": "자동 솔더링 로봇",
+      "inputText": "LW-1050, TM-1060",
+      "inputs": [
+        "LW-1050",
+        "TM-1060"
+      ],
+      "output": "리드 부착품",
+      "ctSec": 30.0,
+      "kind": "표준",
+      "qc": "납땜강도 ≥5N",
+      "note": "",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A70",
+      "seq": 7,
+      "line": "아마추어 라인",
+      "name": "절연저항/내전압",
+      "equipment": "Hi-Pot Tester 1500V",
+      "inputText": "-",
+      "inputs": [],
+      "output": "QC 합격품",
+      "ctSec": 15.0,
+      "kind": "QC",
+      "qc": "IR ≥100MΩ, Leak ≤1mA",
+      "note": "Gate",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A80",
+      "seq": 8,
+      "line": "아마추어 라인",
+      "name": "바니시 함침 (VPI)",
+      "equipment": "진공 함침조",
+      "inputText": "IV-1070",
+      "inputs": [
+        "IV-1070"
+      ],
+      "output": "함침 스테이터",
+      "ctSec": 300.0,
+      "kind": "배치",
+      "qc": "함침율 ≥95%",
+      "note": "30ea/배치",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A90",
+      "seq": 9,
+      "line": "아마추어 라인",
+      "name": "큐어링/건조",
+      "equipment": "열풍 건조로 150℃",
+      "inputText": "-",
+      "inputs": [],
+      "output": "경화 완료품",
+      "ctSec": 3600.0,
+      "kind": "배치",
+      "qc": "온도 프로파일",
+      "note": "30ea/배치",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-A100",
+      "seq": 10,
+      "line": "아마추어 라인",
+      "name": "아마추어 최종검사",
+      "equipment": "LCR Meter",
+      "inputText": "-",
+      "inputs": [],
+      "output": "SA-1000 완성",
+      "ctSec": 20.0,
+      "kind": "완성",
+      "qc": "상간 저항 편차 ≤3%",
+      "note": "→ 조립라인 투입",
+      "stagePn": "SA-1000"
+    },
+    {
+      "op": "OP-B10",
+      "seq": 1,
+      "line": "조립 라인",
+      "name": "샤프트/로터코어 압입",
+      "equipment": "서보 프레스 2t",
+      "inputText": "SH-2010, RC-2020",
+      "inputs": [
+        "SH-2010",
+        "RC-2020"
+      ],
+      "output": "로터 서브",
+      "ctSec": 15.0,
+      "kind": "표준",
+      "qc": "압입력 800±100kgf, 동심도 0.02",
+      "note": "",
+      "stagePn": "RA-2000"
+    },
+    {
+      "op": "OP-B20",
+      "seq": 2,
+      "line": "조립 라인",
+      "name": "마그넷 접착",
+      "equipment": "접착 지그, 디스펜서",
+      "inputText": "PM-2030, AD-2040",
+      "inputs": [
+        "PM-2030",
+        "AD-2040"
+      ],
+      "output": "마그넷 부착 로터",
+      "ctSec": 40.0,
+      "kind": "표준",
+      "qc": "접착 갭 0.05±0.02",
+      "note": "",
+      "stagePn": "RA-2000"
+    },
+    {
+      "op": "OP-B30",
+      "seq": 3,
+      "line": "조립 라인",
+      "name": "마그넷 착자",
+      "equipment": "착자기 (Capacitor Discharge)",
+      "inputText": "-",
+      "inputs": [],
+      "output": "착자 로터",
+      "ctSec": 10.0,
+      "kind": "표준",
+      "qc": "4,200±200 Gauss",
+      "note": "",
+      "stagePn": "RA-2000"
+    },
+    {
+      "op": "OP-B40",
+      "seq": 4,
+      "line": "조립 라인",
+      "name": "로터 다이나믹 밸런싱",
+      "equipment": "밸런싱 머신",
+      "inputText": "BW-2050",
+      "inputs": [
+        "BW-2050"
+      ],
+      "output": "RA-2000 완성",
+      "ctSec": 45.0,
+      "kind": "표준",
+      "qc": "불균형량 ≤0.5 g·mm",
+      "note": "",
+      "stagePn": "RA-2000"
+    },
+    {
+      "op": "OP-B50",
+      "seq": 5,
+      "line": "조립 라인",
+      "name": "스테이터 압입 (Housing)",
+      "equipment": "프레스+히팅지그(열박음)",
+      "inputText": "SA-1000, HS-3010",
+      "inputs": [
+        "SA-1000",
+        "HS-3010"
+      ],
+      "output": "하우징+스테이터",
+      "ctSec": 30.0,
+      "kind": "표준",
+      "qc": "압입력 500~800kgf",
+      "note": "",
+      "stagePn": "HS-3010"
+    },
+    {
+      "op": "OP-B60",
+      "seq": 6,
+      "line": "조립 라인",
+      "name": "베어링 압입",
+      "equipment": "베어링 압입 지그",
+      "inputText": "BF-3040, BR-3050, WW-3060",
+      "inputs": [
+        "BF-3040",
+        "BR-3050",
+        "WW-3060"
+      ],
+      "output": "브라켓 서브",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "qc": "회전토크 ≤3 mN·m",
+      "note": "",
+      "stagePn": "BP-3020"
+    },
+    {
+      "op": "OP-B70",
+      "seq": 7,
+      "line": "조립 라인",
+      "name": "로터 삽입",
+      "equipment": "자력제어 조립지그",
+      "inputText": "RA-2000",
+      "inputs": [
+        "RA-2000"
+      ],
+      "output": "로터 삽입 완료",
+      "ctSec": 20.0,
+      "kind": "표준",
+      "qc": "에어갭 0.3±0.05",
+      "note": "",
+      "stagePn": "RA-2000"
+    },
+    {
+      "op": "OP-B80",
+      "seq": 8,
+      "line": "조립 라인",
+      "name": "브라켓 체결",
+      "equipment": "전동 토크드라이버",
+      "inputText": "BP-3020F/R, BT-3070",
+      "inputs": [
+        "BP-3020F",
+        "BP-3020R",
+        "BT-3070"
+      ],
+      "output": "하우징 완성",
+      "ctSec": 30.0,
+      "kind": "표준",
+      "qc": "체결토크 2.5±0.2 N·m",
+      "note": "",
+      "stagePn": "BP-3020"
+    },
+    {
+      "op": "OP-B85",
+      "seq": 9,
+      "line": "조립 라인",
+      "name": "기어박스 조립",
+      "equipment": "기어 조립지그",
+      "inputText": "GB-8010~8050",
+      "inputs": [
+        "GB-8010",
+        "GB-8020",
+        "GB-8030",
+        "GB-8040",
+        "GB-8050"
+      ],
+      "output": "GB-8000 완성",
+      "ctSec": 50.0,
+      "kind": "표준",
+      "qc": "백래시 0.05~0.15mm",
+      "note": "신규 공정",
+      "stagePn": "GB-8000"
+    },
+    {
+      "op": "OP-B87",
+      "seq": 10,
+      "line": "조립 라인",
+      "name": "파킹락 조립",
+      "equipment": "조립지그",
+      "inputText": "PL-9010~9040",
+      "inputs": [
+        "PL-9010",
+        "PL-9020",
+        "PL-9030",
+        "PL-9040"
+      ],
+      "output": "PL-9000 완성",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "qc": "파울 걸림력 확인",
+      "note": "신규 공정",
+      "stagePn": "PL-9000"
+    },
+    {
+      "op": "OP-B90",
+      "seq": 11,
+      "line": "조립 라인",
+      "name": "Power Electronics 조립",
+      "equipment": "SMT + 자동 결선",
+      "inputText": "PE-6000 자재",
+      "inputs": [
+        "PE-6000"
+      ],
+      "output": "제어부 결합",
+      "ctSec": 60.0,
+      "kind": "표준",
+      "qc": "홀 위상각 오차 ≤2°",
+      "note": "",
+      "stagePn": "PE-6000"
+    },
+    {
+      "op": "OP-B100",
+      "seq": 12,
+      "line": "조립 라인",
+      "name": "커넥터/케이블 결선",
+      "equipment": "커넥터 압착기",
+      "inputText": "CN-4030, CG-5030, OR-5020",
+      "inputs": [
+        "CN-4030",
+        "CG-5030",
+        "OR-5020"
+      ],
+      "output": "결선 완료",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "qc": "도통 시험",
+      "note": "",
+      "stagePn": "PE-6000"
+    },
+    {
+      "op": "OP-B110",
+      "seq": 13,
+      "line": "조립 라인",
+      "name": "성능/기능 시험",
+      "equipment": "다이나모미터, 파워메터",
+      "inputText": "-",
+      "inputs": [],
+      "output": "시험 합격품",
+      "ctSec": 60.0,
+      "kind": "병목",
+      "qc": "무부하 전류, 정격 토크, Cogging, 소음 ≤55dB",
+      "note": "QC Gate",
+      "stagePn": null
+    },
+    {
+      "op": "OP-B120",
+      "seq": 14,
+      "line": "조립 라인",
+      "name": "각인/외관검사/포장",
+      "equipment": "레이저 마킹, AVI",
+      "inputText": "NP-5010, Carton",
+      "inputs": [
+        "NP-5010"
+      ],
+      "output": "출하품",
+      "ctSec": 30.0,
+      "kind": "완성",
+      "qc": "마킹 판독, 외관 스크래치 無",
+      "note": "→ 출하",
+      "stagePn": null
+    }
+  ],
+  "lineBalance": {
+    "가동시간 (시간/일)": [
+      "20"
+    ],
+    "가동효율 (OEE)": [
+      "0.85"
+    ],
+    "일 가동초 (계산)": [
+      "61200"
+    ],
+    "라인": [
+      "병목공정",
+      "병목 C/T(초)",
+      "UPH (1대 기준)",
+      "일 생산량 (대/일)"
+    ],
+    "아마추어 라인 (병렬 2대 후)": [
+      "OP-A40 Needle Winding",
+      "45",
+      "80",
+      "1360"
+    ],
+    "조립 라인": [
+      "OP-B110 성능시험",
+      "60",
+      "60",
+      "1020"
+    ],
+    "목표 UPH": [
+      "60"
+    ],
+    "목표 대비 달성률": [
+      "0"
+    ]
+  },
+  "exploded": [
+    {
+      "stage": 1,
+      "pn": "SA-1000",
+      "file": "SA-1000.png",
+      "group": "ARMATURE",
+      "label": "스테이터 어셈블리"
+    },
+    {
+      "stage": 2,
+      "pn": "RA-2000",
+      "file": "RA-2000.png",
+      "group": "ASSEMBLY",
+      "label": "로터 어셈블리"
+    },
+    {
+      "stage": 3,
+      "pn": "HS-3010",
+      "file": "HS-3010.png",
+      "group": "ASSEMBLY",
+      "label": "모터 하우징"
+    },
+    {
+      "stage": 4,
+      "pn": "BP-3020",
+      "file": "BP-3020.png",
+      "group": "ASSEMBLY",
+      "label": "베어링 플레이트"
+    },
+    {
+      "stage": 5,
+      "pn": "FS-7010",
+      "file": "FS-7010.png",
+      "group": "DRIVE",
+      "label": "메인 플랜지 샤프트 No.1"
+    },
+    {
+      "stage": 6,
+      "pn": "FS-7020",
+      "file": "FS-7020.png",
+      "group": "DRIVE",
+      "label": "플랜지 샤프트 No.2"
+    },
+    {
+      "stage": 7,
+      "pn": "GB-8000",
+      "file": "GB-8000.png",
+      "group": "DRIVE",
+      "label": "기어박스 어셈블리"
+    },
+    {
+      "stage": 8,
+      "pn": "PL-9000",
+      "file": "PL-9000.png",
+      "group": "DRIVE",
+      "label": "파킹락"
+    },
+    {
+      "stage": 9,
+      "pn": "PE-6000",
+      "file": "PE-6000.png",
+      "group": "CONTROL",
+      "label": "파워 일렉트로닉스"
+    }
+  ]
+}

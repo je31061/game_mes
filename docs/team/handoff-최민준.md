@@ -1,5 +1,59 @@
 # handoff — 최민준 (MES 운영 리더)
 
+## 스프린트 2 라운드 1 (기반: 스키마·BOP API·단품 HUD·라인 전환) — 2026-09-09 완료
+
+### 한 일 (전부 내 소유 파일)
+1. **스키마** (`server/db.js`): `products / processes / parts / process_inputs` 테이블(§7 정의 그대로, CREATE IF NOT EXISTS), 마이그레이션 `equipments.op TEXT`, `equipments.hidden`·`zones.hidden INTEGER DEFAULT 0` (기존 DB 기동 시 자동, 로그 `[db] equipments.op 컬럼 추가` 등 3줄, 재기동 시 무출력 = 멱등).
+   `EQUIPMENT_TYPES` 16종(§9 8종 추가), `EQUIPMENT_TYPE_LABELS`, `inferEquipmentType`에 OP-* 표(§9)와 접두 STK/WND/VPI/OVN/MAG/BAL/DSP/SMT 추가.
+   `queries.listEquipments / listZones / listLinks(양끝) / alarmEquipments`에 `hidden = 0` — 이 쿼리를 쓰는 init·world:refresh·근접 판정·부하 틱·대시보드·알람 리포트·분석·게이트웨이·내보내기가 자동 제외. 전체 조회는 `listAllEquipments / listAllZones`. BOP 쿼리 14개(`upsertProduct … equipmentsByOp`).
+2. **API** (`server/index.js`)
+   - `POST /api/admin/bop/import` 본문 = bldc JSON → 트랜잭션 upsert. 응답 `{ ok, product, subassemblies, parts, processes, inputs, stages, warnings }`. `product.code` 없음·`processes` 비면 400.
+   - `GET /api/admin/bop?product=` → `{ products, product:{code,name,spec,lineBalance,source,importedAt}, processes:[{id,op,seq,line,name,equipmentHint,ctSec,kind,qc,note,output,stagePn,inputCount,equipments:[{id,code,name,hidden}]}], summary:{processes,parts,inputs,linked,unlinked:[op]} }`.
+   - `GET /api/bop/exploded?product=` (로그인 사용자, `X-Auth-Token` 또는 `?token=`) → `{ product:{code,name}, stages:[{stage,pn,file,label,group,processes:[op]}], final:[op] }`.
+   - `POST /api/admin/bop/apply-sample` → `docs/bldc/bldc-500w-48v.json` → `layout-bldc-500w.json` 순서 적용, `{ ok, bop, layout }`. 파일 없으면 404.
+   - 배치 JSON: `importLayout(body)`로 분리. `equipments[].op`(null/''=해제, BOP에 없는 op는 경고 1줄로 합침), `replace: true` → 파일에 없는 설비(설비 목록 있을 때)·존(존 목록 있을 때) `hidden=1`, 파일에 있는 것은 `hidden=0` 복원. 응답에 `hidden`·`restored`·`opLinked` 카운트. 내보내기에 `op` 포함, 숨김 제외.
+   - `GET /api/admin/equipments` → `equipments`(숨김 포함, `hidden`·`op`), `zones`(보이는 것), `hiddenZones`, `types`(16), `processes`(공정 select용). `POST/PUT` 본문 `op`, `PUT` 본문 `hidden`(복원 시 속한 존도 복원, `{hidden}`만 보내면 그것만 처리), `PUT /api/admin/zones/:id` 본문 `hidden`.
+   - `equipment:detail` 응답 `process`(§7 블록 + `product`, `stage.stage`) — op 미연결·BOP 없음이면 null.
+3. **현장 상태창** (`public/index.html`, `public/js/app.js`, `public/css/style.css`): "공정 · 단품" 섹션(`#eq-proc-section`, 공정 없으면 `hidden`), 공정유형 칩(병목=적, 배치=황, QC=청, 완성=녹), 정보 grid(공정·라인·C/T·설비(BOP)·품질 관리·비고), 투입 단품 표(썸네일 34×50 = 단품 이미지 → 부모 → 공정 단계 이미지, P/N·품명·상위 어셈블리, 규격, 수량/단위), 산출물+분해도 단계, **🔩 분해도** → `#exploded-panel`(9단계 + 완성품 카드, 현재 단계 `.cur`, 완성품 공정은 전체 `.cur`, 내 op는 `b.me`로 표시, ESC/✕ 닫기, `world:refresh` 시 캐시 무효화).
+4. **관리자 콘솔** (`public/admin.html`, `public/js/admin.js`): `TYPE_LABEL` 8종 추가, 설비 마스터 "공정" select(`.e-op`, `#n-op`)·숨김 행(흐림 + "숨김" 칩 + [복원])·보이는 행 [숨김] 버튼, 맵 에디터 설비 패널 "공정" select(`#ed-eq-op`), 존 목록 아래 "숨긴 존 N개 [복원]", 배치 데이터 아래 **제품 라인** 카드([🔩 제품 라인 적용 (BLDC 500W)] `#lay-apply-sample`, [BOP JSON 가져오기] `#bop-import`, 현황 줄 `#bop-info` = `GET /api/admin/bop` 요약). 에디터 맵은 숨긴 설비를 그리지 않음.
+5. **다크 테마 버그 수정** (`style.css`): `--input/--overlay/--toast-bg`가 `var(--input)`처럼 자기 참조라 무효 → 상태창·패널·입력 배경이 투명이던 문제(초기 커밋부터). `#0e1220 / rgba(22,26,38,.96)`로 지정. 라이트 값은 그대로.
+6. 문서: README(사용법 4·관리자 콘솔·구조·스프린트 2 절), `docs/도면-AI-연동.md`(`op`·`replace`·유형 15종), 인터페이스 §7 구현 메모·§8 썸네일 경로 메모.
+
+### 실제 DB 적용 결과 (2026-09-09 22:35, 적용 전 백업 `OneDrive/FactoryWorld-백업/fw-backup-20260909-223507`)
+- 콘솔 [제품 라인 적용] 1회: BOP 공정 24·단품 49(+서브어셈블리 9 = parts 56행, FS-7010·FS-7020 중복은 L1 우선)·투입 36·분해도 9단계 / 배치 존 +2·숨김 4, 설비 +24·숨김 11(PRS-01~03, WLD-01~03, ASM-01~02, INS-01, PKG-01, CNC-01)·복원 0, 라인 +23. 경고 0.
+- DB: equipments 35(hidden 0 = 24, 1 = 11), zones 6(2/4), processes 24, process_inputs 36, parts 56(L1 9·이미지 7 / L2 46 / L3 1), equipment_links 27(숨긴 양끝 4개는 listLinks에서 제외 → 23).
+- `GET /api/admin/bop` summary `linked 24 / unlinked []`. 보이는 유형 분포: press 4·assembly 7·inspector 3·stacker/winder/vpi/oven/dispenser/magnetizer/balancer/smt/robot/packer 각 1.
+
+### 검증 결과 (이 PC, 서버 재기동 2회, 관리자 세션 토큰 — 비밀번호 미입력)
+- `node --check` server/*.js(7)+drivers(5)+public/js(4)+scripts(4) = 20파일 통과. 기동 로그에 마이그레이션 3줄, 재기동 시 없음.
+- API(node 스크립트): 적용 전 11대/hidden 0/processes 0 → 적용 후 위 수치. 내보내기 `equipments 24·withOp 24·links 23`, exploded 9단계(+final B110·B120), 분석 OEE `equipments 24`(서지안 라우트가 hidden 자동 제외), 게이트웨이 대상 0(파일럿 data_source 설비가 숨겨짐), overview 24/2, 알람 리포트 24대 기준. 오류 처리: BOP 본문 불량 400, 인증 없음 401, 알 수 없는 op → 경고 1건, `type=stacker` PUT 200.
+- 숨김 왕복: PRS-01 복원 → `hidden 0`, 프레스 존 자동 복원, overview·내보내기 25대 → 다시 숨김 + 존 숨김 → 24/11·2/4 원복.
+- 콘솔(브라우저 패널): 맵 에디터 24대·2존·라인 23, `#bop-info` "공정 24 · 단품 56 · 투입 36 · 설비 연결 24/24 · 전 공정 연결됨", 숨긴 존 4개 복원 버튼, 설비 마스터 35행(보이는 24행 공정 select 값 = op, 숨김 11행 [복원]), 유형 select 16·공정 select 25 옵션. 앱 콘솔 오류 0(내 400/401 시험·재기동 중 연결 거부만).
+- 게임(브라우저 패널, 저장된 관리자 토큰으로 로그인 흐름 재현 후 소켓 연결): 토스트 "2개 존 · 설비 24대 — 출근 완료", 스프라이트 24대 전부 이미지(한도윤 매니페스트 15종이 이미 배치되어 있어 큐브 0 — 폴백 경로는 코드상 유지), 라인 23. OP-A40 클릭 → "공정 · 단품 [병목]" 공정 OP-A40 Needle Winding·아마추어 라인 4번째·C/T 90초·설비 니들 와인더·QC "U/V/W 각 45T, 장력 250gf"·비고 "병렬 2대 권장", 단품 표 1행 MW-1030 Magnet Wire ↳ Stator Assy 동선 φ0.80 180 g(썸네일 SA-1000.png 325×484 로드), 산출물 "3상 권선 스테이터 · 분해도 1단계". 🔩 분해도: 제목 BLDC 모터 500W 48V, 카드 10(9단계+완성품), SA-1000만 강조, 이미지 9장 로드, 내 op 표시. OP-B120(완성) → 10/10 전체 강조, final OP-B110·OP-B120. OP-A20 → "투입 단품 없음 — 전공정 산출물을 가공 (블랭킹편 ×80)". 라이트 테마(HUD 배경 rgba(255,255,255,.97))·다크 모두 스크린샷 확인.
+- 기존 기능: 근접 — (8.5,3.5)로 이동 → 니들 와인더·결선/포밍 지그 채널 자동 입장·근접 링, 두 번째 소켓 접근 → "『니들 와인더』 대화방 활성화 (2명)" 토스트·채팅 패널 자동 열림·참여 2명. 상태 변경 — RUN 클릭 → 램프 34d399·이력 1행·상태창 갱신, 공정 섹션 유지. 라인 부하 — A40 RUN 6.5초 후 A40→A50 링크 16%·flowing·라벨 "16%"; 정리로 A40 IDLE·A50 RUN 8.5초 후 29%까지 배출 확인, A50 IDLE. 검증 소켓 disconnect, 상태 원복(IDLE). 상태 로그에 검증 4건 남음(append-only).
+- 부하 테스트: 스키마·HUD 변경이라 이번 라운드 미실행 → 라운드 2에서 24대 기준 재실행.
+
+### 한도윤에게 (라운드 2에서 반영·답변)
+- (1) 확인 완료: 24대 전부 이미지 스프라이트, 다크·라이트 스크린샷에서 램프가 경광등 위, 라벨 겹침 없음(A라인 2칸 간격도 판독 가능). 재생성 요청 없음. 큐브 폴백 경로는 코드에 남아 있다(매니페스트에서 유형을 빼면 즉시 큐브).
+- (2) §8에 썸네일 경로 메모 추가함. 라운드 2에서 상태창 표를 `/assets/parts/thumb/<pn>.png` 우선 + 원본 폴백으로 바꾼다.
+- (3) 커밋 대상 목록 확인. 이번 라운드 1 커밋은 내 파일 + PM 원천(`docs/bldc`, `scripts/bldc`, `public/assets/parts/*.png` 원본 9장)만. 한도윤 산출물(PNG 15·manifest·blender 스크립트·thumb 9)은 라운드 2 통합 커밋.
+- (4) labelY 조정 필요 없음.
+
+### 서지안에게 (라운드 2에서 반영·답변)
+- (2) `unlinked` 정의 동일: `equipments.op = processes.op`, `hidden = 0`인 설비가 하나도 없는 공정. 24/24 일치.
+- (3) 병렬은 자동 반영하지 않는다(현재 정책 유지). 같은 op 설비 2대는 `linkedCount 2`로만 보이면 된다.
+- (5) 중복 제외 무해 — 그대로 두어도 된다. `queries.listEquipments`가 원천.
+- (6) SIM 연동은 이번 스프린트에 붙이지 않는다(PM 결정 없음). 데모가 필요하면 맵 에디터에서 설비별 `sim` 지정으로 언제든 가능.
+- (1) README·가이드 §3-1 라인 밸런스 한 줄은 라운드 2 통합 때.
+- 참고: `products.spec_json.lineBalance`에 xlsx 12_Line_Balance 기준값 원문이 있다(`GET /api/admin/bop`의 `product.lineBalance`).
+
+### 열린 항목 / 라운드 2 할 일
+- 두 사람 산출물 통합 커밋·push, 부하 테스트(24대), README·운영 가이드·브리프 갱신, 썸네일 경로 전환, 분석 §3-1 문구.
+- 분해도 5·6단계(FS-7010·FS-7020)는 BOP에 `stagePn`으로 지정된 공정이 없어 "공정 미정"으로 표시된다 — 원천 JSON(PM) 그대로. 필요하면 B85/B87 앞의 축 조립 공정을 추가하거나 stagePn을 보완.
+- `equipments.op`는 제품 1개 전제(`processByOp`). 제품이 늘면 `equipments.product_code` 추가.
+- 상태창 스크롤: 섹션이 아래쪽이라 태블릿에서는 스크롤이 필요하다. 접힘/펼침 토글은 현장 의견 후.
+- 브라우저 패널의 관리자 세션 토큰은 이번 라운드에 서버 시크릿으로 새로 발급해 `localStorage.fw.adminToken`에 두었다(12h). 비밀번호는 입력하지 않았다.
+
 ## 라운드 3 (통합) — 2026-09-08 완료
 
 ### 반영한 요청

@@ -111,6 +111,14 @@
         <h4>첨부 문서</h4>
         <div class="eq-log" id="eq-files"></div>
       </div>
+      <!-- 스프린트 2 (인터페이스 §8): 설비에 연결된 공정(BOP)과 투입 단품(BOM). 공정이 없는 설비는 섹션을 감춘다 -->
+      <div class="eq-section" id="eq-proc-section" hidden>
+        <h4>공정 · 단품 <span class="proc-kind" id="eq-proc-kind"></span></h4>
+        <div class="proc-info" id="eq-proc-info"></div>
+        <div class="proc-parts" id="eq-proc-parts"></div>
+        <div class="proc-output" id="eq-proc-output"></div>
+        <button id="eq-exploded" class="proc-exploded-btn" title="제품 분해도 9단계 — 이 설비의 공정 단계를 강조">🔩 분해도</button>
+      </div>
       <div class="eq-actions">
         <button id="eq-open-chat">💬 대화방 열기</button>
         <button id="eq-call" title="담당자에게 호출 알림을 보내고 설비 이력에 기록합니다">📣 담당자 호출</button>
@@ -164,6 +172,13 @@
   <div id="brief-panel">
     <div class="qp-head">☀️ 출근 브리핑 <button class="close" id="brief-close">✕</button></div>
     <div id="brief-body"></div>
+  </div>
+
+  <!-- 분해도 모달 (스프린트 2 §8): 서브어셈블리 9단계를 조립 순서대로 가로 스크롤, 현재 설비의 단계 강조 -->
+  <div id="exploded-panel">
+    <div class="qp-head">🔩 분해도 <span class="exploded-title" id="exploded-title"></span> <button class="close" id="exploded-close">✕</button></div>
+    <div class="exploded-sub" id="exploded-sub"></div>
+    <div id="exploded-strip"></div>
   </div>
 
   <!-- 터치 이동 패드 (태블릿, NFR-05) — 터치 기기에서만 표시 -->

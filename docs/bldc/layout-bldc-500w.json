@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "replace": true,
+  "map": { "w": 24, "h": 16 },
+  "zones": [
+    { "name": "아마추어 라인", "color": "#2d4a6b", "rect": { "x": 0, "y": 0, "w": 24, "h": 7 } },
+    { "name": "조립 라인", "color": "#2f5d43", "rect": { "x": 0, "y": 8, "w": 24, "h": 8 } }
+  ],
+  "equipments": [
+    { "code": "OP-A10",  "name": "블랭킹 프레스 300t",  "type": "press",      "op": "OP-A10",  "zone": "아마추어 라인", "x": 1,  "y": 3, "manager": "" },
+    { "code": "OP-A20",  "name": "자동 적층기",         "type": "stacker",    "op": "OP-A20",  "zone": "아마추어 라인", "x": 3,  "y": 3, "manager": "" },
+    { "code": "OP-A30",  "name": "인슐레이터 조립 지그", "type": "assembly",   "op": "OP-A30",  "zone": "아마추어 라인", "x": 5,  "y": 3, "manager": "" },
+    { "code": "OP-A40",  "name": "니들 와인더",         "type": "winder",     "op": "OP-A40",  "zone": "아마추어 라인", "x": 7,  "y": 3, "manager": "" },
+    { "code": "OP-A50",  "name": "결선/포밍 지그",      "type": "assembly",   "op": "OP-A50",  "zone": "아마추어 라인", "x": 9,  "y": 3, "manager": "" },
+    { "code": "OP-A60",  "name": "솔더링 로봇",         "type": "robot",      "op": "OP-A60",  "zone": "아마추어 라인", "x": 11, "y": 3, "manager": "" },
+    { "code": "OP-A70",  "name": "Hi-Pot 테스터",       "type": "inspector",  "op": "OP-A70",  "zone": "아마추어 라인", "x": 13, "y": 3, "manager": "" },
+    { "code": "OP-A80",  "name": "진공 함침조 (VPI)",   "type": "vpi",        "op": "OP-A80",  "zone": "아마추어 라인", "x": 15, "y": 3, "manager": "" },
+    { "code": "OP-A90",  "name": "열풍 건조로",         "type": "oven",       "op": "OP-A90",  "zone": "아마추어 라인", "x": 17, "y": 3, "manager": "" },
+    { "code": "OP-A100", "name": "LCR 최종검사",        "type": "inspector",  "op": "OP-A100", "zone": "아마추어 라인", "x": 19, "y": 3, "manager": "" },
+
+    { "code": "OP-B10",  "name": "서보 프레스 2t",      "type": "press",      "op": "OP-B10",  "zone": "조립 라인", "x": 2,  "y": 10, "manager": "" },
+    { "code": "OP-B20",  "name": "마그넷 접착 디스펜서", "type": "dispenser",  "op": "OP-B20",  "zone": "조립 라인", "x": 5,  "y": 10, "manager": "" },
+    { "code": "OP-B30",  "name": "착자기",              "type": "magnetizer", "op": "OP-B30",  "zone": "조립 라인", "x": 8,  "y": 10, "manager": "" },
+    { "code": "OP-B40",  "name": "밸런싱 머신",         "type": "balancer",   "op": "OP-B40",  "zone": "조립 라인", "x": 11, "y": 10, "manager": "" },
+    { "code": "OP-B50",  "name": "열박음 프레스",       "type": "press",      "op": "OP-B50",  "zone": "조립 라인", "x": 14, "y": 10, "manager": "" },
+    { "code": "OP-B60",  "name": "베어링 압입기",       "type": "press",      "op": "OP-B60",  "zone": "조립 라인", "x": 17, "y": 10, "manager": "" },
+    { "code": "OP-B70",  "name": "로터 삽입 지그",      "type": "assembly",   "op": "OP-B70",  "zone": "조립 라인", "x": 20, "y": 10, "manager": "" },
+
+    { "code": "OP-B80",  "name": "브라켓 체결기",       "type": "assembly",   "op": "OP-B80",  "zone": "조립 라인", "x": 2,  "y": 13, "manager": "" },
+    { "code": "OP-B85",  "name": "기어박스 조립 지그",  "type": "assembly",   "op": "OP-B85",  "zone": "조립 라인", "x": 5,  "y": 13, "manager": "" },
+    { "code": "OP-B87",  "name": "파킹락 조립 지그",    "type": "assembly",   "op": "OP-B87",  "zone": "조립 라인", "x": 8,  "y": 13, "manager": "" },
+    { "code": "OP-B90",  "name": "SMT 결선 라인",       "type": "smt",        "op": "OP-B90",  "zone": "조립 라인", "x": 11, "y": 13, "manager": "" },
+    { "code": "OP-B100", "name": "커넥터 압착기",       "type": "assembly",   "op": "OP-B100", "zone": "조립 라인", "x": 14, "y": 13, "manager": "" },
+    { "code": "OP-B110", "name": "다이나모미터",        "type": "inspector",  "op": "OP-B110", "zone": "조립 라인", "x": 17, "y": 13, "manager": "" },
+    { "code": "OP-B120", "name": "레이저 마킹/포장",    "type": "packer",     "op": "OP-B120", "zone": "조립 라인", "x": 20, "y": 13, "manager": "" }
+  ],
+  "links": [
+    { "from": "OP-A10",  "to": "OP-A20" }, { "from": "OP-A20", "to": "OP-A30" }, { "from": "OP-A30", "to": "OP-A40" },
+    { "from": "OP-A40",  "to": "OP-A50" }, { "from": "OP-A50", "to": "OP-A60" }, { "from": "OP-A60", "to": "OP-A70" },
+    { "from": "OP-A70",  "to": "OP-A80" }, { "from": "OP-A80", "to": "OP-A90" }, { "from": "OP-A90", "to": "OP-A100" },
+    { "from": "OP-A100", "to": "OP-B50" },
+    { "from": "OP-B10",  "to": "OP-B20" }, { "from": "OP-B20", "to": "OP-B30" }, { "from": "OP-B30", "to": "OP-B40" },
+    { "from": "OP-B40",  "to": "OP-B70" },
+    { "from": "OP-B50",  "to": "OP-B60" }, { "from": "OP-B60", "to": "OP-B70" }, { "from": "OP-B70", "to": "OP-B80" },
+    { "from": "OP-B80",  "to": "OP-B85" }, { "from": "OP-B85", "to": "OP-B87" }, { "from": "OP-B87", "to": "OP-B90" },
+    { "from": "OP-B90",  "to": "OP-B100" }, { "from": "OP-B100", "to": "OP-B110" }, { "from": "OP-B110", "to": "OP-B120" }
+  ]
+}

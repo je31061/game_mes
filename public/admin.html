@@ -212,6 +212,7 @@
         <div style="flex:1;min-width:300px">
           <h2 style="font-size:14px">존 (공정 구역)</h2>
           <div id="ed-zones"></div>
+          <div id="ed-hidden-zones" class="muted" style="font-size:11px"></div>
           <div class="filters" style="margin-top:8px">
             <input id="ed-newzone-name" placeholder="새 존 이름" style="width:130px">
             <button id="ed-newzone-add">+ 존 추가</button>
@@ -225,7 +226,14 @@
             <button id="lay-export">⬇ 내보내기</button>
             <label style="font-size:12px" class="muted">⬆ 가져오기 <input type="file" id="lay-import" accept=".json" style="font-size:12px"></label>
           </div>
-          <p class="muted" style="font-size:11px;margin-top:4px" id="lay-info">존은 이름, 설비는 코드 기준으로 추가·갱신됩니다(삭제는 하지 않음). 스키마·AI 프롬프트는 docs/도면-AI-연동.md 참조.</p>
+          <p class="muted" style="font-size:11px;margin-top:4px" id="lay-info">존은 이름, 설비는 코드 기준으로 추가·갱신됩니다(삭제는 하지 않음). <code>"replace": true</code>면 파일에 없는 설비·존을 숨깁니다(설비 관리에서 복원). 스키마·AI 프롬프트는 docs/도면-AI-연동.md 참조.</p>
+
+          <h2 style="font-size:14px;margin-top:18px">제품 라인 <small class="muted">공정(BOP)·단품(BOM)·분해도 — 스프린트 2</small></h2>
+          <div class="filters" style="align-items:center">
+            <button id="lay-apply-sample" title="docs/bldc/bldc-500w-48v.json(BOP) → docs/bldc/layout-bldc-500w.json(배치, replace) 순서로 적용">🔩 제품 라인 적용 (BLDC 500W)</button>
+            <label style="font-size:12px" class="muted">⬆ BOP JSON 가져오기 <input type="file" id="bop-import" accept=".json" style="font-size:12px"></label>
+          </div>
+          <p class="muted" style="font-size:11px;margin-top:4px" id="bop-info">-</p>
 
           <div id="ed-eq-panel" class="hidden" style="margin-top:20px;border-top:1px solid var(--border);padding-top:14px">
             <h2 style="font-size:14px">설비: <span id="ed-eq-title"></span></h2>
@@ -233,6 +241,8 @@
               <tr><th style="width:90px">명칭</th><td><input id="ed-eq-name"></td></tr>
               <tr><th>유형</th><td><select id="ed-eq-type" class="eq-type-select"></select>
                 <div class="muted" style="font-size:11px;margin-top:3px">게임 맵의 실사형 스프라이트와 실적 분석 분류에 쓰입니다. 미지정은 기본 큐브로 표시</div></td></tr>
+              <tr><th>공정</th><td><select id="ed-eq-op" class="eq-op-select"></select>
+                <div class="muted" style="font-size:11px;margin-top:3px">제품 공정(BOP)과 연결하면 현장 상태창에 투입 단품·분해도가 표시됩니다</div></td></tr>
               <tr><th>담당자</th><td><input id="ed-eq-manager"></td></tr>
             </table>
             <h2 style="font-size:13px;color:var(--accent)">데이터 연동 (Phase 2 게이트웨이 대비)</h2>
@@ -271,12 +281,13 @@
     <div class="tabview" id="tab-equipments">
       <h2>설비 마스터 관리</h2>
       <table>
-        <thead><tr><th>코드</th><th>명칭</th><th>유형</th><th>존</th><th>X</th><th>Y</th><th>담당자</th><th></th></tr></thead>
+        <thead><tr><th>코드</th><th>명칭</th><th>유형</th><th>공정</th><th>존</th><th>X</th><th>Y</th><th>담당자</th><th></th></tr></thead>
         <tbody id="eq-rows"></tbody>
         <tbody class="addrow"><tr>
           <td><input id="n-code" placeholder="NEW-01"></td>
           <td><input id="n-name" placeholder="새 설비"></td>
           <td><select id="n-type" class="eq-type-select"></select></td>
+          <td><select id="n-op" class="eq-op-select"></select></td>
           <td><select id="n-zone"></select></td>
           <td><input id="n-x" class="narrow" type="number" value="5"></td>
           <td><input id="n-y" class="narrow" type="number" value="5"></td>
@@ -284,7 +295,8 @@
           <td><button id="n-add">+ 추가</button></td>
         </tr></tbody>
       </table>
-      <p class="muted" style="margin-top:10px;font-size:12px">※ 변경 사항은 접속 중인 사용자의 맵에 즉시 반영됩니다. 유형(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC)을 고르면 게임 맵에 해당 실사형 스프라이트가 표시됩니다(스프라이트가 준비된 유형만, 나머지는 기본 큐브). 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추가하면 유형이 자동 추정됩니다.</p>
+      <p class="muted" style="margin-top:10px;font-size:12px">※ 변경 사항은 접속 중인 사용자의 맵에 즉시 반영됩니다. 유형을 고르면 게임 맵에 해당 실사형 스프라이트가 표시됩니다(스프라이트가 준비된 유형만, 나머지는 기본 큐브). 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-, STK-, WND-, VPI-, OVN-, MAG-, BAL-, DSP-, SMT-)나 공정번호(OP-A40 등)로 추가하면 유형이 자동 추정됩니다.
+        <b>공정</b>을 연결하면 현장 상태창에 투입 단품·분해도가 표시됩니다. <b>숨김</b>은 라인 전환 시 이력을 지우지 않고 맵·분석에서 빼는 것이며 [복원]으로 되돌립니다(설비가 속한 존도 함께 복원).</p>
     </div>
 
     <div class="tabview" id="tab-users">

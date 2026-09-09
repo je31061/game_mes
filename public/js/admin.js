@@ -5,11 +5,20 @@
   // 설비 유형 (docs/team/인터페이스.md §1) — 서버 /api/admin/equipments 의 types 로 목록을 덮어쓴다
   const TYPE_LABEL = {
     press: '프레스', welder: '용접기', robot: '로봇', assembly: '조립 라인',
-    inspector: '검사기', packer: '포장기', cnc: 'CNC 가공기', generic: '미지정 (기본 큐브)',
+    inspector: '검사기', packer: '포장기', cnc: 'CNC 가공기',
+    // 스프린트 2 (§9) BLDC 라인 — 스프라이트는 한도윤, 없으면 기본 큐브
+    stacker: '자동 적층기', winder: '니들 와인더', vpi: '진공 함침조 (VPI)', oven: '열풍 건조로',
+    magnetizer: '착자기', balancer: '밸런싱 머신', dispenser: '접착 디스펜서', smt: 'SMT · 자동 결선',
+    generic: '미지정 (기본 큐브)',
   };
   let eqTypes = Object.keys(TYPE_LABEL);
   const typeOpts = (sel) => eqTypes.map(t =>
     `<option value="${t}"${t === (sel || 'generic') ? ' selected' : ''}>${esc(TYPE_LABEL[t] || t)}</option>`).join('');
+  // 공정(BOP) select — 서버 /api/admin/equipments 의 processes [{productCode, op, seq, line, name}]
+  let bopProcesses = [];
+  const opOpts = (sel) => `<option value=""${!sel ? ' selected' : ''}>— 없음 —</option>` + bopProcesses.map(p =>
+    `<option value="${esc(p.op)}"${p.op === sel ? ' selected' : ''}>${esc(p.op)} ${esc(p.name || '')}</option>`).join('')
+    + (sel && !bopProcesses.some(p => p.op === sel) ? `<option value="${esc(sel)}" selected>${esc(sel)} (BOP에 없음)</option>` : '');
   let token = localStorage.getItem('fw.adminToken') || localStorage.getItem('fw.token');
   let zones = [];
 
@@ -298,25 +307,40 @@
   };
 
   // ── 설비 관리 ──────────────────────────
+  // 설비 마스터: 서버는 숨긴 설비(hidden=1)도 준다 — 숨김 행은 흐리게 + "숨김" 표시 + [복원], 보이는 행은 [저장]·[숨김]
   async function loadEquipments() {
     const d = await api('/api/admin/equipments');
     zones = d.zones;
     if (Array.isArray(d.types) && d.types.length) eqTypes = d.types;
-    const zoneOpts = (sel) => zones.map(z =>
-      `<option value="${z.id}"${z.id === sel ? ' selected' : ''}>${esc(z.name)}</option>`).join('');
+    if (Array.isArray(d.processes)) bopProcesses = d.processes;
+    const allZones = [...zones, ...(d.hiddenZones || [])];
+    const zoneOpts = (sel) => allZones.map(z =>
+      `<option value="${z.id}"${z.id === sel ? ' selected' : ''}>${esc(z.name)}${z.hidden ? ' (숨김)' : ''}</option>`).join('');
     $('f-eq').innerHTML = '<option value="">전체 설비</option>' +
-      d.equipments.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('');
+      d.equipments.map(e => `<option value="${e.id}">${esc(e.name)}${e.hidden ? ' (숨김)' : ''}</option>`).join('');
     $('n-zone').innerHTML = zoneOpts(zones[0]?.id);
     if (!$('n-type').options.length) $('n-type').innerHTML = typeOpts('generic');
-    $('eq-rows').innerHTML = d.equipments.map(eq => `<tr data-id="${eq.id}">
+    $('n-op').innerHTML = opOpts($('n-op').value || '');
+    $('eq-rows').innerHTML = d.equipments.map(eq => eq.hidden ? `<tr data-id="${eq.id}" style="opacity:.55">
+      <td><b>${esc(eq.code)}</b></td>
+      <td>${esc(eq.name)} <span class="chip" style="background:var(--panel2);color:var(--muted)" title="라인 전환으로 숨김 — 맵·분석·게이트웨이에서 제외, 이력은 보존">숨김</span></td>
+      <td class="muted">${esc(TYPE_LABEL[eq.type] || eq.type || '')}</td>
+      <td class="muted">${esc(eq.op || '-')}</td>
+      <td class="muted">${esc(allZones.find(z => z.id === eq.zone_id)?.name || '-')}</td>
+      <td class="muted">${eq.x}</td><td class="muted">${eq.y}</td>
+      <td class="muted">${esc(eq.manager || '')}</td>
+      <td><button class="e-restore" title="맵·분석 대상으로 되돌립니다 (속한 존도 함께 복원)">복원</button></td>
+    </tr>` : `<tr data-id="${eq.id}">
       <td><input class="e-code" value="${esc(eq.code)}"></td>
       <td><input class="e-name" value="${esc(eq.name)}"></td>
       <td><select class="e-type">${typeOpts(eq.type)}</select></td>
+      <td><select class="e-op">${opOpts(eq.op || '')}</select></td>
       <td><select class="e-zone">${zoneOpts(eq.zone_id)}</select></td>
       <td><input class="e-x narrow" type="number" value="${eq.x}"></td>
       <td><input class="e-y narrow" type="number" value="${eq.y}"></td>
       <td><input class="e-manager" value="${esc(eq.manager || '')}"></td>
-      <td><button class="e-save">저장</button></td>
+      <td style="white-space:nowrap"><button class="e-save">저장</button>
+        <button class="e-hide" style="border-color:var(--border);color:var(--muted);background:none" title="삭제 대신 숨김 — 이력을 보존한 채 맵·분석에서 제외">숨김</button></td>
     </tr>`).join('');
 
     $('eq-rows').querySelectorAll('.e-save').forEach(btn => {
@@ -329,6 +353,7 @@
               code: tr.querySelector('.e-code').value.trim(),
               name: tr.querySelector('.e-name').value.trim(),
               type: tr.querySelector('.e-type').value,
+              op: tr.querySelector('.e-op').value || null,
               zoneId: Number(tr.querySelector('.e-zone').value),
               x: Number(tr.querySelector('.e-x').value),
               y: Number(tr.querySelector('.e-y').value),
@@ -340,6 +365,16 @@
         } catch (e) { alert(e.message); }
       };
     });
+    const setHidden = async (tr, hidden) => {
+      try {
+        await api('/api/admin/equipments/' + tr.dataset.id, { method: 'PUT', body: JSON.stringify({ hidden }) });
+        await loadEquipments(); loadEditor().catch(() => {});
+      } catch (e) { if (e.message !== 'auth') alert(e.message); }
+    };
+    $('eq-rows').querySelectorAll('.e-hide').forEach(btn => {
+      btn.onclick = () => { const tr = btn.closest('tr'); if (confirm(`${tr.querySelector('.e-code').value} 설비를 숨길까요? (이력은 보존되며 [복원]으로 되돌릴 수 있습니다)`)) setHidden(tr, true); };
+    });
+    $('eq-rows').querySelectorAll('.e-restore').forEach(btn => { btn.onclick = () => setHidden(btn.closest('tr'), false); });
   }
 
   $('n-add').onclick = async () => {
@@ -350,13 +385,14 @@
           code: $('n-code').value.trim(),
           name: $('n-name').value.trim(),
           type: $('n-type').value,
+          op: $('n-op').value || null,
           zoneId: Number($('n-zone').value),
           x: Number($('n-x').value),
           y: Number($('n-y').value),
           manager: $('n-manager').value.trim(),
         }),
       });
-      $('n-code').value = ''; $('n-name').value = ''; $('n-manager').value = ''; $('n-type').value = 'generic';
+      $('n-code').value = ''; $('n-name').value = ''; $('n-manager').value = ''; $('n-type').value = 'generic'; $('n-op').value = '';
       loadEquipments();
     } catch (e) { alert(e.message); }
   };
@@ -485,16 +521,54 @@
   let edLinkFrom = null;       // 연결 시작 설비
   const canvas = () => $('map-canvas');
 
+  let edHiddenZones = [];
   async function loadEditor() {
     const d = await api('/api/admin/equipments');
     edZones = d.zones || [];
-    edEquipments = d.equipments || [];
+    edHiddenZones = d.hiddenZones || [];
+    edEquipments = (d.equipments || []).filter(e => !e.hidden);   // 숨긴 설비는 에디터 맵에 그리지 않음 (설비 관리 탭에서 복원)
+    if (Array.isArray(d.processes)) bopProcesses = d.processes;
     edLinks = await api('/api/admin/links').catch(() => []);
     await loadFloorplan();
     renderZoneList();
     renderLinkList();
     renderMap();
+    loadBopInfo().catch(() => {});
   }
+
+  // ── 제품 라인 (BOP·BOM·분해도, 스프린트 2) ──
+  async function loadBopInfo() {
+    const d = await api('/api/admin/bop');
+    if (!d.product) { $('bop-info').textContent = '가져온 제품 공정(BOP)이 없습니다. [제품 라인 적용]을 누르거나 BOP JSON을 가져오세요.'; return; }
+    const s = d.summary;
+    $('bop-info').innerHTML = `<b>${esc(d.product.name)}</b> (${esc(d.product.code)}) — 공정 ${s.processes} · 단품 ${s.parts} · 투입 ${s.inputs} · 설비 연결 ${s.linked}/${s.processes}`
+      + (s.unlinked.length ? ` · <span style="color:var(--idle)">설비 없는 공정: ${s.unlinked.map(esc).join(', ')}</span>` : ' · 전 공정 연결됨')
+      + (d.product.importedAt ? ` <span class="muted">(가져옴 ${esc(d.product.importedAt)})</span>` : '');
+  }
+  $('lay-apply-sample').onclick = async () => {
+    if (!confirm('BLDC 500W 제품 라인을 적용합니다.\n1) docs/bldc/bldc-500w-48v.json → 공정·단품 가져오기\n2) docs/bldc/layout-bldc-500w.json → 존 2·설비 24·라인 23 배치 (replace: 파일에 없는 기존 설비·존은 숨김)\n\n기존 설비의 이력은 지워지지 않으며 설비 관리에서 복원할 수 있습니다. 계속할까요?')) return;
+    $('lay-apply-sample').disabled = true;
+    try {
+      const r = await api('/api/admin/bop/apply-sample', { method: 'POST' });
+      const b = r.bop, l = r.layout;
+      $('lay-info').textContent = `제품 라인 적용 완료 — BOP: 공정 ${b.processes}·단품 ${b.parts}·투입 ${b.inputs} / 배치: 존 +${l.zones.created}/수정 ${l.zones.updated}/숨김 ${l.zones.hidden} · 설비 +${l.equipments.created}/수정 ${l.equipments.updated}/숨김 ${l.equipments.hidden}/복원 ${l.equipments.restored} · 라인 +${l.links.created}`
+        + (l.warnings.length ? ` · 경고 ${l.warnings.length}건: ${l.warnings.slice(0, 3).join(' / ')}` : '');
+      await loadEditor(); loadEquipments();
+    } catch (e) { if (e.message !== 'auth') alert(e.message); }
+    $('lay-apply-sample').disabled = false;
+  };
+  $('bop-import').addEventListener('change', async () => {
+    const f = $('bop-import').files[0];
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const r = await api('/api/admin/bop/import', { method: 'POST', body: JSON.stringify(data) });
+      $('lay-info').textContent = `BOP 가져오기 완료 — ${r.product}: 공정 ${r.processes} · 서브어셈블리 ${r.subassemblies} · 단품 ${r.parts} · 투입 ${r.inputs} · 분해도 ${r.stages}단계`
+        + (r.warnings.length ? ` · 경고 ${r.warnings.length}건: ${r.warnings.slice(0, 3).join(' / ')}` : '');
+      await loadEditor(); loadEquipments();
+    } catch (e) { if (e.message !== 'auth') alert('BOP 가져오기 실패: ' + e.message); }
+    $('bop-import').value = '';
+  });
 
   // ── 공장 평면도 (배경 옵션) ───────────
   async function loadFloorplan() {
@@ -566,7 +640,7 @@
     try {
       const data = JSON.parse(await f.text());
       const r = await api('/api/admin/layout', { method: 'POST', body: JSON.stringify(data) });
-      $('lay-info').textContent = `가져오기 완료 — 존 +${r.zones.created}/수정 ${r.zones.updated} · 설비 +${r.equipments.created}/수정 ${r.equipments.updated} · 라인 +${r.links.created}`
+      $('lay-info').textContent = `가져오기 완료 — 존 +${r.zones.created}/수정 ${r.zones.updated}${r.zones.hidden ? `/숨김 ${r.zones.hidden}` : ''} · 설비 +${r.equipments.created}/수정 ${r.equipments.updated}${r.equipments.hidden ? `/숨김 ${r.equipments.hidden}` : ''}${r.equipments.restored ? `/복원 ${r.equipments.restored}` : ''} · 라인 +${r.links.created}`
         + (r.warnings.length ? ` · 경고 ${r.warnings.length}건: ${r.warnings.slice(0, 3).join(' / ')}` : '');
       await loadEditor(); loadEquipments();
     } catch (e) { if (e.message !== 'auth') alert('가져오기 실패: ' + e.message); }
@@ -764,6 +838,17 @@
         } catch (e) { if (e.message !== 'auth') alert(e.message); }
       };
     });
+    // 라인 전환(replace)으로 숨긴 존 — 복원 버튼
+    $('ed-hidden-zones').innerHTML = edHiddenZones.length
+      ? `숨긴 존 ${edHiddenZones.length}개: ` + edHiddenZones.map(z =>
+          `<span style="margin-right:6px">${esc(z.name)} <button class="z-restore" data-id="${z.id}" style="padding:1px 7px;font-size:10px">복원</button></span>`).join('')
+      : '';
+    $('ed-hidden-zones').querySelectorAll('.z-restore').forEach(b => {
+      b.onclick = async () => {
+        try { await api('/api/admin/zones/' + b.dataset.id, { method: 'PUT', body: JSON.stringify({ hidden: false }) }); await loadEditor(); loadEquipments(); }
+        catch (e) { if (e.message !== 'auth') alert(e.message); }
+      };
+    });
   }
 
   // 라인 연결 모드 토글 + 목록
@@ -812,6 +897,7 @@
     $('ed-eq-title').textContent = `${eq.name} (${eq.code})`;
     $('ed-eq-name').value = eq.name;
     $('ed-eq-type').innerHTML = typeOpts(eq.type);
+    $('ed-eq-op').innerHTML = opOpts(eq.op || '');
     $('ed-eq-manager').value = eq.manager || '';
     let ds = null;
     try { ds = eq.data_source ? JSON.parse(eq.data_source) : null; } catch {}
@@ -877,6 +963,7 @@
         body: JSON.stringify({
           name: $('ed-eq-name').value.trim(),
           type: $('ed-eq-type').value,
+          op: $('ed-eq-op').value || null,
           manager: $('ed-eq-manager').value.trim(),
           dataSource,
         }),

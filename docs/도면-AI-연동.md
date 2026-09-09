@@ -44,10 +44,12 @@
 | `zones[].rect` | 타일 좌표. x 0~23, y 0~15, w 1~24, h 1~16 |
 | `zones[].color` | `#rrggbb`. 생략 시 기존 색 또는 기본색 |
 | `equipments[].code` | 필수. 같은 코드가 있으면 갱신(연동 설정은 유지) |
-| `equipments[].type` | 선택. 설비 유형 `press / welder / robot / assembly / inspector / packer / cnc / generic`. 생략하면 기존 값 유지, 신규는 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-)로 추정. 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용 |
+| `equipments[].type` | 선택. 설비 유형 `press / welder / robot / assembly / inspector / packer / cnc / stacker / winder / vpi / oven / magnetizer / balancer / dispenser / smt / generic`. 생략하면 기존 값 유지, 신규는 코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-, STK-, WND-, VPI-, OVN-, MAG-, BAL-, DSP-, SMT-)나 공정번호(OP-A40 등)로 추정. 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용 |
+| `equipments[].op` | 선택(스프린트 2). 제품 공정번호(예: `OP-A40`)로 설비를 BOP 공정에 연결 — 현장 상태창에 투입 단품·분해도 표시. `null`/`""`이면 해제, 생략하면 유지. BOP에 없는 op는 경고만 |
 | `equipments[].zone` | 존 이름. 없거나 틀리면 좌표가 속한 존으로 배치 |
 | `equipments[].x, y` | 타일 좌표 (정수) |
 | `links[].from, to` | 설비 코드. 둘 다 있어야 추가 |
+| `replace` | 선택(스프린트 2). `true`면 파일에 없는 설비(설비 목록이 있을 때)·존(존 목록이 있을 때)을 **숨김**(`hidden=1`, 삭제 아님) — 이력·실적·라인은 보존되고 설비 관리에서 [복원]. 파일에 있는 설비·존은 숨김이 풀린다 |
 
 가져오기 뒤 결과 줄에 추가/수정 건수와 경고가 표시됩니다. 예시 파일: `docs/layout-sample.json`.
 

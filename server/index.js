@@ -17,6 +17,8 @@ const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const FLOORPLAN_DIR = path.join(DATA_DIR, 'floorplan');   // 공장 평면도(배경 이미지) 저장
 fs.mkdirSync(FLOORPLAN_DIR, { recursive: true });
+const PARTS_DIR = path.join(__dirname, '..', 'public', 'assets', 'parts');   // 분해도 서브어셈블리 이미지 <PN>.png (인터페이스 §8)
+const BLDC_DIR = path.join(__dirname, '..', 'docs', 'bldc');                 // 제품 라인 샘플 (BOP JSON + 배치 JSON)
 const MAP_W = 24, MAP_H = 16;
 
 const app = express();
@@ -228,6 +230,8 @@ app.delete('/api/admin/floorplan', requireAdmin, (req, res) => {
 
 // ── 배치 데이터 JSON 내보내기/가져오기 (도면 → Claude/Gemini → JSON → 맵) ──
 // 스키마: docs/도면-AI-연동.md. 가져오기는 존(이름)·설비(코드) 기준 추가/갱신, 라인(코드 쌍) 추가. 삭제는 하지 않음.
+// 스프린트 2: equipments[].op(공정 연결), "replace": true 면 파일에 없는 설비·존을 hidden=1 로 숨김(이력 보존, 콘솔에서 복원 가능).
+// 내보내기는 숨긴 설비·존을 제외한다.
 app.get('/api/admin/layout', requireAdmin, (req, res) => {
   const zones = queries.listZones.all();
   const zoneName = new Map(zones.map(z => [z.id, z.name]));
@@ -236,27 +240,36 @@ app.get('/api/admin/layout', requireAdmin, (req, res) => {
     map: { w: MAP_W, h: MAP_H },
     zones: zones.map(z => ({ name: z.name, color: z.color, rect: { x: z.rect_x, y: z.rect_y, w: z.rect_w, h: z.rect_h } })),
     equipments: queries.listEquipments.all().map(e => ({
-      code: e.code, name: e.name, type: e.type || 'generic', zone: zoneName.get(e.zone_id) || null, x: e.x, y: e.y, manager: e.manager || '',
+      code: e.code, name: e.name, type: e.type || 'generic', op: e.op || null, zone: zoneName.get(e.zone_id) || null, x: e.x, y: e.y, manager: e.manager || '',
     })),
     links: queries.listLinks.all().map(l => ({ from: l.from_code, to: l.to_code })),
   });
 });
 
-app.post('/api/admin/layout', requireAdmin, (req, res) => {
-  const body = req.body || {};
+// 배치 JSON 적용 (트랜잭션). 실패 시 Error throw (호출자가 400 응답). 성공 시 결과 집계 반환 — 브로드캐스트는 호출자가 afterLayoutChange()
+function importLayout(body) {
+  body = body || {};
   const zonesIn = Array.isArray(body.zones) ? body.zones : [];
   const eqIn = Array.isArray(body.equipments) ? body.equipments : [];
   const linksIn = Array.isArray(body.links) ? body.links : [];
+  const replace = body.replace === true;
   if (!zonesIn.length && !eqIn.length && !linksIn.length) {
-    return res.status(400).json({ error: 'zones / equipments / links 중 하나는 있어야 합니다.' });
+    throw new Error('zones / equipments / links 중 하나는 있어야 합니다.');
   }
-  const result = { zones: { created: 0, updated: 0 }, equipments: { created: 0, updated: 0 }, links: { created: 0 }, warnings: [] };
+  const result = {
+    zones: { created: 0, updated: 0, hidden: 0, restored: 0 },
+    equipments: { created: 0, updated: 0, hidden: 0, restored: 0, opLinked: 0 },
+    links: { created: 0 }, replace, warnings: [],
+  };
   const isColor = (c) => /^#[0-9a-f]{6}$/i.test(String(c || ''));
+  const opMissing = [];
   db.exec('BEGIN');
   try {
+    const zoneNamesIn = new Set();
     for (const z of zonesIn) {
       const name = String(z.name || '').trim().slice(0, 40);
       if (!name) { result.warnings.push('이름 없는 존을 건너뜀'); continue; }
+      zoneNamesIn.add(name);
       const r = z.rect || {};
       const cur = queries.findZoneByName.get(name);
       const rect = {
@@ -264,15 +277,19 @@ app.post('/api/admin/layout', requireAdmin, (req, res) => {
         w: clampInt(r.w, 1, MAP_W, cur?.rect_w ?? 4), h: clampInt(r.h, 1, MAP_H, cur?.rect_h ?? 3),
       };
       const color = isColor(z.color) ? z.color : (cur?.color || '#3d5a80');
-      if (cur) { queries.updateZone.run(name, color, rect.x, rect.y, rect.w, rect.h, cur.id); result.zones.updated++; }
-      else { queries.createZone.run(name, color, rect.x, rect.y, rect.w, rect.h); result.zones.created++; }
+      if (cur) {
+        queries.updateZone.run(name, color, rect.x, rect.y, rect.w, rect.h, cur.id); result.zones.updated++;
+        if (cur.hidden) { queries.setZoneHidden.run(0, cur.id); result.zones.restored++; }   // 파일에 있는 존은 다시 보이게
+      } else { queries.createZone.run(name, color, rect.x, rect.y, rect.w, rect.h); result.zones.created++; }
     }
     const zones = queries.listZones.all();
     const zoneByName = new Map(zones.map(z => [z.name, z]));
     const zoneAt = (x, y) => zones.find(z => x >= z.rect_x && x < z.rect_x + z.rect_w && y >= z.rect_y && y < z.rect_y + z.rect_h);
+    const codesIn = new Set();
     for (const e of eqIn) {
       const code = String(e.code || '').trim().slice(0, 20);
       if (!code) { result.warnings.push('코드 없는 설비를 건너뜀'); continue; }
+      codesIn.add(code);
       const cur = queries.findEquipmentByCode.get(code);
       const x = clampInt(e.x, 0, MAP_W - 1, cur?.x ?? 0), y = clampInt(e.y, 0, MAP_H - 1, cur?.y ?? 0);
       const zone = (e.zone && zoneByName.get(String(e.zone))) || zoneAt(x, y) || (cur ? queries.getZone.get(cur.zone_id) : zones[0]);
@@ -286,24 +303,225 @@ app.post('/api/admin/layout', requireAdmin, (req, res) => {
         if (EQUIPMENT_TYPES.includes(String(e.type))) type = String(e.type);
         else result.warnings.push(`${code}: 알 수 없는 유형 '${e.type}' — ${type}(으)로 유지`);
       }
-      if (cur) { queries.updateEquipment.run(zone.id, code, name, x, y, manager, cur.data_source, type, cur.id); result.equipments.updated++; }
-      else { queries.createEquipment.run(zone.id, code, name, x, y, manager, type); result.equipments.created++; }
+      let id;
+      if (cur) {
+        queries.updateEquipment.run(zone.id, code, name, x, y, manager, cur.data_source, type, cur.id); result.equipments.updated++; id = cur.id;
+        if (cur.hidden) { queries.setEquipmentHidden.run(0, cur.id); result.equipments.restored++; }
+      } else { id = queries.createEquipment.run(zone.id, code, name, x, y, manager, type).lastInsertRowid; result.equipments.created++; }
+      // 공정 연결(선택): 문자열이면 설정, null/'' 이면 해제, 없으면 유지
+      if (e.op !== undefined) {
+        const op = String(e.op || '').trim().slice(0, 20) || null;
+        queries.setEquipmentOp.run(op, id);
+        if (op) { result.equipments.opLinked++; if (!queries.processByOp.get(op)) opMissing.push(`${code}→${op}`); }
+      }
     }
     for (const l of linksIn) {
       const a = queries.findEquipmentByCode.get(String(l.from || '')), b = queries.findEquipmentByCode.get(String(l.to || ''));
       if (!a || !b || a.id === b.id) { result.warnings.push(`라인 ${l.from}→${l.to}: 설비를 찾을 수 없어 건너뜀`); continue; }
       try { queries.createLink.run(a.id, b.id); result.links.created++; } catch { /* 이미 있음 */ }
     }
+    // replace: 파일에 없는 설비·존은 숨김 (삭제 아님 — 이력·실적·라인 레코드 보존). 설비/존 목록이 있을 때만 각각 적용
+    if (replace) {
+      if (eqIn.length) {
+        for (const e of queries.listAllEquipments.all()) {
+          if (!codesIn.has(e.code) && !e.hidden) { queries.setEquipmentHidden.run(1, e.id); result.equipments.hidden++; }
+        }
+      }
+      if (zonesIn.length) {
+        for (const z of queries.listAllZones.all()) {
+          if (!zoneNamesIn.has(z.name) && !z.hidden) { queries.setZoneHidden.run(1, z.id); result.zones.hidden++; }
+        }
+      }
+    }
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
-    return res.status(400).json({ error: '가져오기 실패: ' + e.message });
+    throw e;
   }
+  if (opMissing.length) result.warnings.push(`BOP에 없는 공정에 연결된 설비 ${opMissing.length}대 (${opMissing.slice(0, 5).join(', ')}${opMissing.length > 5 ? ' …' : ''}) — BOP JSON을 먼저 가져오면 상태창에 단품이 표시됩니다`);
+  return result;
+}
+
+function afterLayoutChange() {
   syncLinkStates();
   emitWorldRefresh();
   io.emit('links:changed', { links: linksPayload(), states: linkStatesPayload() });
   gateway.reload();
+}
+
+app.post('/api/admin/layout', requireAdmin, (req, res) => {
+  let result;
+  try { result = importLayout(req.body); }
+  catch (e) { return res.status(400).json({ error: '가져오기 실패: ' + e.message }); }
+  afterLayoutChange();
   res.json({ ok: true, ...result });
+});
+
+// ── 스프린트 2: 제품 공정(BOP) · 단품(BOM) · 분해도 (인터페이스 §7) ──
+// 원천 JSON(docs/bldc/bldc-500w-48v.json, scripts/bldc/extract.py 생성)을 products/processes/parts/process_inputs 에 upsert.
+// 분해도 단계(exploded)·라인 밸런스 기준값·사양은 products.spec_json 에 원문 보관(표로 풀지 않음).
+const num = (v) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v))) ? null : Number(v);
+const partImageFor = (...pns) => {
+  for (const pn of pns) {
+    if (!pn || /[\\/]/.test(String(pn))) continue;                        // 'HA-3000/EX-5000' 같은 복합 부모는 파일 없음
+    if (fs.existsSync(path.join(PARTS_DIR, `${pn}.png`))) return `${pn}.png`;
+  }
+  return null;
+};
+
+function importBop(json) {
+  const prod = json?.product;
+  if (!prod || !prod.code) throw new Error('product.code 가 필요합니다.');
+  const code = String(prod.code).trim().slice(0, 40);
+  const name = String(prod.name || code).trim().slice(0, 80);
+  const subs = Array.isArray(json.subassemblies) ? json.subassemblies : [];
+  const parts = Array.isArray(json.parts) ? json.parts : [];
+  const procs = Array.isArray(json.processes) ? json.processes : [];
+  const exploded = Array.isArray(json.exploded) ? json.exploded : [];
+  if (!procs.length) throw new Error('processes 가 비어 있습니다.');
+  const result = { product: code, subassemblies: 0, parts: 0, processes: 0, inputs: 0, stages: exploded.length, warnings: [] };
+  const qtyOf = new Map();   // pn → 제품 1대당 수량 (투입 표의 수량)
+  db.exec('BEGIN');
+  try {
+    queries.upsertProduct.run(code, name, JSON.stringify({
+      spec: prod.spec || {},
+      exploded: exploded.map(s => ({
+        stage: num(s.stage), pn: String(s.pn || ''), file: s.file || partImageFor(s.pn), label: s.label || s.pn, group: s.group || null,
+      })).filter(s => s.pn),
+      lineBalance: json.lineBalance || null,
+      source: json.source || null,
+      importedAt: localTs(new Date()),
+    }));
+    // 단품 → 서브어셈블리 순서로 모아 P/N 당 한 행. 같은 P/N이 양쪽에 있으면(FS-7010처럼 축 자체가 어셈블리) L1(분해도 단계·이미지)을 우선하되 단품의 규격은 보존
+    const rows = new Map();
+    for (const p of parts) {
+      if (!p.pn) continue;
+      rows.set(String(p.pn), [String(p.pn), p.name || null, p.spec || null, p.level || 'L2', p.parentPn || null, p.parentName || null,
+        num(p.qtyPerParent), num(p.qtyPerProduct), p.unit || 'EA', partImageFor(p.pn, p.parentPn)]);
+      qtyOf.set(String(p.pn), num(p.qtyPerProduct) ?? num(p.qtyPerParent)); result.parts++;
+    }
+    for (const s of subs) {
+      if (!s.pn) continue;
+      const prev = rows.get(String(s.pn));
+      if (prev) result.warnings.push(`${s.pn}: 서브어셈블리와 단품 양쪽에 있어 L1로 저장 (규격 '${prev[2] || ''}' 유지)`);
+      rows.set(String(s.pn), [String(s.pn), s.name || prev?.[1] || null, prev?.[2] || s.note || null, 'L1', code, name,
+        num(s.qty), num(s.qty), s.unit || prev?.[8] || 'EA', partImageFor(s.pn)]);
+      qtyOf.set(String(s.pn), num(s.qty)); result.subassemblies++;
+    }
+    for (const r of rows.values()) queries.upsertPart.run(...r);
+    for (const pr of procs) {
+      if (!pr.op) { result.warnings.push('op 없는 공정을 건너뜀'); continue; }
+      const op = String(pr.op).trim().slice(0, 20);
+      queries.upsertProcess.run(code, op, num(pr.seq), pr.line || null, pr.name || null, pr.equipment || null, pr.inputText || null,
+        pr.output || null, num(pr.ctSec), pr.kind || null, pr.qc || null, pr.note || null, pr.stagePn || null);
+      const row = queries.getProcess.get(code, op);
+      queries.deleteProcessInputs.run(row.id);
+      for (const pn of (Array.isArray(pr.inputs) ? pr.inputs : [])) {
+        if (!qtyOf.has(String(pn))) result.warnings.push(`${op}: 투입 ${pn} 이 parts/subassemblies 에 없음`);
+        queries.addProcessInput.run(row.id, String(pn), qtyOf.get(String(pn)) ?? null);
+        result.inputs++;
+      }
+      result.processes++;
+    }
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  return result;
+}
+
+function productMeta(product) {
+  try { return JSON.parse(product?.spec_json || '{}') || {}; } catch { return {}; }
+}
+// 분해도 단계 목록 + 단계별 공정(op) — stage_pn 기준. final = 완성품 공정(stage_pn null)
+function explodedStages(product) {
+  const meta = productMeta(product);
+  const procs = queries.listProcesses.all(product.code);
+  const stages = (meta.exploded || []).slice().sort((a, b) => (a.stage ?? 0) - (b.stage ?? 0)).map(s => ({
+    ...s, processes: procs.filter(p => p.stage_pn === s.pn).map(p => p.op),
+  }));
+  return { stages, final: procs.filter(p => !p.stage_pn).map(p => p.op) };
+}
+// equipment:detail 의 process 블록 (§7) — op 미연결·BOP 미가져오기면 null → 상태창은 섹션을 감춘다
+function processBlock(eq) {
+  if (!eq?.op) return null;
+  const p = queries.processByOp.get(eq.op);
+  if (!p) return null;
+  const product = queries.getProduct.get(p.product_code);
+  const { stages } = explodedStages(product);
+  const st = p.stage_pn ? (stages.find(s => s.pn === p.stage_pn) || { stage: null, pn: p.stage_pn, file: partImageFor(p.stage_pn), label: p.stage_pn, group: null }) : null;
+  return {
+    product: { code: product.code, name: product.name },
+    op: p.op, seq: p.seq, line: p.line, name: p.name, equipmentHint: p.equipment_hint, ctSec: p.ct_sec, kind: p.kind, qc: p.qc, note: p.note,
+    output: p.output, inputText: p.input_text,
+    inputs: queries.processInputs.all(p.id).map(i => ({
+      pn: i.pn, name: i.name, spec: i.spec, qty: i.qty, unit: i.unit, level: i.level, parentPn: i.parent_pn, parentName: i.parent_name, image: i.image,
+    })),
+    stage: st ? { stage: st.stage, pn: st.pn, file: st.file, label: st.label, group: st.group } : null,
+  };
+}
+function pickProduct(codeParam) {
+  const products = queries.listProducts.all();
+  if (!products.length) return null;
+  const code = codeParam ? String(codeParam) : products[0].code;
+  return queries.getProduct.get(code) || null;
+}
+
+app.post('/api/admin/bop/import', requireAdmin, (req, res) => {
+  let result;
+  try { result = importBop(req.body); }
+  catch (e) { return res.status(400).json({ error: 'BOP 가져오기 실패: ' + e.message }); }
+  io.emit('world:refresh', worldPayload());   // 열려 있는 상태창이 단품을 다시 읽도록
+  res.json({ ok: true, ...result });
+});
+
+// 공정 목록 + 투입 단품 수 + 설비 연결 현황 (어느 공정에 설비가 없는지)
+app.get('/api/admin/bop', requireAdmin, (req, res) => {
+  const products = queries.listProducts.all();
+  const product = pickProduct(req.query.product);
+  if (!product) return res.json({ products, product: null, processes: [], summary: { processes: 0, parts: 0, inputs: 0, linked: 0, unlinked: [] } });
+  const processes = queries.listProcesses.all(product.code).map(p => ({
+    id: p.id, op: p.op, seq: p.seq, line: p.line, name: p.name, equipmentHint: p.equipment_hint, ctSec: p.ct_sec, kind: p.kind, qc: p.qc,
+    note: p.note, output: p.output, stagePn: p.stage_pn, inputCount: p.input_count,
+    equipments: queries.equipmentsByOp.all(p.op).map(e => ({ id: e.id, code: e.code, name: e.name, hidden: !!e.hidden })),
+  }));
+  const unlinked = processes.filter(p => !p.equipments.some(e => !e.hidden)).map(p => p.op);
+  const meta = productMeta(product);
+  res.json({
+    products, product: { code: product.code, name: product.name, spec: meta.spec || {}, lineBalance: meta.lineBalance || null, source: meta.source || null, importedAt: meta.importedAt || null },
+    processes,
+    summary: {
+      processes: processes.length, parts: queries.countParts.get().c, inputs: processes.reduce((s, p) => s + p.inputCount, 0),
+      linked: processes.length - unlinked.length, unlinked,
+    },
+  });
+});
+
+// 분해도 모달용 (로그인 사용자): 9단계 + 단계별 공정, 완성품 공정
+app.get('/api/bop/exploded', (req, res) => {
+  const user = authUser(req.query.token || req.headers['x-auth-token']);
+  if (!user) return res.status(401).json({ error: '인증이 필요합니다.' });
+  const product = pickProduct(req.query.product);
+  if (!product) return res.json({ product: null, stages: [], final: [] });
+  const { stages, final } = explodedStages(product);
+  res.json({ product: { code: product.code, name: product.name }, stages, final });
+});
+
+// 샘플 제품 라인 적용: docs/bldc 의 BOP JSON → 배치 JSON(replace) 순서로 적용 (콘솔 "제품 라인 적용" 버튼)
+app.post('/api/admin/bop/apply-sample', requireAdmin, (req, res) => {
+  const bopFile = path.join(BLDC_DIR, 'bldc-500w-48v.json');
+  const layoutFile = path.join(BLDC_DIR, 'layout-bldc-500w.json');
+  if (!fs.existsSync(bopFile) || !fs.existsSync(layoutFile)) {
+    return res.status(404).json({ error: `샘플 파일이 없습니다: ${path.relative(path.join(__dirname, '..'), bopFile)}, ${path.relative(path.join(__dirname, '..'), layoutFile)}` });
+  }
+  let bop, layout;
+  try {
+    bop = importBop(JSON.parse(fs.readFileSync(bopFile, 'utf8')));
+    layout = importLayout(JSON.parse(fs.readFileSync(layoutFile, 'utf8')));
+  } catch (e) {
+    return res.status(400).json({ error: '제품 라인 적용 실패: ' + e.message, bop: bop || null });
+  }
+  afterLayoutChange();
+  console.log(`[bop] 제품 라인 적용 — ${bop.product}: 공정 ${bop.processes}·단품 ${bop.parts}·투입 ${bop.inputs} / 설비 +${layout.equipments.created} 수정 ${layout.equipments.updated} 숨김 ${layout.equipments.hidden}`);
+  res.json({ ok: true, bop, layout });
 });
 
 // ── 관리자 API ────────────────────────────────────────
@@ -473,11 +691,22 @@ app.put('/api/admin/users/:id/role', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/admin/equipments', requireAdmin, (req, res) =>
-  res.json({ equipments: queries.listEquipments.all(), zones: queries.listZones.all(), types: EQUIPMENT_TYPES }));
+// 설비 마스터(콘솔)는 숨긴 설비도 hidden 플래그와 함께 전부 준다(복원 버튼). 맵 에디터는 클라이언트가 hidden 을 걸러 그린다.
+// processes: 공정 select 용 요약 (op·이름·라인), hiddenZones: 숨긴 존 복원용
+app.get('/api/admin/equipments', requireAdmin, (req, res) => {
+  const processes = queries.listProducts.all().flatMap(pr =>
+    queries.listProcesses.all(pr.code).map(p => ({ productCode: pr.code, op: p.op, seq: p.seq, line: p.line, name: p.name })));
+  res.json({
+    equipments: queries.listAllEquipments.all(), zones: queries.listZones.all(),
+    hiddenZones: queries.listAllZones.all().filter(z => z.hidden),
+    types: EQUIPMENT_TYPES, processes,
+  });
+});
+
+const normalizeOp = (v) => (v === undefined ? undefined : (String(v || '').trim().slice(0, 20) || null));
 
 app.post('/api/admin/equipments', requireAdmin, (req, res) => {
-  const { zoneId, code, name, x, y, manager, type } = req.body || {};
+  const { zoneId, code, name, x, y, manager, type, op } = req.body || {};
   if (!code || !name || !Number.isInteger(x) || !Number.isInteger(y)) return res.status(400).json({ error: '입력값을 확인해 주세요.' });
   if (type !== undefined && type !== '' && !EQUIPMENT_TYPES.includes(type)) {
     return res.status(400).json({ error: `설비 유형은 ${EQUIPMENT_TYPES.join(' / ')} 중 하나여야 합니다.` });
@@ -485,6 +714,8 @@ app.post('/api/admin/equipments', requireAdmin, (req, res) => {
   try {
     const r = queries.createEquipment.run(Number(zoneId), String(code), String(name), x, y, String(manager || ''),
       type || inferEquipmentType(code));
+    const opv = normalizeOp(op);
+    if (opv) queries.setEquipmentOp.run(opv, r.lastInsertRowid);
     emitWorldRefresh();
     gateway.reload();
     res.json({ ok: true, id: r.lastInsertRowid });
@@ -496,9 +727,18 @@ app.post('/api/admin/equipments', requireAdmin, (req, res) => {
 app.put('/api/admin/equipments/:id', requireAdmin, (req, res) => {
   const eq = queries.getEquipment.get(Number(req.params.id));
   if (!eq) return res.status(404).json({ error: '설비를 찾을 수 없습니다.' });
-  const { zoneId, code, name, x, y, manager, dataSource, type } = req.body || {};
+  const { zoneId, code, name, x, y, manager, dataSource, type, op, hidden } = req.body || {};
   if (type !== undefined && !EQUIPMENT_TYPES.includes(type)) {
     return res.status(400).json({ error: `설비 유형은 ${EQUIPMENT_TYPES.join(' / ')} 중 하나여야 합니다.` });
+  }
+  // 숨김/복원만 바꾸는 요청 ({ hidden: true|false }) — 복원 시 설비가 속한 존도 함께 보이게
+  if (hidden !== undefined) {
+    const want = hidden ? 1 : 0;
+    if (want !== eq.hidden) {
+      queries.setEquipmentHidden.run(want, eq.id);
+      if (!want) { const z = queries.getZone.get(eq.zone_id); if (z?.hidden) queries.setZoneHidden.run(0, z.id); }
+    }
+    if (Object.keys(req.body).every(k => k === 'hidden')) { afterLayoutChange(); return res.json({ ok: true, hidden: !!want }); }
   }
   // 연동 설정 검증 (Phase 2 게이트웨이 규격, server/drivers/common.js 참조)
   let ds = dataSource === undefined ? eq.data_source : null;
@@ -535,8 +775,9 @@ app.put('/api/admin/equipments/:id', requireAdmin, (req, res) => {
       Number(zoneId ?? eq.zone_id), String(code ?? eq.code), String(name ?? eq.name),
       Number.isInteger(x) ? x : eq.x, Number.isInteger(y) ? y : eq.y, String(manager ?? eq.manager ?? ''), ds,
       type ?? eq.type ?? 'generic', eq.id);
-    emitWorldRefresh();
-    gateway.reload();
+    const opv = normalizeOp(op);
+    if (opv !== undefined && opv !== eq.op) queries.setEquipmentOp.run(opv, eq.id);   // 공정 연결 변경 (null = 해제)
+    if (hidden !== undefined) afterLayoutChange(); else { emitWorldRefresh(); gateway.reload(); }
     res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: '저장에 실패했습니다 (코드 중복 여부 확인).' });
@@ -679,12 +920,13 @@ app.post('/api/admin/zones', requireAdmin, (req, res) => {
 app.put('/api/admin/zones/:id', requireAdmin, (req, res) => {
   const zone = queries.getZone.get(Number(req.params.id));
   if (!zone) return res.status(404).json({ error: '존을 찾을 수 없습니다.' });
-  const { name, color, rectX, rectY, rectW, rectH } = req.body || {};
+  const { name, color, rectX, rectY, rectW, rectH, hidden } = req.body || {};
   const clamp = (v, min, max, def) => Number.isInteger(v) ? Math.max(min, Math.min(max, v)) : def;
   queries.updateZone.run(
     String(name ?? zone.name), String(color ?? zone.color),
     clamp(rectX, 0, 23, zone.rect_x), clamp(rectY, 0, 15, zone.rect_y),
     clamp(rectW, 1, 24, zone.rect_w), clamp(rectH, 1, 16, zone.rect_h), zone.id);
+  if (hidden !== undefined) queries.setZoneHidden.run(hidden ? 1 : 0, zone.id);   // 라인 전환으로 숨긴 존 복원/숨김
   emitWorldRefresh();
   res.json({ ok: true });
 });
@@ -1114,6 +1356,8 @@ io.on('connection', (socket) => {
       recentLog: queries.recentStatusLog.all(eq.id),
       files: queries.filesByEquipment.all(eq.id),
       members: channelMembers(eq.id),
+      // 스프린트 2 (§7): 연결된 공정·투입 단품·분해도 단계. op 미연결이면 null → 상태창은 섹션을 감춘다
+      process: processBlock(eq),
     });
   });
 

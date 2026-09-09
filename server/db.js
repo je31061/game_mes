@@ -131,24 +131,85 @@ db.exec(`
     value TEXT,
     updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
   );
+
+  -- ── 스프린트 2: 제품 공정(BOP) · 단품(BOM) (docs/team/인터페이스.md §7) ──
+  -- 원천은 docs/bldc/bldc-500w-48v.json — POST /api/admin/bop/import 로 upsert. 설비는 equipments.op 로 공정에 연결.
+  CREATE TABLE IF NOT EXISTS products (
+    code TEXT PRIMARY KEY,
+    name TEXT,
+    spec_json TEXT                         -- { spec, exploded[], lineBalance, source } (JSON의 비표 블록 원문 보관)
+  );
+  CREATE TABLE IF NOT EXISTS processes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_code TEXT NOT NULL REFERENCES products(code),
+    op TEXT NOT NULL,                      -- 'OP-A40'
+    seq INTEGER,
+    line TEXT,
+    name TEXT,
+    equipment_hint TEXT,                   -- BOP 시트의 설비 란 (자유 텍스트)
+    input_text TEXT,
+    output TEXT,
+    ct_sec REAL,
+    kind TEXT,                             -- 표준 | 병목 | 배치 | QC | 완성
+    qc TEXT,
+    note TEXT,
+    stage_pn TEXT,                         -- 분해도 단계 P/N (null = 완성품 공정)
+    UNIQUE(product_code, op)
+  );
+  CREATE TABLE IF NOT EXISTS parts (
+    pn TEXT PRIMARY KEY,
+    name TEXT,
+    spec TEXT,
+    level TEXT,                            -- L1(서브어셈블리) | L2 | L3
+    parent_pn TEXT,
+    parent_name TEXT,
+    qty_per_parent REAL,
+    qty_per_product REAL,
+    unit TEXT,
+    image TEXT                             -- public/assets/parts/<file> 가 있을 때 파일명
+  );
+  CREATE TABLE IF NOT EXISTS process_inputs (
+    process_id INTEGER NOT NULL REFERENCES processes(id),
+    pn TEXT NOT NULL,
+    qty REAL,
+    PRIMARY KEY (process_id, pn)
+  );
 `);
 
 // ── 설비 유형 (인터페이스 §1) — 스프라이트(한도윤)·분석(서지안)이 이 값으로 분기 ──
-export const EQUIPMENT_TYPES = ['press', 'welder', 'robot', 'assembly', 'inspector', 'packer', 'cnc', 'generic'];
+// 스프린트 2(§9): BLDC 라인용 8종 추가 — stacker(적층기) winder(와인더) vpi(함침조) oven(건조로) magnetizer(착자기) balancer(밸런서) dispenser(디스펜서) smt(SMT)
+export const EQUIPMENT_TYPES = [
+  'press', 'welder', 'robot', 'assembly', 'inspector', 'packer', 'cnc',
+  'stacker', 'winder', 'vpi', 'oven', 'magnetizer', 'balancer', 'dispenser', 'smt',
+  'generic',
+];
 export const EQUIPMENT_TYPE_LABELS = {
   press: '프레스', welder: '용접기', robot: '로봇', assembly: '조립 라인',
-  inspector: '검사기', packer: '포장기', cnc: 'CNC 가공기', generic: '미지정',
+  inspector: '검사기', packer: '포장기', cnc: 'CNC 가공기',
+  stacker: '자동 적층기', winder: '니들 와인더', vpi: '진공 함침조 (VPI)', oven: '열풍 건조로',
+  magnetizer: '착자기', balancer: '밸런싱 머신', dispenser: '접착 디스펜서', smt: 'SMT · 자동 결선',
+  generic: '미지정',
 };
-// 설비 코드 접두로 유형 추정 (시드 매핑 규칙: PRS→press, WLD-03→robot, 그 외 WLD→welder, ASM→assembly, INS→inspector, PKG→packer, CNC→cnc)
+// BLDC 500W 라인 공정번호 → 유형 (인터페이스 §9 표). 코드가 공정번호(OP-*)인 설비의 유형 추정에 사용
+const OP_TYPE = {
+  'OP-A10': 'press', 'OP-A20': 'stacker', 'OP-A30': 'assembly', 'OP-A40': 'winder', 'OP-A50': 'assembly',
+  'OP-A60': 'robot', 'OP-A70': 'inspector', 'OP-A80': 'vpi', 'OP-A90': 'oven', 'OP-A100': 'inspector',
+  'OP-B10': 'press', 'OP-B20': 'dispenser', 'OP-B30': 'magnetizer', 'OP-B40': 'balancer', 'OP-B50': 'press',
+  'OP-B60': 'press', 'OP-B70': 'assembly', 'OP-B80': 'assembly', 'OP-B85': 'assembly', 'OP-B87': 'assembly',
+  'OP-B90': 'smt', 'OP-B100': 'assembly', 'OP-B110': 'inspector', 'OP-B120': 'packer',
+};
+// 설비 코드 접두로 유형 추정 (시드 매핑 규칙: PRS→press, WLD-03→robot, 그 외 WLD→welder, ASM→assembly, INS→inspector, PKG→packer, CNC→cnc,
+// 스프린트 2: STK→stacker, WND→winder, VPI→vpi, OVN→oven, MAG→magnetizer, BAL→balancer, DSP→dispenser, SMT→smt, OP-*는 §9 표)
 export function inferEquipmentType(code) {
   const c = String(code || '').toUpperCase();
   if (c === 'WLD-03') return 'robot';
-  if (c.startsWith('PRS-')) return 'press';
-  if (c.startsWith('WLD-')) return 'welder';
-  if (c.startsWith('ASM-')) return 'assembly';
-  if (c.startsWith('INS-')) return 'inspector';
-  if (c.startsWith('PKG-')) return 'packer';
-  if (c.startsWith('CNC-')) return 'cnc';
+  if (OP_TYPE[c]) return OP_TYPE[c];
+  const prefix = {
+    'PRS-': 'press', 'WLD-': 'welder', 'ASM-': 'assembly', 'INS-': 'inspector', 'PKG-': 'packer', 'CNC-': 'cnc',
+    'STK-': 'stacker', 'WND-': 'winder', 'VPI-': 'vpi', 'OVN-': 'oven', 'MAG-': 'magnetizer', 'BAL-': 'balancer',
+    'DSP-': 'dispenser', 'SMT-': 'smt',
+  };
+  for (const [p, t] of Object.entries(prefix)) if (c.startsWith(p)) return t;
   return 'generic';
 }
 
@@ -213,6 +274,20 @@ if (!db.prepare("PRAGMA table_info(equipments)").all().some(c => c.name === 'typ
   console.log(`[db] equipments.type 컬럼 추가 — 코드 접두로 ${mapped}대 유형 매핑`);
 }
 
+// 마이그레이션: 스프린트 2 — 설비 ↔ 공정 연결(op), 라인 전환 시 숨김(hidden — 삭제 대신 맵·분석에서 제외, 이력 보존)
+if (!db.prepare("PRAGMA table_info(equipments)").all().some(c => c.name === 'op')) {
+  db.exec('ALTER TABLE equipments ADD COLUMN op TEXT');
+  console.log('[db] equipments.op 컬럼 추가 (공정 연결)');
+}
+if (!db.prepare("PRAGMA table_info(equipments)").all().some(c => c.name === 'hidden')) {
+  db.exec('ALTER TABLE equipments ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0');
+  console.log('[db] equipments.hidden 컬럼 추가 (라인 전환 숨김)');
+}
+if (!db.prepare("PRAGMA table_info(zones)").all().some(c => c.name === 'hidden')) {
+  db.exec('ALTER TABLE zones ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0');
+  console.log('[db] zones.hidden 컬럼 추가 (라인 전환 숨김)');
+}
+
 // 관리자 계정 시드 (idempotent — 매 부팅 시 확인)
 if (!db.prepare("SELECT 1 FROM users WHERE emp_no = 'admin'").get()) {
   db.prepare("INSERT INTO users (emp_no, name, role) VALUES ('admin', '관리자', 'admin')").run();
@@ -249,8 +324,14 @@ export const queries = {
     WHERE u.team IS NOT NULL AND u.team != ''
     GROUP BY u.team ORDER BY points DESC LIMIT 10`),
 
-  listZones: db.prepare('SELECT * FROM zones'),
-  listEquipments: db.prepare('SELECT * FROM equipments'),
+  // 숨김(hidden=1) 존·설비는 맵(init·world:refresh)·근접 판정·분석·게이트웨이·내보내기 대상에서 제외 — 관리자 콘솔 설비 마스터만 *All 로 전체 조회
+  listZones: db.prepare('SELECT * FROM zones WHERE hidden = 0'),
+  listAllZones: db.prepare('SELECT * FROM zones ORDER BY id'),
+  listEquipments: db.prepare('SELECT * FROM equipments WHERE hidden = 0'),
+  listAllEquipments: db.prepare('SELECT * FROM equipments ORDER BY hidden, id'),
+  setEquipmentHidden: db.prepare('UPDATE equipments SET hidden = ? WHERE id = ?'),
+  setZoneHidden: db.prepare('UPDATE zones SET hidden = ? WHERE id = ?'),
+  setEquipmentOp: db.prepare('UPDATE equipments SET op = ? WHERE id = ?'),
   getEquipment: db.prepare('SELECT * FROM equipments WHERE id = ?'),
   setEquipmentStatus: db.prepare("UPDATE equipments SET status = ?, status_since = datetime('now','localtime') WHERE id = ?"),
   logStatus: db.prepare('INSERT INTO equipment_status_log (equipment_id, status, reason, changed_by) VALUES (?, ?, ?, ?)'),
@@ -290,7 +371,8 @@ export const queries = {
            t.name AS to_name, t.code AS to_code
     FROM equipment_links l
     JOIN equipments f ON f.id = l.from_id
-    JOIN equipments t ON t.id = l.to_id ORDER BY l.id`),
+    JOIN equipments t ON t.id = l.to_id
+    WHERE f.hidden = 0 AND t.hidden = 0 ORDER BY l.id`),   // 숨긴 설비에 걸린 라인은 부하 틱·맵에서 제외 (레코드는 보존)
   createLink: db.prepare('INSERT INTO equipment_links (from_id, to_id) VALUES (?, ?)'),
   setLinkLoad: db.prepare('UPDATE equipment_links SET load = ? WHERE id = ?'),
   deleteLink: db.prepare('DELETE FROM equipment_links WHERE id = ?'),
@@ -345,7 +427,7 @@ export const queries = {
     SELECT COALESCE(SUM(target_qty), 0) AS target, COUNT(*) AS orders
     FROM work_orders WHERE equipment_id = ?
       AND (status IN ('OPEN','IN_PROGRESS') OR (status = 'DONE' AND completed_at >= date('now','localtime')))`),
-  alarmEquipments: db.prepare("SELECT id, code, name, status_since FROM equipments WHERE status = 'ALARM' ORDER BY status_since"),
+  alarmEquipments: db.prepare("SELECT id, code, name, status_since FROM equipments WHERE status = 'ALARM' AND hidden = 0 ORDER BY status_since"),
   countOpenQuests: db.prepare("SELECT COUNT(*) AS c FROM work_orders WHERE status = 'OPEN'"),
   countMyQuests: db.prepare("SELECT COUNT(*) AS c FROM work_orders WHERE status = 'IN_PROGRESS' AND assignee_id = ?"),
   recentNotices: db.prepare(`
@@ -361,4 +443,38 @@ export const queries = {
       (SELECT COUNT(*) FROM messages WHERE created_at >= date('now','localtime') AND type != 'system') AS messages,
       (SELECT COUNT(*) FROM files WHERE created_at >= date('now','localtime')) AS files,
       (SELECT COUNT(*) FROM equipment_status_log WHERE changed_at >= date('now','localtime') AND status = 'ALARM') AS alarms`),
+
+  // ── 스프린트 2: 제품 공정(BOP) · 단품(BOM) (인터페이스 §7) ──
+  upsertProduct: db.prepare(`
+    INSERT INTO products (code, name, spec_json) VALUES (?, ?, ?)
+    ON CONFLICT(code) DO UPDATE SET name = excluded.name, spec_json = excluded.spec_json`),
+  listProducts: db.prepare('SELECT code, name FROM products ORDER BY code'),
+  getProduct: db.prepare('SELECT * FROM products WHERE code = ?'),
+  upsertProcess: db.prepare(`
+    INSERT INTO processes (product_code, op, seq, line, name, equipment_hint, input_text, output, ct_sec, kind, qc, note, stage_pn)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(product_code, op) DO UPDATE SET
+      seq = excluded.seq, line = excluded.line, name = excluded.name, equipment_hint = excluded.equipment_hint,
+      input_text = excluded.input_text, output = excluded.output, ct_sec = excluded.ct_sec, kind = excluded.kind,
+      qc = excluded.qc, note = excluded.note, stage_pn = excluded.stage_pn`),
+  getProcess: db.prepare('SELECT * FROM processes WHERE product_code = ? AND op = ?'),
+  processByOp: db.prepare('SELECT * FROM processes WHERE op = ? ORDER BY product_code LIMIT 1'),   // 설비 op → 공정 (제품이 하나인 파일럿 전제)
+  listProcesses: db.prepare(`
+    SELECT p.*, (SELECT COUNT(*) FROM process_inputs i WHERE i.process_id = p.id) AS input_count
+    FROM processes p WHERE p.product_code = ? ORDER BY p.line, p.seq, p.op`),
+  upsertPart: db.prepare(`
+    INSERT INTO parts (pn, name, spec, level, parent_pn, parent_name, qty_per_parent, qty_per_product, unit, image)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(pn) DO UPDATE SET
+      name = excluded.name, spec = excluded.spec, level = excluded.level, parent_pn = excluded.parent_pn,
+      parent_name = excluded.parent_name, qty_per_parent = excluded.qty_per_parent, qty_per_product = excluded.qty_per_product,
+      unit = excluded.unit, image = excluded.image`),
+  countParts: db.prepare('SELECT COUNT(*) AS c FROM parts'),
+  deleteProcessInputs: db.prepare('DELETE FROM process_inputs WHERE process_id = ?'),
+  addProcessInput: db.prepare('INSERT OR REPLACE INTO process_inputs (process_id, pn, qty) VALUES (?, ?, ?)'),
+  processInputs: db.prepare(`
+    SELECT i.pn, i.qty, p.name, p.spec, p.unit, p.level, p.parent_pn, p.parent_name, p.image
+    FROM process_inputs i LEFT JOIN parts p ON p.pn = i.pn
+    WHERE i.process_id = ? ORDER BY i.rowid`),
+  equipmentsByOp: db.prepare('SELECT id, code, name, hidden FROM equipments WHERE op = ? ORDER BY hidden, id'),
 };

@@ -13,9 +13,10 @@
   --idle: #fbbf24;
   --stop: #f87171;
   --alarm: #ef4444;
-  --input: var(--input);
-  --overlay: var(--overlay);
-  --toast-bg: var(--toast-bg);
+  /* 다크 값 — 자기 참조(var(--input) 등)로 적혀 있어 무효 처리되던 것을 실제 색으로 (상태창·패널이 투명하게 보이던 문제, 스프린트 2 라운드 1 수정) */
+  --input: #0e1220;
+  --overlay: rgba(22,26,38,.96);
+  --toast-bg: rgba(22,26,38,.96);
   --topbar: linear-gradient(180deg, rgba(13,15,23,.92), rgba(13,15,23,.55) 80%, transparent);
   --title-bg:
     radial-gradient(1200px 500px at 50% 115%, rgba(79,195,247,.18), transparent 60%),
@@ -223,6 +224,65 @@ input, select { font-family: inherit; }
 #eq-call.online { border-color: var(--run); color: var(--run); background: rgba(52,211,153,.12); }
 .s-RUN { color: var(--run); } .s-IDLE { color: var(--idle); } .s-STOP { color: var(--stop); } .s-ALARM { color: var(--alarm); }
 
+/* ── 상태창 "공정 · 단품" (스프린트 2, 인터페이스 §8) — 공정 정보 + 투입 단품 표(서브어셈블리 썸네일) + 산출물 ── */
+#eq-proc-section h4 { display: flex; align-items: center; gap: 8px; }
+.proc-kind { font-size: 10px; letter-spacing: 0; padding: 1px 7px; border-radius: 8px; background: var(--panel2); color: var(--muted); font-weight: 700; }
+.proc-kind.k-bottleneck { background: rgba(239,68,68,.16); color: var(--alarm); }
+.proc-kind.k-batch { background: rgba(251,191,36,.16); color: var(--idle); }
+.proc-kind.k-qc { background: var(--accent-soft); color: var(--accent); }
+.proc-kind.k-final { background: rgba(52,211,153,.16); color: var(--run); }
+.proc-info { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 12px; margin-bottom: 8px; }
+.proc-info .k { color: var(--muted); white-space: nowrap; }
+.proc-info .v b { color: var(--accent); }
+.proc-parts table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.proc-parts th { text-align: left; color: var(--muted); font-weight: 600; font-size: 10px; letter-spacing: 1px; padding: 2px 4px; border-bottom: 1px solid var(--border); }
+.proc-parts td { padding: 4px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.proc-parts tr:last-child td { border-bottom: none; }
+.proc-parts .pthumb { width: 34px; height: 50px; object-fit: contain; background: #fff; border-radius: 4px; border: 1px solid var(--border); display: block; }
+.proc-parts .ppn { font-weight: 800; }
+.proc-parts .pname { color: var(--text); }
+.proc-parts .pspec { color: var(--muted); font-size: 10px; }
+.proc-parts .pqty { text-align: right; white-space: nowrap; font-weight: 700; }
+.proc-parts .pparent { color: var(--muted); font-size: 10px; }
+.proc-empty { font-size: 12px; color: var(--muted); padding: 4px 0; }
+.proc-output { font-size: 12px; margin-top: 8px; color: var(--muted); }
+.proc-output b { color: var(--text); }
+.proc-exploded-btn {
+  margin-top: 8px; width: 100%; padding: 8px; border-radius: 7px; border: 1px solid var(--border);
+  background: var(--panel2); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.proc-exploded-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── 분해도 모달 (§8): 9단계 가로 스크롤, 현재 단계 강조 — 이미지는 흰 카드(325×484)라 다크·라이트 모두 그대로 ── */
+#exploded-panel {
+  position: fixed; left: 50%; top: 60px; transform: translateX(-50%); z-index: 40;
+  width: min(96vw, 1180px); max-height: 84vh; overflow: hidden; display: none; flex-direction: column;
+  background: var(--overlay); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+}
+#exploded-panel.open { display: flex; }
+#exploded-panel .qp-head { position: static; }
+.exploded-title { font-weight: 600; color: var(--muted); font-size: 12px; letter-spacing: 0; margin-left: 6px; flex: 1; }
+.exploded-sub { padding: 8px 16px 0; font-size: 12px; color: var(--muted); }
+.exploded-sub b { color: var(--accent); }
+#exploded-strip { display: flex; align-items: stretch; gap: 8px; overflow-x: auto; padding: 12px 16px 18px; scroll-snap-type: x proximity; }
+.ex-card {
+  flex: none; width: 168px; scroll-snap-align: center; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--panel); padding: 8px; opacity: .55; transition: opacity .2s, box-shadow .2s;
+}
+.ex-card.cur { opacity: 1; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft), 0 8px 24px rgba(0,0,0,.28); }
+.ex-card img { width: 100%; aspect-ratio: 325 / 484; object-fit: contain; background: #fff; border-radius: 6px; display: block; }
+.ex-card .ex-noimg { width: 100%; aspect-ratio: 325 / 484; border-radius: 6px; background: var(--panel2); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; }
+.ex-card .ex-step { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 6px; }
+.ex-card .ex-pn { font-weight: 800; font-size: 13px; }
+.ex-card .ex-label { font-size: 12px; margin-top: 1px; }
+.ex-card .ex-group { display: inline-block; margin-top: 4px; font-size: 10px; padding: 1px 7px; border-radius: 8px; background: var(--panel2); color: var(--muted); }
+.ex-card .ex-ops { font-size: 10px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.ex-card .ex-ops b { color: var(--accent); }
+.ex-card.cur .ex-ops b.me { background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+.ex-card.final { background: linear-gradient(180deg, var(--panel), var(--panel2)); }
+.ex-arrow { flex: none; align-self: center; color: var(--muted); font-size: 18px; }
+#exploded-panel .qp-head .close { cursor: pointer; }
+
 /* ── SCR-05 대화 패널 (우측 슬라이드) ───── */
 #chat-panel {
   position: fixed; right: 0; top: 0; bottom: 0; width: 330px; z-index: 25;
@@ -413,6 +473,8 @@ body.chat-open #board-toggle { right: 548px; }
   #online-panel { width: 150px; top: 54px; }
   #online-panel.collapsed { width: auto; }
   #eq-window, #quest-panel, #board-panel, #brief-panel, #pw-panel { width: 94vw; max-width: 420px; top: 52px; max-height: 84vh; }
+  #exploded-panel { width: 96vw; top: 52px; }
+  .ex-card { width: 140px; }
   #chat-panel { width: 100vw; }
   #chat-tabs { padding-top: 50px; }
   #chat-toggle { right: 10px; bottom: 10px; padding: 10px 13px; }
