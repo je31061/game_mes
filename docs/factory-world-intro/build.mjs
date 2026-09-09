@@ -127,12 +127,18 @@ const Main = head(true) + `
       <div style="display: flex; gap: 18px;">${legendDot(S.run, '가동')}${legendDot(S.idle, '대기')}${legendDot(S.stop, '정지')}${legendDot(S.alarm, '알람')}</div>
     </div>
   </div>
-  <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; border-top: 1px solid ${D.border}; padding-top: 22px;">
-    <div style="display: flex; align-items: center; gap: 14px;">
-      <code style="font-family: Consolas, 'D2Coding', monospace; font-size: 13px; background: #0e1220; border: 1px solid ${D.border}; border-radius: 6px; padding: 6px 12px; color: ${D.accent};">npm install &amp;&amp; npm start</code>
-      <span style="font-size: 13px; color: ${D.muted};">한 줄로 사내 PC 어디서나 실행 · 외부 인프라 없음</span>
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-top: 1px solid ${D.border}; padding-top: 22px;">
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <code style="font-family: Consolas, 'D2Coding', monospace; font-size: 13px; background: #0e1220; border: 1px solid ${D.border}; border-radius: 6px; padding: 6px 12px; color: ${D.accent};">npm install &amp;&amp; npm start</code>
+        <span style="font-size: 13px; color: ${D.muted};">한 줄로 사내 PC 어디서나 실행 · 외부 인프라 없음</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <a href="https://factory-world.onrender.com" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #0a0c14; background: ${D.accent}; border: 1px solid ${D.accent}; border-radius: 6px; padding: 6px 12px; text-decoration: none; white-space: nowrap;">지금 체험하기 → factory-world.onrender.com</a>
+        <span style="font-size: 13px; color: ${D.muted};">무료 호스팅(Render) · 첫 접속은 절전 해제로 30~60초 · 사전 등록된 사번만 로그인</span>
+      </div>
     </div>
-    <div style="font-size: 12px; letter-spacing: 0.25em; color: ${D.muted};">기안 『게임형 MES 시스템 구축 기안 및 기본설계서』 기반</div>
+    <div style="font-size: 12px; letter-spacing: 0.25em; color: ${D.muted}; white-space: nowrap;">기안 『게임형 MES 시스템 구축 기안 및 기본설계서』 기반</div>
   </div>
 </div>
 ` + tail;
@@ -730,6 +736,17 @@ const Status = head(false) + `
         <div style="font-size: 12px; letter-spacing: 0.16em; color: ${D.accent}; font-weight: 700;">협조 요청</div>
         <p style="font-size: 15px; font-weight: 700; line-height: 1.5;">파일럿 라인 1개 선정에 협조를 부탁드립니다.</p>
         <p style="font-size: 13px; color: #c3c9d8; line-height: 1.6;">선정된 라인에서 실사용 피드백을 모아 다음 단계 범위를 정하겠습니다.</p>
+      </div>
+      <div style="padding: 14px 16px; background: ${L.surface}; border: 1px solid ${L.line}; border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 12px; letter-spacing: 0.16em; color: ${L.muted}; font-weight: 700; white-space: nowrap;">웹 체험 주소</span>
+          <a href="https://factory-world.onrender.com" target="_blank" rel="noopener" style="font-size: 14px; font-weight: 700; color: ${L.accent}; text-decoration: none;">factory-world.onrender.com</a>
+        </div>
+        <div style="font-size: 12px; color: ${L.muted}; line-height: 1.5;">무료 호스팅(Render) · 첫 접속은 절전 해제로 30~60초 · 사전 등록된 사번만 로그인</div>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px;">
+          <a href="https://github.com/je31061/game_mes" target="_blank" rel="noopener" style="color: ${L.accent}; text-decoration: none;">소스 저장소 · github.com/je31061/game_mes</a>
+          <a href="https://je31061.github.io/game_mes/" target="_blank" rel="noopener" style="color: ${L.accent}; text-decoration: none;">공개 문서 · je31061.github.io/game_mes</a>
+        </div>
       </div>
     </div>
   </div>
