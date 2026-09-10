@@ -977,9 +977,28 @@
 
   initEditorEvents();
 
+  // ── 로그아웃 ───────────────────────────
+  $('btn-logout').onclick = (e) => {
+    e.preventDefault();
+    if (!confirm('로그아웃할까요? 이 브라우저에 저장된 로그인(관리자 콘솔·게임)이 모두 지워집니다.')) return;
+    localStorage.removeItem('fw.adminToken');
+    localStorage.removeItem('fw.token');
+    token = null;
+    showGate('');
+  };
+
   // ── 시작 ──────────────────────────────
+  // 저장된 세션이 있으면 확인하는 동안 로그인 폼을 띄우지 않는다 (테마 전환·게임에서 넘어올 때 다시 로그인하는 것처럼 보이지 않게)
   if (token) {
-    api('/api/admin/overview').then(showConsole).catch(() => {});
+    $('gate').classList.add('hidden');
+    const tried = token;
+    api('/api/admin/overview').then(showConsole).catch((e) => {
+      if (e.message === 'auth') {
+        if (localStorage.getItem('fw.adminToken') === tried) localStorage.removeItem('fw.adminToken');   // 만료된 콘솔 세션 정리
+      } else {
+        showGate('서버에 연결할 수 없습니다. 잠시 후 새로고침해 주세요.');
+      }
+    });
   } else {
     showGate('');
   }

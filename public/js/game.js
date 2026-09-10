@@ -194,6 +194,11 @@
         this.moveTarget = t;
       });
       this.input.keyboard.disableGlobalCapture();
+
+      // 준비 완료 — 스프라이트 로딩 중에 도착한 소켓 이벤트(접속·이동·라인 부하 등)를 순서대로 적용
+      this.ready = true;
+      const pending = FW._sceneQueue.splice(0);
+      for (const fn of pending) { try { fn(this); } catch (e) { console.warn('[scene] 대기 이벤트 적용 실패', e); } }
     }
 
     drawFloor() {
@@ -608,21 +613,32 @@
         fps: FW.lowFx ? { target: 30, forceSetTimeOut: false } : undefined,
         render: FW.lowFx ? { antialias: false, powerPreference: 'low-power' } : undefined,
       });
-      FW.scene = () => FW.phaserGame.scene.getScene('factory');
+      // create()가 끝난 뒤에만 장면을 돌려준다 — 스프라이트 로딩 중에는 내부 맵(linkStates·playerSprites)이 없어 호출하면 오류
+      FW.scene = () => { const s = FW.phaserGame.scene.getScene('factory'); return s && s.ready ? s : null; };
     });
   };
-  FW.scene = () => null;   // 부팅 전 gameApi 호출은 무시
+  FW.scene = () => null;   // 부팅 전 gameApi 호출은 대기열로
+  FW._sceneQueue = [];
+  // 장면 준비 전 호출은 대기열에 쌓았다가 create() 끝에서 순서대로 적용 (이벤트 유실·오류 방지). 게임 부팅 전(로그인 화면)에는 쌓지 않음
+  function withScene(fn) {
+    const s = FW.scene();
+    if (s) return fn(s);
+    if (FW.phaserGame) {
+      FW._sceneQueue.push(fn);
+      if (FW._sceneQueue.length > 2000) FW._sceneQueue.shift();   // 장면이 끝내 뜨지 않는 경우 메모리 보호
+    }
+  }
 
   FW.gameApi = {
-    addPlayer: (p) => FW.scene()?.addPlayer(p),
-    removePlayer: (id) => FW.scene()?.removePlayer(id),
-    movePlayer: (id, x, y, m, dir) => FW.scene()?.movePlayer(id, x, y, m, dir),
-    setEquipmentStatus: (eqId, s) => FW.scene()?.setEquipmentStatus(eqId, s),
-    setLinks: (links, states) => FW.scene()?.setLinks(links, states),
-    updateLinkStates: (states) => FW.scene()?.updateLinkStates(states),
-    reloadWorld: (zones, equipments) => FW.scene()?.reloadWorld(zones, equipments),
-    setFloorplan: (plan) => FW.scene()?.setFloorplan(plan),
-    resetPlayers: (players) => FW.scene()?.resetPlayers(players),
+    addPlayer: (p) => withScene(s => s.addPlayer(p)),
+    removePlayer: (id) => withScene(s => s.removePlayer(id)),
+    movePlayer: (id, x, y, m, dir) => withScene(s => s.movePlayer(id, x, y, m, dir)),
+    setEquipmentStatus: (eqId, st) => withScene(s => s.setEquipmentStatus(eqId, st)),
+    setLinks: (links, states) => withScene(s => s.setLinks(links, states)),
+    updateLinkStates: (states) => withScene(s => s.updateLinkStates(states)),
+    reloadWorld: (zones, equipments) => withScene(s => s.reloadWorld(zones, equipments)),
+    setFloorplan: (plan) => withScene(s => s.setFloorplan(plan)),
+    resetPlayers: (players) => withScene(s => s.resetPlayers(players)),
     myPosition: () => { const s = FW.scene(); return s?.me ? { x: s.me.wx, y: s.me.wy, dir: s.me.dir } : null; },
   };
 })();

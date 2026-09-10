@@ -91,14 +91,26 @@ app.post('/api/login', (req, res) => {
   } else if (!verifyPassword(password, user.password_hash)) {
     return res.status(401).json({ error: '비밀번호가 일치하지 않습니다.' });
   }
-  const token = signToken({ uid: user.id });
+  // emp: 발급 당시 사번 — DB가 초기화되는 배포(Render)에서 같은 id의 다른 사용자로 인증되는 것을 막는다 (authUser에서 대조)
+  const token = signToken({ uid: user.id, emp: user.emp_no });
   res.json({ token, user: { id: user.id, empNo: user.emp_no, name: user.name, role: user.role } });
 });
 
 function authUser(token) {
   const payload = verifyToken(token);
-  return payload ? queries.getUser.get(payload.uid) : null;
+  if (!payload) return null;
+  const user = queries.getUser.get(payload.uid);
+  if (!user) return null;
+  if (payload.emp && payload.emp !== user.emp_no) return null;   // 토큰의 사번과 현재 id의 사번이 다르면 무효
+  return user;
 }
+
+// 세션 확인 (자동 로그인): 저장된 토큰이 유효하면 로그인 화면을 건너뛴다 — 관리자 콘솔 → 공장 맵, 테마 전환 새로고침
+app.get('/api/me', (req, res) => {
+  const user = authUser(req.headers['x-auth-token']);
+  if (!user || user.role === 'system') return res.status(401).json({ error: '세션이 만료되었습니다. 다시 로그인해 주세요.' });
+  res.json({ user: { id: user.id, empNo: user.emp_no, name: user.name, role: user.role } });
+});
 
 // 비밀번호 변경 (본인)
 app.post('/api/password/change', (req, res) => {

@@ -114,6 +114,10 @@ input, select { font-family: inherit; }
 .btn-primary:hover { filter: brightness(1.1); }
 .login-error { color: var(--stop); font-size: 12px; margin-top: 10px; min-height: 16px; }
 .press-start { margin-top: 26px; color: var(--muted); font-size: 12px; letter-spacing: 3px; animation: blink 1.6s infinite; }
+/* 세션 자동 복귀 중에는 로그인 폼 대신 안내만 (깜빡임 방지) */
+.resume-msg { display: none; margin-top: 26px; color: var(--muted); font-size: 13px; letter-spacing: 2px; animation: blink 1.6s infinite; }
+#screen-title.resuming .login-card, #screen-title.resuming .press-start { display: none; }
+#screen-title.resuming .resume-msg { display: block; }
 @keyframes blink { 50% { opacity: .25; } }
 
 /* ── SCR-02 캐릭터 선택 ─────────────────── */

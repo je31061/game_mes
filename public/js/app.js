@@ -37,19 +37,33 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '로그인 실패');
-      token = data.token; me = data.user;
-      FW.token = token; // 게임 계층의 이미지 로딩(평면도)에 사용
-      localStorage.setItem('fw.token', token);
-      // 관리자 콘솔용 토큰은 별도 키 (게임에 다른 계정으로 접속해도 콘솔 세션 유지)
-      if (me.role === 'admin') localStorage.setItem('fw.adminToken', token);
-      $('btn-admin').style.display = me.role === 'admin' ? '' : 'none';
-      $('char-nick').value = localStorage.getItem('fw.nick') || me.name;
-      $('char-badge').value = localStorage.getItem('fw.badge') || '작업자';
-      selectColor(localStorage.getItem('fw.color') || COLORS[0]);
+      adoptSession(data.token, data.user);
       showScreen('screen-character');
     } catch (e) {
       $('login-error').textContent = '⚠ ' + e.message;
     }
+  }
+
+  // 로그인·자동 복귀 공통: 토큰 저장, 사용자 반영, 캐릭터 입력칸 채우기
+  function adoptSession(tok, user) {
+    token = tok; me = user;
+    FW.token = token; // 게임 계층의 이미지 로딩(평면도)에 사용
+    localStorage.setItem('fw.token', token);
+    // 관리자 콘솔용 토큰은 별도 키 (게임에 다른 계정으로 접속해도 콘솔 세션 유지)
+    if (me.role === 'admin') localStorage.setItem('fw.adminToken', token);
+    $('btn-admin').style.display = me.role === 'admin' ? '' : 'none';
+    $('char-nick').value = localStorage.getItem('fw.nick') || me.name;
+    $('char-badge').value = localStorage.getItem('fw.badge') || '작업자';
+    selectColor(localStorage.getItem('fw.color') || COLORS[0]);
+  }
+
+  // 만료·무효가 확인된 토큰만 지운다 (게임과 콘솔이 서로 다른 계정일 수 있으므로 값이 같은 키만)
+  function forgetToken(tok) {
+    ['fw.token', 'fw.adminToken'].forEach(k => { if (localStorage.getItem(k) === tok) localStorage.removeItem(k); });
+  }
+
+  function setResuming(on) {
+    $('screen-title').classList.toggle('resuming', on);
   }
 
   // ── SCR-02 캐릭터 ──────────────────────
@@ -85,7 +99,18 @@
     socket = io({ auth: { token, color: charColor, badge, nick } });
     FW.socket = socket;
 
-    socket.on('connect_error', (e) => toast('서버 연결 실패: ' + e.message, true));
+    socket.on('connect_error', (e) => {
+      if (e && e.message === 'unauthorized') {
+        // 세션 만료(12시간)·무효 토큰 — 저장된 토큰을 지우고 로그인 화면으로
+        socket.disconnect();
+        forgetToken(token);
+        setResuming(false);
+        showScreen('screen-title');
+        $('login-error').textContent = '⚠ 세션이 만료되었습니다. 다시 로그인해 주세요.';
+        return;
+      }
+      toast('서버 연결 실패: ' + e.message, true);
+    });
 
     socket.on('init', (data) => {
       data.me.name = nick; // 표시용 닉네임
@@ -108,10 +133,22 @@
       if (!canSet) $('eq-reason').placeholder = '상태 변경은 보전/관리자 권한이 필요합니다';
       renderOnline();
       initChat();
+      setResuming(false);
       if (!FW.phaserGame) {
+        // 테마·저사양 전환 새로고침이면 직전 위치에서 이어서 (서버 스폰 위치 대신), 브리핑은 다시 띄우지 않음
+        let resumePos = null;
+        try { resumePos = JSON.parse(sessionStorage.getItem('fw.resumePos') || 'null'); } catch {}
+        sessionStorage.removeItem('fw.resumePos');
+        if (resumePos && Number.isFinite(resumePos.x) && Number.isFinite(resumePos.y)) {
+          data.me.x = resumePos.x; data.me.y = resumePos.y;
+        } else resumePos = null;
         FW.startGame(data);
-        toast(`${data.zones.length}개 존 · 설비 ${data.equipments.length}대 — 출근 완료!`);
-        showBriefing(data.briefing);
+        if (resumePos) {
+          FW.sendMove(resumePos.x, resumePos.y, false, resumePos.dir || 'down');
+        } else {
+          toast(`${data.zones.length}개 존 · 설비 ${data.equipments.length}대 — 출근 완료!`);
+          showBriefing(data.briefing);
+        }
         return;
       }
       // 재접속 (NFR-04): 서버는 새 소켓으로 보므로 맵·접속자를 다시 맞추고 내 위치를 알려준다
@@ -461,11 +498,17 @@
   $('brief-close').onclick = () => $('brief-panel').classList.remove('open');
 
   // ── 테마 전환 (다크 / 흰 바탕) ─────────
+  // 맵 색은 게임 생성 시 읽으므로 새로고침으로 적용한다. 세션 자동 복귀 + 위치 기억으로 로그인 없이 같은 자리로 돌아온다.
+  function reloadInPlace() {
+    const pos = FW.gameApi && FW.gameApi.myPosition && FW.gameApi.myPosition();
+    if (pos) sessionStorage.setItem('fw.resumePos', JSON.stringify(pos));
+    setTimeout(() => location.reload(), 500);
+  }
   $('btn-theme').onclick = () => {
     const light = document.documentElement.dataset.theme !== 'light';
     localStorage.setItem('fw.theme', light ? 'light' : 'dark');
-    toast(light ? '🌓 흰 바탕 테마로 전환합니다 — 화면을 다시 불러옵니다' : '🌓 다크 테마로 전환합니다 — 화면을 다시 불러옵니다');
-    setTimeout(() => location.reload(), 900);
+    toast(light ? '🌓 흰 바탕 테마로 전환합니다' : '🌓 다크 테마로 전환합니다');
+    reloadInPlace();
   };
 
   // ── 저사양 모드 (NFR-05: 구형 태블릿) ───
@@ -474,8 +517,18 @@
   $('btn-lowfx').onclick = () => {
     const next = !FW.lowFx;
     localStorage.setItem('fw.lowfx', next ? '1' : '0');
-    toast(next ? '⚡ 저사양 모드를 켭니다 — 화면을 다시 불러옵니다' : '⚡ 저사양 모드를 끕니다 — 화면을 다시 불러옵니다');
-    setTimeout(() => location.reload(), 900);
+    toast(next ? '⚡ 저사양 모드를 켭니다' : '⚡ 저사양 모드를 끕니다');
+    reloadInPlace();
+  };
+
+  // ── 로그아웃 (자동 로그인을 끊고 다른 계정으로) ─
+  $('btn-logout').onclick = () => {
+    if (!confirm('로그아웃할까요? 이 브라우저에 저장된 로그인(게임·관리자 콘솔)이 모두 지워집니다.')) return;
+    try { socket && socket.disconnect(); } catch {}
+    localStorage.removeItem('fw.token');
+    localStorage.removeItem('fw.adminToken');
+    sessionStorage.removeItem('fw.resumePos');
+    location.href = '/';
   };
 
   // ── 터치 이동 패드 (NFR-05) ────────────
@@ -783,6 +836,39 @@
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
+  // ── 세션 자동 복귀 ──────────────────────
+  // 저장된 토큰이 유효하면 로그인 화면을 건너뛴다(관리자 콘솔 → 공장 맵, 테마·저사양 전환 새로고침, 브라우저 재방문).
+  // 캐릭터 설정이 저장돼 있으면 곧바로 출근, 없으면 캐릭터 화면. 콘솔에서 넘어오면(?as=admin) 관리자 세션을 우선한다.
+  (async function resumeSession() {
+    const params = new URLSearchParams(location.search);
+    const preferAdmin = params.get('as') === 'admin';
+    if (params.has('as')) history.replaceState(null, '', location.pathname);
+    const saved = (preferAdmin && localStorage.getItem('fw.adminToken'))
+      || localStorage.getItem('fw.token') || localStorage.getItem('fw.adminToken');
+    if (!saved) return;
+    setResuming(true);
+    let res;
+    try {
+      res = await fetch('/api/me', { headers: { 'X-Auth-Token': saved } });
+    } catch {
+      setResuming(false);   // 서버 연결 실패 — 토큰은 남겨 두고 로그인 화면 (새로고침하면 다시 시도)
+      return;
+    }
+    if (!res.ok) {
+      if (res.status === 401) forgetToken(saved);
+      setResuming(false);
+      return;
+    }
+    const { user } = await res.json();
+    adoptSession(saved, user);
+    if (localStorage.getItem('fw.nick')) {
+      connect($('char-nick').value.trim() || me.name, $('char-badge').value);   // init 수신 시 게임 화면으로
+    } else {
+      setResuming(false);
+      showScreen('screen-character');
+    }
+  })();
+
   function fmtSize(n) {
     if (n < 1024) return n + 'B';
     if (n < 1048576) return (n / 1024).toFixed(1) + 'KB';
