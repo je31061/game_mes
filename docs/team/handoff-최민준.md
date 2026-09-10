@@ -54,10 +54,16 @@
   채팅 수신 5,250건 · p50 2.0ms · **p95 9.4ms** · max 17.1ms → 통과(NFR-01). 서버 오류 로그 0, 테스트 서버 종료·데이터 삭제.
 
 ### 커밋·push·Render
-- 이번 통합 커밋(두 사람 산출물 + 내 파일 + 문서)과 라운드 1 커밋 `6917e76`을 함께 push → Render 자동 재배포. 해시와 Render 확인 결과는 아래 "Render 반영 확인"에 적는다(문서만 고치는 후속 커밋은 `[skip render]`).
+- `990cb62` 스프린트 2 라운드 2 통합 — 43파일(두 사람 산출물 + 내 파일 + 문서). 라운드 1 `6917e76`(PM 원천 `docs/bldc/source` xlsx·PDF 포함)과 함께 push: `origin/main` `7f8f779..990cb62`. push 전 `git status` 클린, 스테이징 목록에 `data/`·`assets/blender/out/`·`__pycache__`·로그·시크릿 패턴 없음 확인.
+- 이 Render 확인 기록은 문서만 바꾸는 후속 커밋이라 메시지에 `[skip render]`를 넣어 재배포(=체험 서버 DB 초기화)를 일으키지 않게 했다.
 
-### Render 반영 확인
-- (push 후 기록)
+### Render 반영 확인 (2026-09-10, 로그인 없이)
+- GitHub Deployments(Render가 기록): 환경 `main - factory-world`, sha `990cb62` — 09:18:07Z 생성(진행 중에서 멈춤 = 뒤 배포로 대체된 것으로 보임), 09:19:48Z 생성 → **09:20:32Z success**(18:20 KST, push 후 약 2.5분). 같은 sha 배포가 두 번인 것은 push 자동 배포와 `render.yaml` 변경에 따른 Blueprint 동기화로 추정.
+- 백그라운드 폴링(18:32 KST 첫 확인에서 통과): `/js/app.js` `eq-proc-section` 1·`PARTS_THUMB` 2, `/assets/equipment/winder.png` 200, `/assets/parts/thumb/SA-1000.png` 200, `/api/bop/exploded` 비로그인 **401**(배포 전 404 = 라우트 없음).
+- 추가 확인: `/api/admin/bop`·`/api/admin/analytics/line-balance`·`/oee`·`/api/admin/equipments` 비로그인 401(라우트 등록·`analytics.js` 로드 — 로드 실패면 404), `/api/policy` `allowSelfRegister:false`(Render 환경변수 적용),
+  매니페스트 15종, 설비 PNG 15/15·썸네일 9/9·분해도 원본 9/9 200, `/admin.html`에 `.content min-width: 0`, `/js/analytics.js`에 `line-balance`, `/`에 `eq-proc-section`.
+- **로그인이 필요한 확인(사용자)**: `FW_SEED_PRODUCT_LINE=bldc` 적용 여부 — https://factory-world.onrender.com 에 `admin` / `관리자` / Render `FW_ADMIN_PASSWORD`로 입장 → 토스트 "2개 존 · 설비 24대"와 BLDC 맵, 설비(예: 니들 와인더) 클릭 → "공정 · 단품"·썸네일·🔩 분해도.
+  설비가 10대(프레스 존 등)로 보이면 Render 대시보드 Environment에 `FW_SEED_PRODUCT_LINE=bldc`가 동기화되지 않은 것 — 대시보드에서 값을 넣고 재배포하거나, 관리자 콘솔 → 맵 에디터 [🔩 제품 라인 적용]을 누르면 된다.
 
 ### 한도윤에게 (다음)
 - 요청 전부 반영, 되돌림 없음. 다음 후보: `footprint {w,h}`(SMT 다리 3% 초과), `balancer_run.png` 상태별 프레임(로더 프레임 훅은 내가 만든다 — 계약 제안을 협업로그에), `generic` 스프라이트 여부.
