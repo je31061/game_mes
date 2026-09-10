@@ -17,7 +17,9 @@
 4. **기존 파일럿 데이터를 이어가려면**: 백업 폴더(`FactoryWorld-백업\fw-backup-*` 또는 `backups\fw-backup-*`) 중
    최신 폴더에서 `factory.db`, `uploads`, `jwt.secret`을 프로젝트의 `data\` 폴더에 복사한 뒤 서버 시작.
    (루트가 아니라 반드시 `data\` 아래여야 서버가 읽습니다.)
-   백업 없이 시작하면 초기 시드 데이터(설비 10대·4존)로 새로 시작됨
+   백업 없이 시작하면 초기 시드 데이터(설비 10대·4존)로 새로 시작됨.
+   BLDC 500W 제품 라인(설비 24·공정 24)으로 바로 시작하려면 환경변수 `FW_SEED_PRODUCT_LINE=bldc`를 주고 시작(빈 DB에 1회 자동 적용)하거나,
+   시작 후 관리자 콘솔 → 맵 에디터 → [🔩 제품 라인 적용 (BLDC 500W)]
 5. Claude Code로 이어서 개발할 때는 프로젝트 폴더를 열고 이 README를 읽게 하면 전체 맥락 파악 가능
 
 ## 실행
@@ -47,11 +49,14 @@ npm start
 
 ## 외부에서 접속하게 하기
 
+- **체험 서버 (Render, 공개)**: https://factory-world.onrender.com — GitHub `main`에 push하면 `render.yaml`(Blueprint) 설정으로 자동 재배포됩니다.
+  무료 플랜이라 15분 미접속 시 절전(첫 접속 30~60초), 재배포마다 DB가 초기화되지만 `FW_SEED_PRODUCT_LINE=bldc`로 매번 **BLDC 500W 라인(설비 24·공정 24)**으로
+  시작해 설비 클릭 → 공정·단품·분해도가 바로 보입니다. 관리자 로그인은 `admin` / `관리자` / Render 환경변수 `FW_ADMIN_PASSWORD`로 정한 비밀번호(배포한 사람만 앎).
+  같은 설정으로 새로 배포: [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/je31061/game_mes)
 - **무료 웹 배포 (Koyeb, 카드 불필요)**:
-  [![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/je31061/game_mes&branch=main&name=factory-world&builder=dockerfile&instance_type=free&regions=was&ports=3000;http;/&env[FW_SELF_REGISTER]=false&env[FW_ADMIN_PASSWORD]=CHANGE-ME&env[FW_JWT_SECRET]=CHANGE-ME-TO-A-LONG-RANDOM-STRING)
+  [![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/je31061/game_mes&branch=main&name=factory-world&builder=dockerfile&instance_type=free&regions=was&ports=3000;http;/&env[FW_SELF_REGISTER]=false&env[FW_ADMIN_PASSWORD]=CHANGE-ME&env[FW_JWT_SECRET]=CHANGE-ME-TO-A-LONG-RANDOM-STRING&env[FW_SEED_PRODUCT_LINE]=bldc)
   버튼을 누르고 `FW_ADMIN_PASSWORD`·`FW_JWT_SECRET` 두 값을 바꾼 뒤 Deploy → `https://factory-world-<계정>.koyeb.app` 주소가 생깁니다.
-  무료 인스턴스는 미접속 시 절전(첫 접속 수십 초), 재배포 때 DB 초기화(시드로 재시작) — 절차와 한계, Render 등 대안은 [docs/배포-가이드.md](docs/배포-가이드.md)
-- Render를 쓰려면 저장소의 `render.yaml`(Blueprint)로 같은 방식 배포 가능
+  무료 인스턴스는 미접속 시 절전(첫 접속 수십 초), 재배포 때 DB 초기화(`FW_SEED_PRODUCT_LINE=bldc`면 BLDC 라인으로 재시작) — 절차와 한계, 대안은 [docs/배포-가이드.md](docs/배포-가이드.md)
 - **사내망**: 서버 PC에서 실행해 두고 `http://<서버 IP>:3000`으로 접속. Windows 방화벽에서 3000 포트 인바운드 허용
 - **임시 외부 공개(시연용)**: `tunnel.cmd` 실행 → 출력되는 `https://xxxx.trycloudflare.com` 주소를 공유
   (Cloudflare Quick Tunnel, 계정 불필요, 창을 닫으면 주소가 사라짐. 설치: `winget install Cloudflare.cloudflared`)
@@ -69,7 +74,9 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
 ```
 
 이동 동기화(p95 ≤ 200ms)·채팅 전달(p95 ≤ 1초) 지연과 손실을 측정해 기준 충족 여부를 판정합니다.
-최근 결과(2026-09-08, 50명 30초): 접속 50/50 · 이동 p50 6.0ms / p95 21.1ms / max 27.0ms(손실 1건) · 채팅 p50 1.7ms / p95 10.1ms → 통과.
+테스트 서버에 `FW_SEED_PRODUCT_LINE=bldc`를 함께 주면 BLDC 라인(설비 24·라인 23) 기준으로 잽니다.
+최근 결과(2026-09-10, BLDC 24대·라인 23, 50명 30초): 접속 50/50 · 오류 0 · 이동 p50 7.8ms / p95 18.9ms / max 25.0ms(수신 9,903건 중 손실 4건) · 채팅 p50 2.0ms / p95 9.4ms / max 17.1ms → 통과.
+(이전: 2026-09-08 파일럿 11대 — 이동 p95 21.1ms · 채팅 p95 10.1ms)
 
 ## 사용법
 
@@ -84,7 +91,7 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
 4. 설비 클릭 → 상태창(HUD): 상태/지속시간/금일 가동률(HP바)/목표 대비 진행률(경험치바, 작업지시 목표수량 대비 금일 양품)/이력/첨부,
    상태 수동 변경, 📣 담당자 호출(담당자 이름과 같은 접속자에게 알림 + 설비 이력 기록)
    - **공정 · 단품**(스프린트 2): 설비에 공정(BOP)이 연결되어 있으면 공정번호·공정명·라인·C/T·공정유형(표준/병목/배치/QC/완성)·품질 관리 항목과
-     **투입 단품 표**(서브어셈블리 썸네일·P/N·품명·규격·수량/단위), 산출물이 표시된다. **🔩 분해도** 버튼은 제품 분해도 9단계를
+     **투입 단품 표**(서브어셈블리 썸네일 — `assets/parts/thumb/<PN>.png` 96×96, 없으면 원본으로 폴백 — ·P/N·품명·규격·수량/단위), 산출물이 표시된다. **🔩 분해도** 버튼은 제품 분해도 9단계를
      조립 순서대로 가로 스크롤로 보여 주고 이 설비의 단계를 강조(완성품 공정은 전체 강조). 공정이 없는 설비는 섹션이 숨겨진다
    - 출근 시 "출근 브리핑" 팝업: 진행 중 알람, 모집 중 작업지시, 오늘의 전체 공지 (알릴 것이 없으면 뜨지 않음)
    - 상단 ⚡ 저사양 모드: 점멸·자재 흐름 애니메이션 끄고 30fps — 구형 태블릿용. 터치 기기에서는 좌하단 방향 패드 표시
@@ -99,11 +106,13 @@ node scripts/load-test.js --users 50 --duration 60 --url http://localhost:3001
    - 알람 리포트: 알람 발생→해제 에피소드별 대응 시간·해제자·협업 지표(대화/참여자/파일),
      기간·설비 필터, 평균/최장 대응 시간 요약 — 기대효과 "대응 시간 단축" 측정 근거
    - 설비 마스터: 추가·수정 (접속 중인 사용자의 맵에 새로고침 없이 즉시 반영). **설비 유형** 15종(프레스/용접기/로봇/조립 라인/검사기/포장기/CNC +
-     적층기/와인더/함침조/건조로/착자기/밸런싱 머신/디스펜서/SMT, 미지정) 선택 — 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용.
+     적층기/와인더/함침조/건조로/착자기/밸런싱 머신/디스펜서/SMT) + 미지정 선택 — 게임 맵의 실사형 스프라이트와 실적 분석 분류에 사용.
      코드 접두(PRS-, WLD-, ASM-, INS-, PKG-, CNC-, STK-, WND-, VPI-, OVN-, MAG-, BAL-, DSP-, SMT-)나 공정번호(OP-A40 등)로 추가하면 자동 추정.
      **공정** select로 제품 공정(BOP)에 연결(현장 상태창에 단품 표시), **숨김/복원** — 라인 전환 시 설비를 지우지 않고 맵·분석·게이트웨이에서 제외(이력 보존)
    - 📈 실적 분석: 설비별 OEE(가동률·성능·품질)와 일별 생산실적, 게이트웨이 연결 품질 — 기간·설비 필터, 요약 타일, 인라인 SVG 막대.
      모든 지표의 정의·분모·한계는 [docs/분석-정의.md](docs/분석-정의.md) (대시보드·상태창의 "가동률(로그 구간)"과는 분모가 다름)
+     - **라인 밸런스 카드**(스프린트 2, BOP 적용 후 표시): 공정 C/T(BOP 설계값)와 설비 연결로 라인별 병목·UPH·일 생산량·목표 달성률·밸런스 효율 —
+       가동시간·OEE 가정·목표 UPH·병렬 대수를 화면에서 바꿔 본다(기간 필터와 무관한 설계 능력 지표). 정의 [docs/분석-정의.md §8](docs/분석-정의.md#8-라인-밸런스-line-balance-스프린트-2)
    - 사용자 관리: 역할(작업자/보전/관리자)·팀 변경, 비밀번호 초기화, **사전 등록**(사번·이름·역할·팀 — 비밀번호는 본인 첫 로그인 때 설정)
    - 운영 정책: **신규 사번 자동 등록 허용** 토글(운영 전환 시 끄고 사전 등록만 허용),
      **대화·파일 보존 기간**(0=무기한, 매일 자동 백업 성공 직후 기간 초과분 정리 — 상태 이력·실적은 보존),
@@ -137,9 +146,11 @@ public/
   js/app.js   로그인 흐름, 소켓 핸들링, HUD/채팅/퀘스트/브리핑 UI
   admin.html, js/admin.js  관리자 콘솔 (SCR-06)
   js/analytics.js, css/analytics.css  실적 분석 화면 (window.FWAnalytics.mount — 없으면 서버가 빈 파일로 대체)
-  assets/equipment/  설비 유형 아이소메트릭 스프라이트 PNG(192×192) + manifest.json (없는 유형·generic은 절차적 큐브)
-  assets/parts/      제품 분해도 서브어셈블리 이미지 <PN>.png (325×484, 흰 카드) — 상태창 단품 썸네일·분해도 모달
+  assets/equipment/  설비 유형 15종 아이소메트릭 스프라이트 PNG(192×192) + manifest.json (없는 유형·generic은 절차적 큐브)
+  assets/parts/      제품 분해도 서브어셈블리 이미지 <PN>.png (325×484, 흰 카드) — 🔩 분해도 모달
+  assets/parts/thumb/  같은 이름의 96×96 썸네일 — 상태창 투입 단품 표 (없으면 원본으로 폴백)
 assets/blender/  설비 3D 모델 생성·렌더 파이프라인 (build_equipment.py · render.cmd · postprocess.py, Blender 5.2; out/은 커밋 제외)
+                 contact_sheet.py(3배 확대 검수 시트) · make_part_thumbs.py(분해도 → 썸네일, Blender 불필요)
 server/analytics.js  실적 분석 API — registerAnalytics(app, {requireAdmin, db, queries, settings}) (없으면 건너뜀)
 docs/         기획 브리프, 구축 경과 보고, 운영 전환 가이드, 분석-정의(OEE 지표 정의), 도면-AI-연동, 소개 캔버스 작업 파일
 docs/bldc/    BLDC 500W 제품 라인 원천 — bldc-500w-48v.json(BOP·BOM·분해도 단계), layout-bldc-500w.json(배치), source/(xlsx·PDF 원본)
@@ -261,10 +272,12 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
   정책 API 경계값(0·2000·소수·문자 → 400), 부하 테스트 50명 30초 통과(이동 p95 21.1ms, 채팅 p95 10.1ms)
 - 팀 운영: `docs/team/운영규약.md`(역할·라운드), `인터페이스.md`(계약), `작업보드.md`, `협업로그.md`, `handoff-*.md`
 
-## 스프린트 2: BLDC 500W 모터 라인 — 공정(BOP)·단품(BOM)·분해도 (진행 중, 라운드 1 2026-09-09)
+## 스프린트 2: BLDC 500W 모터 라인 — 공정(BOP)·단품(BOM)·분해도·라인 밸런스 (2026-09-10 완료)
 
 첨부 자료(BLDC_500W_48V BOM/BOP 마스터 xlsx, 분해도 PDF)의 24공정을 맵으로 표현하고, **설비를 클릭하면 그 공정에 투입되는 단품**이 보인다.
-계약은 `docs/team/인터페이스.md` §7(데이터 모델·API)·§8(단품 HUD)·§9(새 유형 8종).
+계약은 `docs/team/인터페이스.md` §7(데이터 모델·API)·§8(단품 HUD)·§9(새 유형 8종). 원본 xlsx·PDF는 `docs/bldc/source/`에 있고
+`python scripts/bldc/extract.py`가 `docs/bldc/bldc-500w-48v.json`과 분해도 이미지 `public/assets/parts/<PN>.png`를 다시 만든다.
+체험 서버 https://factory-world.onrender.com 은 이 라인으로 시작한다(아래 "빈 DB 자동 적용").
 
 - **데이터 모델** (`server/db.js`, 기존 DB는 기동 시 자동 마이그레이션): `products`(code, name, spec_json — 사양·분해도 단계·라인 밸런스 기준값 원문),
   `processes`(product_code+op 유일, seq/line/name/equipment_hint/input_text/output/ct_sec/kind/qc/note/stage_pn), `parts`(pn PK, level L1~L3, parent, 수량, image),
@@ -274,18 +287,33 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 - **숨김 규칙**: `hidden=1` 설비·존은 `init`·`world:refresh`·근접 판정·라인 부하 틱·대시보드·알람 리포트·실적 분석·게이트웨이·배치 내보내기에서 제외
   (`queries.listEquipments/listZones/listLinks`가 거름). 설비 마스터에서 [복원](속한 존도 함께)·[숨김], 맵 에디터 존 목록에 숨긴 존 복원. 이력·실적·라인 레코드는 그대로 남는다.
 - **적용 절차** (관리자 콘솔 → 맵 에디터 → 제품 라인): [🔩 제품 라인 적용 (BLDC 500W)] → 확인. 서버가 `docs/bldc/bldc-500w-48v.json`을 가져온 뒤 `docs/bldc/layout-bldc-500w.json`을
-  `replace`로 적용한다(존 2·설비 24·라인 23, 기존 파일럿 11대·4존은 숨김). 다른 제품: [BOP JSON 가져오기] → 배치 JSON [가져오기](설비마다 `op` 지정) 순서.
-  원천 JSON은 `python scripts/bldc/extract.py`로 xlsx/PDF에서 재생성.
-- **현장 화면**: 상태창 "공정 · 단품" 섹션 + 🔩 분해도 모달(사용법 4 참조). 새 유형 8종은 `EQUIPMENT_TYPES`·콘솔 라벨에 등록되어 있고, 스프라이트가 없는 유형은 큐브로 폴백.
+  `replace`로 적용한다(존 2·설비 24·라인 23, 파일에 없는 기존 설비·존은 숨김 — 이 PC는 파일럿 11대·4존, 빈 DB는 시드 10대·4존). 다른 제품: [BOP JSON 가져오기] → 배치 JSON [가져오기](설비마다 `op` 지정) 순서.
+- **빈 DB 자동 적용** (`FW_SEED_PRODUCT_LINE=bldc`): 서버가 빈 DB(`products` 없음)로 뜰 때 위 절차를 1회 자동 실행한다(기동 로그 `[bop] 제품 라인 적용(자동 시드)`).
+  제품이 이미 있는 DB는 건너뛰므로(`… 이미 제품이 있어 자동 적용 건너뜀`) 로컬 개발 DB에는 영향이 없고, 적용 이력은 `settings.seed_product_line`. 지원하지 않는 값은 경고만 남기고 서버는 뜬다.
+  `render.yaml`에 설정되어 있어 Render 체험 서버는 재배포(DB 초기화)마다 BLDC 라인으로 시작한다. 라인이 늘면 `server/index.js`의 `SAMPLE_PRODUCT_LINES`에 파일 쌍을 추가.
+- **현장 화면**: 상태창 "공정 · 단품" 섹션 + 🔩 분해도 모달(사용법 4 참조). 투입 단품 썸네일은 `public/assets/parts/thumb/<PN>.png`(96×96 불투명·1px 회색 테두리, 표시 36×36) —
+  로드 실패 시 원본 `/assets/parts/<PN>.png`, 그것도 없으면 빈 칸. 분해도 모달은 원본(325×484)을 쓰고 이 설비의 단계를 강조한다.
+- **새 설비 스프라이트 8종** (한도윤, `assets/blender/build_equipment.py`): 자동 적층기(stacker)·니들 와인더(winder)·진공 함침조(vpi)·열풍 건조로(oven)·
+  착자기(magnetizer)·밸런싱 머신(balancer)·접착 디스펜서(dispenser)·SMT 결선(smt). 매니페스트 15종·PNG 15장 합계 79.8 KB, 규격 동일(192×192, 앵커 (96,150),
+  그림자 알파 28~60 → 클릭 통과, 본체 ≥ 96). BLDC 배치 24대가 큐브 없이 전부 이미지로 뜬다. 검수용 `contact_sheet.py`(3배 시트·다크/라이트), 썸네일 `make_part_thumbs.py`.
+- **📈 라인 밸런스** (서지안, `GET /api/admin/analytics/line-balance?product&hours&oee&targetUph&parallel[OP]&hints`): BOP 설계 C/T ÷ 병렬 대수로 라인별 병목·UPH·
+  일 생산량(가동시간 × OEE ÷ 병목 C/T)·목표 달성률·밸런스 효율을 내고, 제품은 가장 느린 라인으로 본다. 기본값은 xlsx 12_Line_Balance(가동 20h·OEE 0.85·목표 UPH 60).
+  배치 공정(A80·A90)은 병목 판정에서 빼되 개당 C/T가 병목보다 크면 경고. 같은 공정에 설비 2대를 연결해도 병렬은 자동 반영하지 않는다(연결 대수만 표시, PM 결정).
+  xlsx와 일치: 아마추어 라인 A40 45초(병렬 2)·UPH 80·일 1,360대 / 조립 라인 B110 60초·UPH 60·일 1,020대. 정의 [docs/분석-정의.md §8](docs/분석-정의.md#8-라인-밸런스-line-balance-스프린트-2)
 - **적용 결과(이 PC, 2026-09-09)**: 설비 35대 중 24대 표시·11대 숨김, 존 2 표시·4 숨김, 공정 24·단품 56(서브어셈블리 9 포함)·투입 36·라인 23, 24/24 공정에 설비 연결.
-  게임에서 OP-A40(니들 와인더) 클릭 → 병목 공정·C/T 90초·MW-1030 Magnet Wire 180 g(SA-1000 썸네일) 표시, 분해도 1단계 강조 확인(다크·라이트).
   근접 대화(2인 자동 활성화)·상태 변경·라인 부하(A40→A50 16%)가 새 설비에서 그대로 동작.
+- **검증(2026-09-10)**: `node --check` 20파일. 빈 DB 격리 서버(포트 3002, 임시 `FW_DATA_DIR`)에서 자동 적용 → `/api/admin/bop` 연결 24/24, 설비 34대 중 24 표시·10 숨김,
+  존 2/4, 라인 23, 분해도 API 비로그인 401·로그인 9단계, 라인 밸런스 UPH 60·일 1,020대, 소켓 `init` 24대 / 재기동 시 건너뜀·수치 불변.
+  로컬에서 니들 와인더(OP-A40) 클릭 → 병목 칩·단품 표(MW-1030 Magnet Wire 180 g, 썸네일 96×96)·🔩 분해도 모달(10장, 1단계 강조) 다크·라이트,
+  썸네일 404 → 원본 폴백 → 원본도 없으면 빈 칸. 부하 테스트(BLDC 24대, 50명 30초) 이동 p95 18.9ms·채팅 p95 9.4ms 통과.
 - 참고: 다크 테마의 `--input/--overlay/--toast-bg`가 자기 참조로 무효 처리되어 상태창·패널 배경이 투명하던 문제를 함께 수정(`public/css/style.css`).
+  관리자 콘솔 본문(`.content`)에 `min-width: 0`을 줘서 📈 탭의 넓은 표가 약 1,000px 화면에서 페이지를 가로로 밀지 않고 표 안에서 스크롤되게 했다.
 
 ## 다음 단계 후보
 
 - 사내 계정 연동(SSO/AD) — 현재 사내 인증 서버 없음, 필요 시 LDAP/OIDC 모듈 추가
 - OPC-UA/Modbus 실 장비 연결 검증 — 드라이버는 준비됨, 라이브러리 설치 후 파일럿 설비 1대로 확인
 - 심시티식 라인 증설 시뮬레이션 뷰 (Phase 3 확장)
-- 스프린트 2 후보(`docs/team/handoff-최민준.md` 참조): 게이트웨이 폴링 수신/실패 카운트 표(연결 끊김 vs 상태 안정 구분),
-  가동률 정의 통일(상태창·대시보드 → 분석 정의), 설비 방향(회전) 필드 + 4방향 렌더, 상태별 애니메이션 프레임, 유형별 OEE 집계
+- 스프린트 3 후보(`docs/team/handoff-최민준.md` 참조): 게이트웨이 폴링 수신/실패 카운트 표(연결 끊김 vs 상태 안정 구분),
+  공정별 실측 C/T(게이트웨이 사이클 카운트 → 라인 밸런스에 설계 C/T와 나란히), 가동률 정의 통일(상태창·대시보드 → 분석 정의),
+  제품 여러 개(`equipments.product_code`), 분해도 5·6단계(축 서브어셈블리) 공정 연결 보완, 설비 방향(회전) 필드 + 4방향 렌더, 상태별 애니메이션 프레임, 유형별 OEE 집계

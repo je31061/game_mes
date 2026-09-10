@@ -1,5 +1,80 @@
 # handoff — 최민준 (MES 운영 리더)
 
+## 스프린트 2 라운드 2 (통합·배포) — 2026-09-10 완료
+
+### 반영한 요청
+| 발신 | 요청 | 결과 |
+|---|---|---|
+| 한도윤 | (1) 24대 이미지 스프라이트·램프·라벨 확인 | 라운드 1에서 확인(재생성 요청 없음). 이번 라운드 로컬 게임 24대 전부 `isImage`(큐브 0), 매니페스트 15종 요청 200 |
+| 한도윤 | (2) §8 썸네일 경로 + HUD 전환 | `app.js` `PARTS_THUMB = '/assets/parts/thumb/'` 우선, `data-orig` = 원본, `error` 리스너로 원본 폴백 → 그것도 없으면 `img` 제거(빈 칸). `style.css` `.pthumb` 36×36. §8 확정 문구 |
+| 한도윤 | (3) 커밋 대상 | equipment PNG 15 + manifest, parts/thumb 9, blender 스크립트 5(수정 3·신규 2) 전부 이번 커밋. `assets/blender/out/`·`__pycache__/` 제외 |
+| 한도윤 | (4) 라벨 겹침 | 해당 없음(라운드 1 확인) |
+| 서지안 | (1) README·가이드 §3-1 라인 밸런스 한 줄 + §8 링크 | README 관리자 콘솔 📈 항목·스프린트 2 절, 운영 가이드 §3-1 — 앵커 `#8-라인-밸런스-line-balance-스프린트-2`(GitHub 슬러그 규칙 대조) |
+| 서지안 | (2) `unlinked` 정의 대조 | 라운드 1 답변(동일). 빈 DB 격리 서버에서도 `/api/admin/bop` linked 24 = 라인 밸런스 `summary.linked` 24 |
+| 서지안 | (3) 병렬 자동 반영 | PM 결정(2026-09-09 23:55): 자동 반영 안 함, `linkedCount` 표시 + 수동 `parallel` 유지 |
+| 서지안 | (4)(5)(6) | 코드 요청 아님 / 중복 제외 무해 / SIM 이번 스프린트 없음 — 라운드 1 답변 그대로 |
+| PM | (1) `docs/bldc/source` 원본 커밋 | 라운드 1 커밋 `6917e76`에 이미 포함 → 이번 push로 공개 저장소 반영 |
+| PM | (3) `FW_SEED_PRODUCT_LINE=bldc` 빈 DB 자동 적용 + `render.yaml` | 구현·검증(아래). `render.yaml` envVars에 `FW_SEED_PRODUCT_LINE: "bldc"` |
+
+되돌린 산출물: **없음.** 한도윤 — 15장 192×192 RGBA, 알파 1~27 픽셀 0·64~95 구간 0·본체 최소 96·램프 알파 255·최고점 y ≥ 69, 썸네일 9장 96×96 전 픽셀 불투명·테두리 rgb(150,154,164), 원본 9장 HEAD와 바이트 동일.
+서지안 — `registerAnalytics(app, { requireAdmin, db, queries, settings })`, 라우트 4개 전부 `requireAdmin`, `window.FWAnalytics.mount`, 셀렉터 144개 전부 `.fwa-*`, 하드코딩 색 0·테마 변수만.
+
+### 코드 변경 (이번 라운드, 전부 내 소유 파일)
+- `server/index.js`: `SAMPLE_PRODUCT_LINES = { bldc: {bop, layout} }`, `sampleLineFiles(line)`, `applySampleProductLine(line, who)`(콘솔 버튼과 공용), 기동 블록 —
+  `FW_SEED_PRODUCT_LINE`이 있으면 ① 지원 값이 아니면 경고 ② `products`가 있으면 건너뜀 ③ `settings.seed_product_line` 이력이 같으면 건너뜀 ④ 파일 없으면 오류 로그 ⑤ 적용 후 이력 저장. 실패해도 서버는 뜬다.
+  위치: "관리자 API" 절 바로 위(참조하는 `num`·`partImageFor`·`clampInt`·`SAMPLE_PRODUCT_LINES`는 앞에서 정의, `localTs`는 함수 선언이라 TDZ 없음). 기동 시 소켓이 없으므로 `afterLayoutChange()` 불필요(라인 상태는 `tickLinks`가 지연 생성).
+- `render.yaml`: `FW_SEED_PRODUCT_LINE: "bldc"`.
+- `public/js/app.js`·`public/css/style.css`: 썸네일 경로·폴백·크기(위 표).
+- `public/admin.html`: `.content { min-width: 0 }` — 📈 탭에서 라인 밸런스 표(`nowrap`, 약 1,176px)의 최소 콘텐츠 폭이 flex 항목 `.content`를 `max-width` 1100px까지 밀어
+  982px 화면에서 본문이 1,300px로 가로 스크롤되던 문제. 수정 후 본문 967/967, 표는 `.fwa-scroll` 안에서 스크롤(681/1176). 서지안 파일은 손대지 않음.
+- `.gitignore`: `__pycache__/`(검증 중 `py_compile`이 만든 폴더가 커밋되지 않게), `data-loadtest/`(가이드 §4의 부하 테스트 폴더 — 테스트 DB에도 비밀번호 해시가 있음).
+- 문서: README(체험 서버·Render 버튼·Koyeb 버튼 `FW_SEED_PRODUCT_LINE`, 사용법·📈 라인 밸런스·구조·스프린트 2 절 완료·부하 기록·스프린트 3 후보), `docs/운영전환-가이드.md`(§1 체험 서버, §3-1 제목, §4 기록·BLDC 옵션),
+  `docs/배포-가이드.md`(Render 체험 서버·로그인 없는 반영 확인법·`[skip render]`, Koyeb 표 행), `docs/design-brief.md`(§3 구축 순서 9·BLDC 절, §4 현재 상태), 인터페이스 §8 확정 문구.
+
+### 검증 결과 (2026-09-10, 이 PC)
+- `node --check` 20파일(server 7·drivers 5·public/js 4·scripts 4) 통과, python 5개 `py_compile` 통과(생성된 `__pycache__` 삭제).
+- **빈 DB 자동 적용**(임시 `FW_DATA_DIR`, `PORT=3002`, `FW_SEED_PRODUCT_LINE=bldc`, 무작위 `FW_ADMIN_PASSWORD`·`FW_JWT_SECRET` — 관리자 확인은 비밀번호 로그인 대신 그 시크릿으로 발급한 토큰):
+  - 1차 기동 로그: 마이그레이션 3줄, `[auth] 관리자 초기 비밀번호를 FW_ADMIN_PASSWORD로 설정`, `[bop] 제품 라인 적용(자동 시드) — BLDC-500W-48V: 공정 24·단품 49·투입 36 / 설비 +24 수정 0 숨김 10 / 존 +2 숨김 4 / 라인 +23`.
+  - `/api/admin/bop` summary `processes 24·parts 56·inputs 36·linked 24·unlinked []`. 설비 34대 = 표시 24(전부 `op` 연결)·숨김 **10**(PRS-01~03, WLD-01~03, ASM-01~02, INS-01, PKG-01 — 빈 DB 시드가 10대라서. 로컬 DB는 CNC-01이 있어 11), 존 2/4, 내보내기 설비 24·라인 23.
+    유형 분포 press 4·assembly 7·inspector 3·stacker·winder·vpi·oven·dispenser·magnetizer·balancer·smt·robot·packer 각 1. `/api/bop/exploded` 비로그인 **401**, 로그인 9단계·final OP-B110,OP-B120.
+    라인 밸런스 `?hints=1` UPH 60·일 1,020·linked 24 (아마추어 A40 45초·UPH 80·1,360 / 조립 B110 60초·UPH 60·1,020). 소켓 `init` 설비 24·존 2·라인 23, OP-A40 `equipment:detail.process` 입력 MW-1030(image SA-1000.png)·단계 1.
+  - 2차 기동(재기동): `[bop] FW_SEED_PRODUCT_LINE=bldc — products 에 이미 제품이 있어 자동 적용 건너뜀`, DB 행 수 불변(products 1·processes 24·parts 56·inputs 36·equipments 34·links 23·zones 6).
+  - 3차 `FW_SEED_PRODUCT_LINE=xyz` → 경고 1줄 후 정상 기동, 4차 변수 없음 → 시드 로그 없음. 프로세스 종료·임시 폴더 삭제 확인.
+- **로컬 3000**(미리보기 `factory-world` 재기동 — `FW_SEED_PRODUCT_LINE` 미설정이라 로컬 DB 무영향. 브라우저 패널에 이전 세션 토큰이 없어 로컬 `data/jwt.secret`으로 3시간짜리 관리자 토큰을 발급하고
+  페이지의 `/api/login` 요청만 가로채 그 토큰을 돌려주는 방식으로 로그인 흐름을 재현 — 비밀번호는 서버로 보내지 않음. 검증 후 localStorage 정리):
+  - 게임: 설비 24대 전부 이미지. 니들 와인더 본체를 실제 클릭 → 상태창 "니들 와인더 · OP-A40", 병목 칩, 공정 정보, 단품 표 MW-1030 Magnet Wire ↳ Stator Assy 동선 φ0.80 180 g,
+    썸네일 `/assets/parts/thumb/SA-1000.png` 96×96(표시 34×34 + 테두리), 산출물 "3상 권선 스테이터 · 분해도 1단계". 🔩 분해도 실제 클릭 → 카드 10(9단계+완성품), `cur` = STAGE 1(SA-1000)만, 원본 9장 전부 로드(325×484 등), 내 공정 표시 OP-A40. ESC 닫기.
+  - 폴백: 실제 `img`(리스너 부착된 요소)에 없는 thumb 경로 + `data-orig`=원본 → 원본 325×484로 교체, 원본도 없는 경로 → `img` 제거·셀 빈 칸(표 유지). 이 두 404만 콘솔에 남음.
+  - 라이트 테마: 상태창 배경 rgba(255,255,255,.97), 썸네일 경계 보임. 다크 테마 스크린샷도 확인.
+  - 관리자 콘솔 📈: 라인 밸런스 카드(SVG 2·병렬 입력 27) 타일 "60 / 1,020대 / 100% / 24/24공정", 경고 1건(A90), 다크·라이트. 위 `.content` 수정 전후 폭 비교.
+  - 에셋 요청: 매니페스트·PNG 15장·thumb·원본 9장 전부 200.
+  - 관찰(이번 변경과 무관): 브라우저 패널이 OS에서 가려진(`document.hidden`) 상태로 게임을 부팅하면 Phaser RESIZE 캔버스가 0×0으로 잡히고 `Framebuffer status: Incomplete Attachment`가 한 번 뜬다.
+    `scale.getParentBounds()+refresh()` 후 정상 렌더. 실제 사용자가 백그라운드 탭에서 입장하는 경우에만 해당 — 스프린트 3에서 `visibilitychange` 시 `scale.refresh()` 한 줄 검토.
+- **부하 테스트**(격리 서버 3001, 스크래치 `FW_DATA_DIR`, `FW_SEED_PRODUCT_LINE=bldc` → 설비 24·라인 23, 50명 30초): 접속 50/50 · 오류 0 · 이동 수신 9,903건 · 손실 4건 · p50 7.8ms · **p95 18.9ms** · max 25.0ms,
+  채팅 수신 5,250건 · p50 2.0ms · **p95 9.4ms** · max 17.1ms → 통과(NFR-01). 서버 오류 로그 0, 테스트 서버 종료·데이터 삭제.
+
+### 커밋·push·Render
+- 이번 통합 커밋(두 사람 산출물 + 내 파일 + 문서)과 라운드 1 커밋 `6917e76`을 함께 push → Render 자동 재배포. 해시와 Render 확인 결과는 아래 "Render 반영 확인"에 적는다(문서만 고치는 후속 커밋은 `[skip render]`).
+
+### Render 반영 확인
+- (push 후 기록)
+
+### 한도윤에게 (다음)
+- 요청 전부 반영, 되돌림 없음. 다음 후보: `footprint {w,h}`(SMT 다리 3% 초과), `balancer_run.png` 상태별 프레임(로더 프레임 훅은 내가 만든다 — 계약 제안을 협업로그에), `generic` 스프라이트 여부.
+- 썸네일 폴백이 있으니 새 P/N 이미지를 넣을 때 thumb를 빠뜨려도 화면은 원본으로 뜬다. 그래도 `make_part_thumbs.py`로 같이 만들어 달라(96×96이 표에서 더 선명).
+
+### 서지안에게 (다음)
+- 요청 전부 반영. 📈 탭 가로 넘침은 내 `admin.html` 쪽 원인이라 내가 고쳤다 — 서지안 파일 변경 필요 없음. 다만 라인 밸런스 표가 1,176px라 약 1,000px 화면에서는 표 안 가로 스크롤이 생긴다(정상 동작).
+- 다음 후보: 공정별 실측 C/T(게이트웨이 사이클 카운트 전제 — 수집·스키마는 내가, 정의·화면은 서지안), "OEE 가정"에 §3 실측 OEE 끌어오기 버튼.
+
+### 열린 항목 / 스프린트 3 후보
+1. 게이트웨이 폴링 수신/실패 카운트 표 `gateway_samples` (서지안 제안, 스키마·수집은 최민준) — 실측 C/T의 전제이기도 함
+2. 공정별 실측 C/T 열 (서지안)
+3. 제품 여러 개: `equipments.product_code` + `processByOp`에 제품 조건 (최민준)
+4. 분해도 5·6단계(FS-7010·FS-7020)에 `stagePn` 공정이 없어 "공정 미정" — 원천 JSON 보완 여부 PM 결정
+5. 숨김 탭 부팅 시 캔버스 0×0 (위 관찰) — `game.js` 한 줄
+6. 가동률 정의 통일, 설비 방향 4방향, 상태별 애니메이션, 유형별 OEE, `generic` 스프라이트, `footprint` (스프린트 1 후보 이월)
+
 ## 스프린트 2 라운드 1 (기반: 스키마·BOP API·단품 HUD·라인 전환) — 2026-09-09 완료
 
 ### 한 일 (전부 내 소유 파일)
@@ -46,6 +121,11 @@
 - (6) SIM 연동은 이번 스프린트에 붙이지 않는다(PM 결정 없음). 데모가 필요하면 맵 에디터에서 설비별 `sim` 지정으로 언제든 가능.
 - (1) README·가이드 §3-1 라인 밸런스 한 줄은 라운드 2 통합 때.
 - 참고: `products.spec_json.lineBalance`에 xlsx 12_Line_Balance 기준값 원문이 있다(`GET /api/admin/bop`의 `product.lineBalance`).
+
+### 커밋
+- `6917e76` 스프린트 2 라운드 1 — 27파일(내 파일 + PM 원천 docs/bldc·scripts/bldc·parts 원본 9장). push 안 함(라운드 2). `data/` 미포함 확인.
+- 미커밋(라운드 2 통합 커밋 대상): 한도윤 `public/assets/equipment/*.png` 8장 신규·manifest.json·`assets/blender/*`(스크립트 3 수정 + 2 신규)·`public/assets/parts/thumb/`, 서지안 `server/analytics.js`·`public/js/analytics.js`·`public/css/analytics.css`·`docs/분석-정의.md`, 두 handoff.
+- `docs/bldc/source/`의 xlsx(37 KB)·PDF(944 KB) 원본을 저장소에 넣었다(다른 PC에서 `extract.py` 재현용). 공개 저장소이므로 push 전에 PM이 원하지 않으면 라운드 2에서 뺀다.
 
 ### 열린 항목 / 라운드 2 할 일
 - 두 사람 산출물 통합 커밋·push, 부하 테스트(24대), README·운영 가이드·브리프 갱신, 썸네일 경로 전환, 분석 §3-1 문구.

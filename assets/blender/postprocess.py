@@ -7,8 +7,9 @@ Factory World — 렌더 후처리 (PIL + numpy). owner: 한도윤 (docs/team/�
 
 하는 일
  1. _calib.png 의 마름모를 측정해 폭≈64·높이≈32·중심≈(96,150) 검증. 어긋나면 정수 오프셋으로 전 스프라이트 정렬.
- 2. 본체: 알파 ≥ 96 실루엣 주위 1px 어두운 윤곽(다크·라이트 테마 대비).
- 3. 그림자: shadow.png 휘도(밝은 바닥 대비 어두운 정도) → 알파 28~60 밴드(24 미만이면 게임 클릭이 통과), 앵커 중심 접지 타원 합성.
+ 2. 본체: 알파 ≥ 96 실루엣 주위 1px 어두운 윤곽(다크·라이트 테마 대비). 본체·윤곽은 알파 ≥ 64(클릭 대상).
+ 3. 그림자: shadow.png 휘도(밝은 바닥 대비 어두운 정도) → 알파 28~60 밴드, 앵커 중심 접지 타원 합성.
+    게임 클릭 임계값은 64(인터페이스 §3, 2026-09-08 결정): 알파 64 미만은 클릭이 통과하므로 그림자(28~60)는 통과, 본체 ≥ 64는 히트.
  4. 검증: 빈 이미지·검은 사각형·캔버스 밖 잘림·상단 y<10·파일 크기 합계 2MB 초과 → 실패(exit 1).
  5. manifest.json: version 1, tile, anchor, types[type] = { file, lamp{x,y}, labelY }.
 """
@@ -23,10 +24,11 @@ CANVAS = 192
 ANCHOR = (96, 150)
 TILE_W, TILE_H = 64, 32
 SHADOW_RGB = (18, 22, 34)
-SHADOW_A_MIN, SHADOW_A_MAX = 28, 60      # 게임 alphaTolerance 24 → 최소 28
+SHADOW_A_MIN, SHADOW_A_MAX = 28, 60      # 게임 임계값 64(SPRITE_HIT_ALPHA) → 그림자 28~60은 클릭 통과, 본체·윤곽 ≥ 64
 OUTLINE_RGB = (16, 18, 24)
 OUTLINE_A = 225
-TYPES = ['press', 'welder', 'robot', 'assembly', 'inspector', 'packer', 'cnc']
+TYPES = ['press', 'welder', 'robot', 'assembly', 'inspector', 'packer', 'cnc',
+         'stacker', 'winder', 'vpi', 'oven', 'magnetizer', 'balancer', 'dispenser', 'smt']
 
 
 def load_rgba(path):

@@ -87,3 +87,68 @@
 .fwa-chart[data-chart="oee"] svg { max-height: 420px; }
 .fwa-foot { font-size: 11px; color: var(--muted); margin-top: 18px; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 10px; }
 .fwa-foot a { color: var(--accent); }
+
+/* ── 라인 밸런스 (분석-정의.md §8) ─────────────────────────── */
+.fwa-lb.loading { opacity: .55; pointer-events: none; transition: opacity .15s; }
+.fwa-lb-ctl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: 12px; }
+.fwa-lb-ctl label { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-right: -2px; }
+.fwa-lb-ctl label.lb-chk { display: inline-flex; align-items: center; gap: 5px; letter-spacing: 0; font-size: 12px; color: var(--text); margin-left: 4px; }
+.fwa-lb-ctl input[type=number], .fwa-lb-ctl select { padding: 6px 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 13px; width: 78px; font-variant-numeric: tabular-nums; }
+.fwa-lb-ctl select { width: auto; }
+.fwa-lb-ctl .lb-reset { padding: 6px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); font-size: 12px; font-weight: 600; }
+.fwa-lb-ctl .lb-reset:hover { border-color: var(--accent); color: var(--accent); }
+.fwa-lb-ctl .lb-status { font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+.fwa-lb-cards .v .unit { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 4px; }
+.fwa-lb-cards .v.ok { color: var(--run); }
+.fwa-lb-cards .v.low { color: var(--idle); }
+
+.fwa-lb-line { margin-top: 14px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+.fwa-lb-line .fwa-chart { padding: 10px 12px 6px; background: var(--panel2); }
+.fwa-lb-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; }
+.fwa-lb-head b { font-size: 14px; }
+.fwa-lb-head .muted { font-size: 12px; }
+.fwa-lb-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.fwa-lb-tiles > div { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel2); min-width: 0; }
+.fwa-lb-tiles i { display: block; font-style: normal; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+.fwa-lb-tiles b { display: block; font-size: 16px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fwa-lb-tiles b .muted { font-size: 11px; font-weight: 500; }
+.fwa-lb-tiles b.ok { color: var(--run); }
+.fwa-lb-tiles b.low { color: var(--idle); }
+.fwa-lb-tiles small { display: block; font-size: 10px; color: var(--muted); margin-top: 1px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 차트 3: 공정 C/T 막대 */
+.fwa-chart .bar-ct { fill: var(--accent); opacity: .85; }
+.fwa-chart .bar-bt { fill: var(--alarm); }
+.fwa-chart .bar-batch { stroke: var(--muted); stroke-width: 1; }
+.fwa-chart .hatch { stroke: var(--muted); stroke-width: 1.5; }
+.fwa-chart .bar-raw { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 2; }
+.fwa-chart .takt { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; }
+.fwa-chart .val .m { fill: var(--muted); }
+.fwa-chart .val .bt { fill: var(--alarm); font-weight: 700; }
+.fwa-chart .val.strong { font-weight: 700; }
+.fwa-chart .eqdot { stroke: var(--panel); stroke-width: 1.5; fill: var(--muted); }
+.fwa-chart .eqdot.RUN { fill: var(--run); }
+.fwa-chart .eqdot.IDLE { fill: var(--idle); }
+.fwa-chart .eqdot.STOP { fill: var(--stop); }
+.fwa-chart .eqdot.ALARM { fill: var(--alarm); }
+.fwa-chart .eqdot.unlinked { fill: none; stroke: var(--muted); stroke-dasharray: 2 1.5; }
+.fwa-legend i.ct { background: var(--accent); } .fwa-legend i.bt { background: var(--alarm); }
+.fwa-legend i.batch { background: repeating-linear-gradient(45deg, var(--muted) 0 1.5px, transparent 1.5px 4px); border: 1px solid var(--muted); box-sizing: border-box; }
+.fwa-legend i.raw { background: none; border: 1px dashed var(--muted); box-sizing: border-box; }
+.fwa-legend i.takt { background: var(--accent); }
+.fwa-legend i.dot { width: 8px; height: 8px; border-radius: 50%; }
+.fwa-legend i.dot.linked { background: var(--run); }
+.fwa-legend i.dot.unlinked { background: none; border: 1.5px dashed var(--muted); box-sizing: border-box; }
+
+/* 라인 밸런스 표 */
+.fwa-lb-table td .qc { font-size: 10.5px; white-space: normal; max-width: 260px; line-height: 1.35; margin-top: 2px; }
+.fwa-lb-table tr.is-bt td { background: color-mix(in srgb, var(--alarm) 8%, transparent); }
+.fwa-lb-table tr.is-batch td:not(.notes) { color: var(--muted); }
+.fwa-lb-table tr.sum td { border-top: 2px solid var(--border); border-bottom: none; }
+.fwa-lb-table input.lb-par { width: 52px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.fwa .tag.kind-batch { background: repeating-linear-gradient(45deg, var(--border) 0 2px, var(--panel2) 2px 6px); color: var(--text); }
+.fwa .tag.kind-bt { color: var(--alarm); }
+.fwa .tag.kind-qc { color: var(--accent); }
+.fwa .tag.kind-fin { color: var(--run); }
+.fwa .tag.bt { color: var(--alarm); background: color-mix(in srgb, var(--alarm) 14%, transparent); }
+.fwa .tag.unlinked { color: var(--idle); border: 1px dashed var(--idle); background: none; }

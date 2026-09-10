@@ -3,6 +3,8 @@ rem Factory World — 설비 스프라이트 배치 렌더 (owner: 한도윤, do
 rem 사용: assets\blender\render.cmd [--types press,cnc] [--engine cycles] [--samples N]
 rem   1) Blender 5.2 배치: 모델 생성 + 렌더 → assets\blender\out\ (중간 파일, 커밋 제외)
 rem   2) 시스템 python(PIL+numpy): 후처리 → public\assets\equipment\<type>.png + manifest.json
+rem 유형 15종(스프린트 1: 7종 + 스프린트 2 BLDC: stacker,winder,vpi,oven,magnetizer,balancer,dispenser,smt).
+rem --types 로 일부만 렌더하면 manifest.json 의 나머지 유형은 유지된다.
 setlocal
 cd /d "%~dp0..\.."
 set BLENDER=C:\Program Files\Blender Foundation\Blender 5.2\blender.exe

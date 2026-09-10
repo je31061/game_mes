@@ -64,6 +64,70 @@
         "y": 103
       },
       "labelY": 74
+    },
+    "stacker": {
+      "file": "stacker.png",
+      "lamp": {
+        "x": 99,
+        "y": 74
+      },
+      "labelY": 58
+    },
+    "winder": {
+      "file": "winder.png",
+      "lamp": {
+        "x": 107,
+        "y": 103
+      },
+      "labelY": 84
+    },
+    "vpi": {
+      "file": "vpi.png",
+      "lamp": {
+        "x": 106,
+        "y": 80
+      },
+      "labelY": 64
+    },
+    "oven": {
+      "file": "oven.png",
+      "lamp": {
+        "x": 115,
+        "y": 101
+      },
+      "labelY": 74
+    },
+    "magnetizer": {
+      "file": "magnetizer.png",
+      "lamp": {
+        "x": 98,
+        "y": 96
+      },
+      "labelY": 80
+    },
+    "balancer": {
+      "file": "balancer.png",
+      "lamp": {
+        "x": 116,
+        "y": 118
+      },
+      "labelY": 91
+    },
+    "dispenser": {
+      "file": "dispenser.png",
+      "lamp": {
+        "x": 113,
+        "y": 124
+      },
+      "labelY": 100
+    },
+    "smt": {
+      "file": "smt.png",
+      "lamp": {
+        "x": 94,
+        "y": 96
+      },
+      "labelY": 80
     }
   }
 }

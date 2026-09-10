@@ -310,7 +310,8 @@
   // equipment:detail 의 process 블록: { op, seq, line, name, equipmentHint, ctSec, kind, qc, note, output, inputText,
   //   inputs:[{pn,name,spec,qty,unit,parentPn,parentName,image}], stage:{stage,pn,file,label,group}|null }
   let currentProc = null;
-  const PARTS_BASE = '/assets/parts/';
+  const PARTS_BASE = '/assets/parts/';           // 원본 (325×484 흰 카드) — 분해도 모달
+  const PARTS_THUMB = '/assets/parts/thumb/';    // 한도윤 썸네일 (96×96 불투명, 1px 회색 테두리) — 투입 단품 표. 없으면 원본으로 폴백 (인터페이스 §8)
   const KIND_CLASS = { '병목': 'bottleneck', '배치': 'batch', 'QC': 'qc', '완성': 'final' };
   const fmtQty = (q, unit) => (q === null || q === undefined) ? '-' : `${Number.isInteger(q) ? q : Number(q).toFixed(2)} ${unit || ''}`.trim();
 
@@ -331,7 +332,8 @@
     ];
     if (proc.note) rows.push(['비고', esc(proc.note)]);
     $('eq-proc-info').innerHTML = rows.map(([k, v]) => `<span class="k">${k}</span><span class="v">${v}</span>`).join('');
-    // 투입 단품 표 — 썸네일은 단품 이미지 → 없으면 부모 서브어셈블리 → 없으면 이 공정의 분해도 단계 이미지
+    // 투입 단품 표 — 썸네일은 단품 이미지 → 없으면 부모 서브어셈블리 → 없으면 이 공정의 분해도 단계 이미지.
+    // 경로는 thumb/<file>(96×96) 우선, 로드 실패 시 원본 /assets/parts/<file>, 그것도 없으면 빈 칸 (파일명은 둘 다 <pn>.png 로 동일)
     const stageFile = proc.stage?.file || null;
     if (proc.inputs && proc.inputs.length) {
       $('eq-proc-parts').innerHTML = `<table>
@@ -339,12 +341,19 @@
         <tbody>${proc.inputs.map(i => {
           const img = i.image || stageFile;
           return `<tr>
-            <td style="width:38px">${img ? `<img class="pthumb" src="${PARTS_BASE}${esc(img)}" alt="" loading="lazy">` : ''}</td>
+            <td style="width:38px">${img ? `<img class="pthumb" src="${PARTS_THUMB}${esc(img)}" data-orig="${PARTS_BASE}${esc(img)}" alt="" loading="lazy">` : ''}</td>
             <td><div class="ppn">${esc(i.pn)}</div><div class="pname">${esc(i.name || '')}</div>${i.parentName && i.level !== 'L1' ? `<div class="pparent">↳ ${esc(i.parentName)}</div>` : ''}</td>
             <td class="pspec">${esc(i.spec || '')}</td>
             <td class="pqty">${fmtQty(i.qty, i.unit)}</td>
           </tr>`;
         }).join('')}</tbody></table>`;
+      // 썸네일 폴백: thumb 404 → 원본, 원본도 없으면 이미지를 지운다 (콘솔 404 한 번은 남지만 표는 깨지지 않음)
+      $('eq-proc-parts').querySelectorAll('img.pthumb').forEach(im => {
+        im.addEventListener('error', () => {
+          if (im.dataset.orig) { const o = im.dataset.orig; delete im.dataset.orig; im.src = o; }
+          else im.remove();
+        });
+      });
     } else {
       $('eq-proc-parts').innerHTML = `<div class="proc-empty">투입 단품 없음 — 전공정 산출물을 가공${proc.inputText ? ` (${esc(proc.inputText)})` : ''}</div>`;
     }

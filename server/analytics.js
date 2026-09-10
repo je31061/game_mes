@@ -5,9 +5,12 @@
  *  GET /api/admin/analytics/oee?from&to&equipmentId      설비별 가동률·성능·품질·OEE
  *  GET /api/admin/analytics/production?from&to&equipmentId 일별·설비별 생산실적
  *  GET /api/admin/analytics/gateway?from&to             게이트웨이 연결 품질(상태 이력 기준)
+ *  GET /api/admin/analytics/line-balance?product&hours&oee&targetUph&parallel[OP]=n&hints
+ *                                                        라인 밸런스 — BOP 공정 C/T 기준 병목·UPH·일 생산량 (분석-정의.md §8)
  *
  * 시각: DB 문자열은 서버 로컬 'YYYY-MM-DD HH:MM:SS'. 기간은 alarm-report 와 같이
  *      `${from} 00:00:00` ~ `${to} 23:59:59` 문자열 비교, ms 계산은 [기간 시작, min(기간 끝, 지금)].
+ * 숨김 설비: listEquipments 행에 `hidden` 필드가 있고 참이면 모든 라우트에서 제외한다 (인터페이스 §7, 분석-정의.md §7).
  */
 
 const STATES = ['RUN', 'IDLE', 'STOP', 'ALARM'];
@@ -18,9 +21,156 @@ const localDate = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getD
 const localTs = (d) => `${localDate(d)} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
 const toMs = (s) => new Date(String(s).replace(' ', 'T')).getTime();   // 로컬 시각 문자열 → ms
 const round1 = (x) => Math.round(x * 10) / 10;
+const round2 = (x) => Math.round(x * 100) / 100;
 const ratio = (num, den) => (den > 0 ? Number((num / den).toFixed(4)) : null); // 소수 4자리 비율, 분모 0 → null
 const product = (...vs) => (vs.some(v => v === null) ? null : Number(vs.reduce((a, b) => a * b, 1).toFixed(4)));
 const parseDs = (s) => { try { return s ? JSON.parse(s) : null; } catch { return null; } };
+const visible = (eq) => !!eq && !eq.hidden;   // equipments.hidden (컬럼이 없으면 undefined → 보임)
+
+// ── 라인 밸런스 (분석-정의.md §8) ───────────────────────────────────────────
+// 순수 계산 함수 — DB 없이 processes 행 배열로 검증할 수 있게 export 한다 (scripts/검증에서 JSON 원천으로 대조).
+const BATCH_RE = /(\d+(?:\.\d+)?)\s*ea\s*\/\s*배치/i;   // note "30ea/배치" → 배치 크기
+const PARALLEL_HINT_RE = /병렬\s*(\d+)\s*대/;            // note "병렬 2대 권장" → 병렬 권장 대수
+const LB_DEFAULTS = { hours: 20, oee: 0.85, targetUph: 60 };  // xlsx 12_Line_Balance 기준값
+const PARALLEL_MAX = 20;
+
+/** 라인 밸런스 쿼리 파라미터 해석. 잘못된 값이면 { error } */
+export function parseLineBalanceParams(query = {}) {
+  const num = (v, def, min, max) => {
+    if (v === undefined || v === null || v === '') return def;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= min && n <= max ? n : NaN;
+  };
+  const hours = num(query.hours, LB_DEFAULTS.hours, 0.1, 24);
+  if (Number.isNaN(hours)) return { error: 'hours 는 0.1~24 사이 숫자여야 합니다.' };
+  const oee = num(query.oee, LB_DEFAULTS.oee, 0.01, 1);
+  if (Number.isNaN(oee)) return { error: 'oee 는 0.01~1 사이 숫자여야 합니다.' };
+  const targetUph = num(query.targetUph, LB_DEFAULTS.targetUph, 1, 100000);
+  if (Number.isNaN(targetUph)) return { error: 'targetUph 는 1~100000 사이 숫자여야 합니다.' };
+  // parallel[OP-A40]=2 (qs 객체) 또는 parallel=OP-A40:2,OP-B110:1 (문자열)
+  const parallel = {};
+  const p = query.parallel;
+  const entries = p && typeof p === 'object' ? Object.entries(p)
+    : typeof p === 'string' && p.trim() ? p.split(',').map(s => s.split(':').map(x => x.trim())) : [];
+  for (const [op, v] of entries) {
+    if (v === undefined || v === '') continue;
+    const n = Number(v);
+    if (!op || !Number.isInteger(n) || n < 1 || n > PARALLEL_MAX) return { error: `parallel[${op}] 은 1~${PARALLEL_MAX} 정수여야 합니다.` };
+    parallel[op] = n;
+  }
+  const hints = query.hints === '1' || query.hints === 'true' || query.hints === true;
+  return { hours, oee, targetUph, parallel, hints };
+}
+
+/**
+ * 라인 밸런스 계산 — 분석-정의.md §8.2~§8.4 와 같은 말.
+ * rows: processes 행(op, seq, line, name, equipment_hint, ct_sec, kind, qc, note, stage_pn), eqByOp: Map<op, equipment[]>
+ */
+export function computeLineBalance(rows, params, eqByOp = new Map()) {
+  const { hours, oee, targetUph, hints } = params;
+  const override = params.parallel || {};
+  const dailySec = Math.round(hours * 3600 * oee * 1000) / 1000;   // 일 가동초 = hours × 3600 × oee (기본 61,200)
+  const taktSec = round2(3600 / targetUph);                         // 목표 C/T = 3600 ÷ 목표 UPH
+  const effectiveParallel = {};
+
+  // 라인은 첫 등장 순서(적재 순서), 라인 안은 seq 순
+  const order = []; const byLine = new Map();
+  for (const r of rows) {
+    if (!byLine.has(r.line)) { byLine.set(r.line, []); order.push(r.line); }
+    byLine.get(r.line).push(r);
+  }
+
+  const lines = order.map(line => {
+    const procs = byLine.get(line)
+      .slice().sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0) || (a.id ?? 0) - (b.id ?? 0))
+      .map(r => {
+        const note = String(r.note || '');
+        const isBatch = r.kind === '배치';
+        const bm = note.match(BATCH_RE); const batchSize = bm ? Number(bm[1]) : null;
+        const hm = note.match(PARALLEL_HINT_RE); const parallelHint = hm ? Number(hm[1]) : null;
+        // 병렬 대수: 쿼리 지정 > (hints=1 이면) note 권장값 > 1
+        const parallel = override[r.op] ?? (hints && parallelHint ? parallelHint : 1);
+        effectiveParallel[r.op] = parallel;
+        const ctSec = Number(r.ct_sec);
+        const ctOk = Number.isFinite(ctSec) && ctSec > 0;
+        const notes = [];
+        // 유효 C/T = ctSec ÷ parallel (비배치) · 배치 개당 C/T = ctSec ÷ batchSize ÷ parallel
+        const effectiveCtSec = !isBatch && ctOk ? round2(ctSec / parallel) : null;
+        const perUnitCtSec = isBatch && ctOk && batchSize ? round2(ctSec / batchSize / parallel) : null;
+        if (!ctOk) notes.push('C/T 없음 → 계산 제외');
+        if (isBatch && ctOk && !batchSize) notes.push('배치 크기 미상(note에 "N ea/배치" 없음) → 개당 C/T 계산 불가');
+        if (parallel > 1) notes.push(`병렬 ${parallel}대 적용${override[r.op] === undefined && parallelHint ? '(비고 권장값)' : ''}`);
+        else if (parallelHint && parallelHint > 1) notes.push(`비고 "병렬 ${parallelHint}대 권장" 미적용`);
+        const linked = eqByOp.get(r.op) || [];
+        const eq = linked[0] || null;
+        if (linked.length > 1 && linked.length !== parallel) notes.push(`연결 설비 ${linked.length}대 ≠ 병렬 설정 ${parallel}대`);
+        else if (linked.length === 1 && parallel > 1) notes.push(`설비 연결 1대(병렬 설정 ${parallel}대)`);
+        return {
+          op: r.op, seq: r.seq, name: r.name, kind: r.kind || null,
+          ctSec: ctOk ? ctSec : null, isBatch, batchSize, parallel, parallelHint,
+          effectiveCtSec, perUnitCtSec, isBottleneck: false,
+          equipmentHint: r.equipment_hint || null, qc: r.qc || null, note: note || null, stagePn: r.stage_pn || null,
+          equipment: eq ? { id: eq.id, code: eq.code, name: eq.name, type: eq.type || 'generic', status: eq.status } : null,
+          linkedCount: linked.length,
+          notes,
+        };
+      });
+
+    // 병목 = 유효 C/T 최대인 비배치 공정. 동률이면 시트의 '병목' 표기(kind)가 있는 것, 그것도 없으면 seq 앞선 것.
+    // 동률 공정은 tiedWith 에 전부 싣는다 (어느 쪽을 골라도 C/T·UPH 는 같다).
+    const flow = procs.filter(p => !p.isBatch && p.effectiveCtSec !== null);
+    let bottleneck = null, tiedWith = [];
+    for (const p of flow) if (!bottleneck || p.effectiveCtSec > bottleneck.effectiveCtSec) bottleneck = p;
+    if (bottleneck) {
+      const ties = flow.filter(p => p.effectiveCtSec === bottleneck.effectiveCtSec);
+      bottleneck = ties.find(p => p.kind === '병목') || ties[0];
+      bottleneck.isBottleneck = true;
+      tiedWith = ties.filter(p => p !== bottleneck).map(p => p.op);
+      for (const p of ties) if (p !== bottleneck) p.notes.push(`병목 ${bottleneck.op}과 동률(${bottleneck.effectiveCtSec}초)`);
+    }
+    const btCt = bottleneck ? bottleneck.effectiveCtSec : null;
+
+    const sumCtSec = round2(flow.reduce((s, p) => s + p.ctSec, 0));                      // 작업 내용 총량(병렬 반영 안 함)
+    const sumEffectiveCtSec = round2(flow.reduce((s, p) => s + p.effectiveCtSec, 0));
+    const balanceEff = btCt ? ratio(sumEffectiveCtSec, flow.length * btCt) : null;       // Σ유효 C/T ÷ (공정 수 × 병목 C/T)
+    const uph = btCt ? round1(3600 / btCt) : null;                                        // UPH = 3600 ÷ 병목 C/T
+    const dailyOutput = btCt ? Math.floor(dailySec / btCt + 1e-9) : null;                 // 일 생산량 = 일 가동초 ÷ 병목 C/T (정수 내림)
+    const attainment = uph !== null ? ratio(uph, targetUph) : null;                       // 목표 달성률 = UPH ÷ 목표 UPH
+    const warnings = [];
+    if (!bottleneck) warnings.push('C/T가 있는 비배치 공정이 없어 병목·UPH를 계산할 수 없습니다.');
+    for (const p of procs) {
+      if (p.kind === '병목' && !p.isBottleneck && bottleneck) p.notes.push(`시트 표기는 병목이나 계산 병목은 ${bottleneck.op}(${btCt}초)`);
+      if (p.isBatch && p.perUnitCtSec !== null && btCt && p.perUnitCtSec > btCt) {
+        const need = Math.ceil(p.perUnitCtSec / btCt);
+        const msg = `${p.op} 배치 개당 ${p.perUnitCtSec}초 > 병목 ${btCt}초 → 실질 병목. 배치 설비 ${need}대(병렬) 또는 배치 크기 ${Math.ceil(p.batchSize * p.perUnitCtSec / btCt)}ea 필요`;
+        p.notes.push(msg.replace(`${p.op} `, ''));
+        warnings.push(msg);
+      }
+    }
+    const overTakt = flow.filter(p => p.effectiveCtSec > taktSec).map(p => p.op);
+    const unlinked = procs.filter(p => !p.equipment).map(p => p.op);
+    return {
+      line, processCount: procs.length, flowCount: flow.length, batchCount: procs.filter(p => p.isBatch).length,
+      bottleneck: bottleneck ? { op: bottleneck.op, name: bottleneck.name, ctSec: bottleneck.ctSec, parallel: bottleneck.parallel, effectiveCtSec: btCt, tiedWith } : null,
+      sumCtSec, sumEffectiveCtSec, balanceEff, uph, dailyOutput, attainment, overTakt,
+      linkedCount: procs.length - unlinked.length, unlinked, warnings,
+      processes: procs,
+    };
+  });
+
+  // 제품 = 직렬 라인 → 가장 느린 라인이 결정 (§8.4)
+  const withUph = lines.filter(l => l.uph !== null);
+  const slowest = withUph.reduce((m, l) => (!m || l.uph < m.uph ? l : m), null);
+  const summary = {
+    lines: lines.length, processes: rows.length,
+    linked: lines.reduce((s, l) => s + l.linkedCount, 0),
+    unlinked: lines.flatMap(l => l.unlinked),
+    uph: slowest ? slowest.uph : null, dailyOutput: slowest ? slowest.dailyOutput : null,
+    attainment: slowest ? ratio(slowest.uph, targetUph) : null, slowestLine: slowest ? slowest.line : null,
+    targetUph,
+  };
+  return { params: { hours, oee, targetUph, dailySec, taktSec, hints, parallel: effectiveParallel }, lines, summary };
+}
 
 /** 기간 파라미터 해석. 기본: 오늘 포함 최근 7일. 잘못된 형식이면 { error } */
 function parseRange(query) {
@@ -101,11 +251,15 @@ export function registerAnalytics(app, { requireAdmin, db, queries, settings }) 
 
   const gatewayId = () => stmts.gatewayUserId.get()?.id ?? null;
 
-  /** equipmentId 필터 → 설비 배열 (없는 id면 빈 배열) */
+  /** equipmentId 필터 → 설비 배열 (없는 id·숨김 설비면 빈 배열). 숨김(hidden) 설비는 분석 대상에서 제외 — 인터페이스 §7 */
   function targetEquipments(query) {
-    if (query.equipmentId) return [queries.getEquipment.get(Number(query.equipmentId))].filter(Boolean);
-    return queries.listEquipments.all();
+    if (query.equipmentId) return [queries.getEquipment.get(Number(query.equipmentId))].filter(visible);
+    return queries.listEquipments.all().filter(visible);
   }
+
+  // 스키마 존재 확인 (processes/products 테이블, equipments.op/hidden 컬럼은 최민준 라운드에서 생기므로 요청 시점에 본다)
+  const tableExists = (name) => !!db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = ?").get(name);
+  const hasColumn = (table, col) => db.prepare(`PRAGMA table_info(${table})`).all().some(c => c.name === col);
 
   /** 설비별 로그 묶음 Map<equipment_id, log[]> (id 순) */
   function logsByEquipment() {
@@ -253,7 +407,7 @@ export function registerAnalytics(app, { requireAdmin, db, queries, settings }) 
     if (range.error) return res.status(400).json({ error: range.error });
     const gwId = gatewayId();
     const logs = logsByEquipment();
-    const all = queries.listEquipments.all();
+    const all = queries.listEquipments.all().filter(visible);
     // 대상: data_source 프로토콜이 있는 설비 ∪ 기간 내 게이트웨이 로그가 있는 설비 — 분석-정의.md §5
     const equipments = all.map(eq => {
       const ds = parseDs(eq.data_source);
@@ -282,5 +436,45 @@ export function registerAnalytics(app, { requireAdmin, db, queries, settings }) 
       };
     }).filter(Boolean);
     res.json({ range: { from: range.from, to: range.to, gatewayUserId: gwId }, equipments });
+  });
+
+  // ── 라인 밸런스 (BOP 공정 C/T 기준) — 분석-정의.md §8 ───────────
+  app.get('/api/admin/analytics/line-balance', requireAdmin, (req, res) => {
+    const params = parseLineBalanceParams(req.query);
+    if (params.error) return res.status(400).json({ error: params.error });
+    const schema = {
+      processes: tableExists('processes'), products: tableExists('products'),
+      equipmentOp: hasColumn('equipments', 'op'), equipmentHidden: hasColumn('equipments', 'hidden'),
+    };
+    const paramsOut = { ...params, dailySec: Math.round(params.hours * 3600 * params.oee * 1000) / 1000, taktSec: round2(3600 / params.targetUph) };
+    // 데이터가 없으면 200 + ok:false + reason — 화면이 "데이터 없음 · 이유"를 그대로 보여 준다
+    const empty = (reason) => res.json({ ok: false, reason, product: null, products: [], schema, params: paramsOut, lines: [], summary: null });
+    if (!schema.processes) return empty('processes 테이블 없음 — BOP 스키마(인터페이스 §7) 적용 전입니다. 스키마 반영 후 서버를 재기동하세요.');
+
+    const products = schema.products ? db.prepare('SELECT code, name FROM products ORDER BY code').all() : [];
+    const requested = req.query.product ? String(req.query.product) : '';
+    const code = requested || products[0]?.code
+      || db.prepare('SELECT product_code FROM processes ORDER BY id LIMIT 1').get()?.product_code || null;
+    if (!code) return empty('BOP 미적용 — 공정 데이터가 없습니다. 관리자 콘솔 → 제품 라인 적용(POST /api/admin/bop/import)으로 BOP JSON을 적재하세요.');
+    const rows = db.prepare('SELECT * FROM processes WHERE product_code = ? ORDER BY id').all(code);
+    if (rows.length === 0) return empty(`제품 ${code}의 공정 데이터가 없습니다. ${products.length ? '등록된 제품: ' + products.map(p => p.code).join(', ') : '관리자 콘솔 → 제품 라인 적용으로 BOP JSON을 적재하세요.'}`);
+
+    // 설비 연결: equipments.op = processes.op (숨김 제외). 컬럼이 아직 없으면 전부 미연결 + schema.equipmentOp=false
+    const eqByOp = new Map();
+    if (schema.equipmentOp) {
+      const sql = `SELECT id, code, name, type, status, op FROM equipments WHERE op IS NOT NULL AND op <> ''`
+        + (schema.equipmentHidden ? ' AND COALESCE(hidden, 0) = 0' : '') + ' ORDER BY id';
+      for (const e of db.prepare(sql).all()) {
+        if (!eqByOp.has(e.op)) eqByOp.set(e.op, []);
+        eqByOp.get(e.op).push(e);
+      }
+    }
+    const result = computeLineBalance(rows, params, eqByOp);
+    res.json({
+      ok: true,
+      product: products.find(p => p.code === code) || { code, name: null },
+      products, schema,
+      ...result,
+    });
   });
 }

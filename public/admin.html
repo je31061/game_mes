@@ -26,7 +26,7 @@
   .nav button:hover { color: var(--text); }
   .sidebar .back { margin: 20px 18px 0; }
   .sidebar .back a { color: var(--muted); font-size: 12px; text-decoration: none; }
-  .content { flex: 1; padding: 24px 28px; max-width: 1100px; }
+  .content { flex: 1; padding: 24px 28px; max-width: 1100px; min-width: 0; }   /* min-width 0: 넓은 표(📈 라인 밸런스 등)가 .fwa-scroll 안에서 스크롤되고 화면 폭을 밀지 않게 (flex 항목 기본값 auto 방지) */
   .content h2 { font-size: 17px; letter-spacing: 2px; margin-bottom: 16px; }
   .tabview { display: none; }
   .tabview.active { display: block; }

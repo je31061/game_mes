@@ -23,3 +23,5 @@ services:
         value: "false"               # 사전 등록된 사번만 로그인 (콘솔 운영 정책에서 변경 가능)
       - key: FW_BACKUP_HOUR
         value: "3"
+      - key: FW_SEED_PRODUCT_LINE
+        value: "bldc"                # 빈 DB로 기동할 때 BLDC 500W 라인(공정 24·설비 24)을 자동 적용 — 재배포 후에도 데모가 제품 라인으로 바로 뜸

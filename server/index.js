@@ -505,24 +505,64 @@ app.get('/api/bop/exploded', (req, res) => {
   res.json({ product: { code: product.code, name: product.name }, stages, final });
 });
 
-// 샘플 제품 라인 적용: docs/bldc 의 BOP JSON → 배치 JSON(replace) 순서로 적용 (콘솔 "제품 라인 적용" 버튼)
+// 샘플 제품 라인: docs/bldc 의 BOP JSON → 배치 JSON(replace) 순서로 적용. 콘솔 "제품 라인 적용" 버튼과 기동 시 자동 적용(FW_SEED_PRODUCT_LINE)이 공용.
+// 지원 라인: bldc (docs/bldc/bldc-500w-48v.json + layout-bldc-500w.json). 라인이 늘면 이 표에 파일 쌍을 추가한다.
+const SAMPLE_PRODUCT_LINES = {
+  bldc: { bop: 'bldc-500w-48v.json', layout: 'layout-bldc-500w.json' },
+};
+function sampleLineFiles(line) {
+  const def = SAMPLE_PRODUCT_LINES[line];
+  if (!def) return null;
+  const bopFile = path.join(BLDC_DIR, def.bop), layoutFile = path.join(BLDC_DIR, def.layout);
+  const rel = (f) => path.relative(path.join(__dirname, '..'), f);
+  return { bopFile, layoutFile, missing: [bopFile, layoutFile].filter(f => !fs.existsSync(f)).map(rel) };
+}
+function applySampleProductLine(line, who) {
+  const files = sampleLineFiles(line);
+  const bop = importBop(JSON.parse(fs.readFileSync(files.bopFile, 'utf8')));
+  const layout = importLayout(JSON.parse(fs.readFileSync(files.layoutFile, 'utf8')));
+  console.log(`[bop] 제품 라인 적용(${who}) — ${bop.product}: 공정 ${bop.processes}·단품 ${bop.parts}·투입 ${bop.inputs} / 설비 +${layout.equipments.created} 수정 ${layout.equipments.updated} 숨김 ${layout.equipments.hidden} / 존 +${layout.zones.created} 숨김 ${layout.zones.hidden} / 라인 +${layout.links.created}`);
+  return { bop, layout };
+}
+
 app.post('/api/admin/bop/apply-sample', requireAdmin, (req, res) => {
-  const bopFile = path.join(BLDC_DIR, 'bldc-500w-48v.json');
-  const layoutFile = path.join(BLDC_DIR, 'layout-bldc-500w.json');
-  if (!fs.existsSync(bopFile) || !fs.existsSync(layoutFile)) {
-    return res.status(404).json({ error: `샘플 파일이 없습니다: ${path.relative(path.join(__dirname, '..'), bopFile)}, ${path.relative(path.join(__dirname, '..'), layoutFile)}` });
-  }
-  let bop, layout;
-  try {
-    bop = importBop(JSON.parse(fs.readFileSync(bopFile, 'utf8')));
-    layout = importLayout(JSON.parse(fs.readFileSync(layoutFile, 'utf8')));
-  } catch (e) {
-    return res.status(400).json({ error: '제품 라인 적용 실패: ' + e.message, bop: bop || null });
-  }
+  const files = sampleLineFiles('bldc');
+  if (files.missing.length) return res.status(404).json({ error: `샘플 파일이 없습니다: ${files.missing.join(', ')}` });
+  let result;
+  try { result = applySampleProductLine('bldc', `콘솔 ${req.user.emp_no}`); }
+  catch (e) { return res.status(400).json({ error: '제품 라인 적용 실패: ' + e.message }); }
   afterLayoutChange();
-  console.log(`[bop] 제품 라인 적용 — ${bop.product}: 공정 ${bop.processes}·단품 ${bop.parts}·투입 ${bop.inputs} / 설비 +${layout.equipments.created} 수정 ${layout.equipments.updated} 숨김 ${layout.equipments.hidden}`);
-  res.json({ ok: true, bop, layout });
+  res.json({ ok: true, ...result });
 });
+
+// ── 빈 DB 기동 시 제품 라인 자동 적용 (PM 결정 2026-09-09): FW_SEED_PRODUCT_LINE=bldc 이면 products 가 비어 있을 때 1회만 적용 ──
+// Render 무료 플랜처럼 재배포마다 DB가 초기화되는 환경에서 데모가 BLDC 라인으로 바로 뜨게 한다.
+// 이미 제품이 있는 DB(로컬 개발 DB 등)에는 영향 없음. 적용 이력은 settings.seed_product_line 에 남기고(두 번째 조건), 실패해도 서버는 계속 기동한다.
+{
+  const seedLine = String(process.env.FW_SEED_PRODUCT_LINE || '').trim().toLowerCase();
+  if (seedLine) {
+    const already = settings.get('seed_product_line', null);
+    if (!SAMPLE_PRODUCT_LINES[seedLine]) {
+      console.warn(`[bop] FW_SEED_PRODUCT_LINE='${seedLine}' 은 지원하지 않는 값 — 가능한 값: ${Object.keys(SAMPLE_PRODUCT_LINES).join(', ')}`);
+    } else if (queries.listProducts.all().length) {
+      console.log(`[bop] FW_SEED_PRODUCT_LINE=${seedLine} — products 에 이미 제품이 있어 자동 적용 건너뜀`);
+    } else if (already?.line === seedLine) {
+      console.log(`[bop] FW_SEED_PRODUCT_LINE=${seedLine} — 이전에 적용된 이력(${already.appliedAt})이 있어 건너뜀`);
+    } else {
+      const files = sampleLineFiles(seedLine);
+      if (files.missing.length) {
+        console.error(`[bop] FW_SEED_PRODUCT_LINE=${seedLine} — 샘플 파일이 없어 자동 적용 실패: ${files.missing.join(', ')}`);
+      } else {
+        try {
+          const r = applySampleProductLine(seedLine, '자동 시드');
+          settings.set('seed_product_line', { line: seedLine, appliedAt: localTs(new Date()), processes: r.bop.processes, equipments: r.layout.equipments.created });
+        } catch (e) {
+          console.error(`[bop] FW_SEED_PRODUCT_LINE=${seedLine} — 자동 적용 실패(서버는 계속 기동):`, e?.message || e);
+        }
+      }
+    }
+  }
+}
 
 // ── 관리자 API ────────────────────────────────────────
 function requireAdmin(req, res, next) {
