@@ -63,6 +63,7 @@ npm start
 - 공개 전에 관리자 비밀번호를 바꾸고, 필요하면 운영 정책에서 "신규 사번 자동 등록"을 끄세요.
   정식 외부 공개(HTTPS·상시 가동)는 [docs/운영전환-가이드.md](docs/운영전환-가이드.md) 참조
 - 소개 페이지·문서는 GitHub Pages로 공개: https://je31061.github.io/game_mes/
+- **사용설명서**(현장 작업자·보전·관리자용, 인쇄 가능): https://je31061.github.io/game_mes/manual.html — 원본 `docs/manual.html`
 
 ## 부하 테스트 (NFR-01)
 

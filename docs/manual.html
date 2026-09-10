@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory World 사용설명서</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --panel: #ffffff; --text: #1a2230; --muted: #5b6478; --border: #d6dce8;
+    --accent: #1c7fb5; --accent-soft: #e8f3fa; --run: #15803d; --idle: #b45309; --stop: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; font-size: 15px; }
+  main { max-width: 780px; margin: 0 auto; padding: 48px 24px 64px; }
+  header { margin-bottom: 28px; }
+  header .brand { letter-spacing: 3px; color: var(--accent); font-weight: 800; font-size: 13px; }
+  h1 { font-size: 28px; margin: 6px 0 4px; }
+  header p { color: var(--muted); margin: 0; }
+  nav.toc { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 22px 0 8px; font-size: 14px; }
+  nav.toc ol { margin: 6px 0 0; padding-left: 20px; columns: 2; column-gap: 28px; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 16px 0; break-inside: avoid; }
+  h2 { font-size: 18px; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+  h2 .no { display: inline-flex; width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 13px; align-items: center; justify-content: center; flex: none; }
+  h3 { font-size: 15px; margin: 16px 0 6px; }
+  p { margin: 6px 0; }
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; }
+  th, td { border-bottom: 1px solid var(--border); padding: 7px 8px; text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .5px; }
+  td.c, th.c { text-align: center; }
+  .key { display: inline-block; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font-size: 13px; background: #fafbfd; white-space: nowrap; }
+  .note { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: 9px 13px; margin: 10px 0; font-size: 14px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps li { counter-increment: s; position: relative; padding-left: 34px; margin: 8px 0; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .ok { color: var(--run); font-weight: 700; }
+  .no-perm { color: #9aa3b5; }
+
+  /* 화면 구성도 */
+  .layout { display: grid; grid-template-columns: 150px 1fr 150px; grid-template-rows: auto 1fr auto; gap: 6px;
+            background: #0f1422; border-radius: 10px; padding: 8px; color: #dbe3f3; font-size: 12px; margin: 10px 0 6px; min-height: 250px; }
+  .layout > div { border: 1px dashed #4a5877; border-radius: 7px; padding: 7px 9px; }
+  .layout .top { grid-column: 1 / 4; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .layout .map { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-color: #4fc3f7; background: rgba(79,195,247,.06); }
+  .layout .map b { color: #4fc3f7; font-size: 13px; }
+  .layout .hud { margin-top: 8px; border: 1px solid #4fc3f7; border-radius: 6px; padding: 5px 8px; background: #151c2e; }
+  .layout .bottom { grid-column: 1 / 4; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .layout .lbl { color: #8fa0c0; }
+
+  footer { color: var(--muted); font-size: 13px; margin-top: 28px; text-align: center; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    nav.toc ol { columns: 1; }
+    .layout { grid-template-columns: 1fr; }
+    .layout .top, .layout .bottom { grid-column: 1; }
+    section { padding: 16px 16px; }
+  }
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body { background: #fff; font-size: 12.5px; }
+    main { padding: 0; max-width: none; }
+    nav.toc { display: none; }
+    section { border-color: #ccc; padding: 12px 16px; margin: 10px 0; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">FACTORY WORLD</div>
+    <h1>사용설명서</h1>
+    <p>게임형 MES · 디지털 트윈형 협업 MES — 현장 작업자 · 설비 보전 · 관리자용 (2026-09-10 기준)</p>
+  </header>
+
+  <div class="note">
+    <b>한눈에 보기</b> — 공장 전체가 한 장의 맵입니다. 내 캐릭터로 설비 앞으로 가서 <b>설비를 클릭하면 상태와 투입 부품</b>이 보이고,
+    <b>두 명 이상이 같은 설비 앞에 모이면 대화방이 자동으로 열립니다.</b> 대화·사진·조치 기록은 그 설비의 이력으로 남습니다.
+  </div>
+
+  <nav class="toc">
+    <b>목차</b>
+    <ol>
+      <li><a href="#login">접속과 로그인</a></li>
+      <li><a href="#character">캐릭터 설정과 출근</a></li>
+      <li><a href="#screen">화면 구성</a></li>
+      <li><a href="#equipment">이동과 설비 확인</a></li>
+      <li><a href="#chat">대화와 파일 공유</a></li>
+      <li><a href="#alarm">알람 대응 순서</a></li>
+      <li><a href="#quest">작업지시(임무)와 포인트</a></li>
+      <li><a href="#roles">역할별 권한</a></li>
+      <li><a href="#admin">관리자 콘솔</a></li>
+      <li><a href="#faq">문제 해결</a></li>
+    </ol>
+  </nav>
+
+  <section id="login">
+    <h2><span class="no">1</span>접속과 로그인</h2>
+    <ul>
+      <li><b>주소</b>: 사내 서버 주소는 시스템 담당자가 안내합니다. 체험용 공개 서버는 <a href="https://factory-world.onrender.com" target="_blank" rel="noopener">factory-world.onrender.com</a>입니다.</li>
+      <li><b>권장 환경</b>: PC의 크롬·엣지 브라우저, 현장 태블릿(크롬). 별도 설치는 없습니다.</li>
+      <li><b>로그인</b>: <b>사번 · 이름 · 비밀번호</b>를 입력하고 [접 속]을 누릅니다. 등록된 사번은 <b>첫 로그인 때 입력한 비밀번호가 그대로 등록</b>됩니다(4자 이상).</li>
+      <li>"등록되지 않은 사번"이라고 나오면 관리자에게 사용자 등록을 요청하세요.</li>
+      <li><b>로그인 유지</b>: 로그인은 12시간 유지됩니다. 새로고침, 테마 전환, 관리자 콘솔과 오갈 때 다시 로그인하지 않습니다.</li>
+      <li><b>로그아웃</b>: 상단 <span class="key">🚪</span>. 여러 사람이 쓰는 PC·태블릿은 사용 후 꼭 로그아웃하세요.</li>
+      <li><b>비밀번호 변경</b>: 상단 <span class="key">🔑</span> → 현재 비밀번호와 새 비밀번호(두 번) 입력.</li>
+    </ul>
+  </section>
+
+  <section id="character">
+    <h2><span class="no">2</span>캐릭터 설정과 출근</h2>
+    <ol class="steps">
+      <li>캐릭터 <b>색상</b>을 고르고 <b>닉네임</b>을 적습니다(기본은 내 이름).</li>
+      <li><b>직무 뱃지</b>를 고릅니다: 작업자 · 설비 보전 · 생산 관리자 · 품질.</li>
+      <li><b>[🏭 출근하기]</b>를 누르면 공장 맵에 입장합니다. 한 번 설정하면 다음부터는 이 화면 없이 바로 출근합니다.</li>
+    </ol>
+    <p>입장하면 <b>출근 브리핑</b> 창이 진행 중인 알람, 모집 중인 작업지시, 오늘의 공지를 보여 줍니다. 알릴 것이 없으면 뜨지 않습니다.</p>
+  </section>
+
+  <section id="screen">
+    <h2><span class="no">3</span>화면 구성</h2>
+    <div class="layout" aria-label="게임 화면 구성도">
+      <div class="top"><span>FACTORY WORLD</span><span class="lbl">내 이름·뱃지 · ⭐ 레벨 · 접속 인원 · 🌓 · ⚡ · 🔑 · 🚪 · ⚙ 관리 콘솔</span></div>
+      <div><b>접속자 목록</b><br><span class="lbl">지금 출근한 사람</span></div>
+      <div class="map"><b>공장 맵</b><span class="lbl">존(공정 구역) · 설비 · 캐릭터 · 공정 라인</span>
+        <div class="hud">설비 클릭 → <b>상태창</b></div></div>
+      <div><b>알림</b><br><span class="lbl">알람 · 호출 · 작업지시 소식</span></div>
+      <div class="bottom"><span class="lbl">조작 안내 (태블릿은 방향 패드)</span><span>🏆 리더보드 · 📜 임무 · 💬 대화</span></div>
+    </div>
+    <table>
+      <tr><th>버튼</th><th>기능</th></tr>
+      <tr><td><span class="key">🌓</span></td><td>테마 전환 — 어두운 화면 / 흰 바탕. 밝은 현장이나 보고용 화면에는 흰 바탕이 잘 보입니다.</td></tr>
+      <tr><td><span class="key">⚡</span></td><td>저사양 모드 — 깜빡임·흐름 애니메이션을 끄고 가볍게 표시합니다. 구형 태블릿용입니다.</td></tr>
+      <tr><td><span class="key">⚙ 관리 콘솔</span></td><td>관리자에게만 보입니다. 새 탭으로 관리자 콘솔을 엽니다.</td></tr>
+      <tr><td><span class="key">🏆</span> <span class="key">📜 임무</span> <span class="key">💬 대화</span></td><td>리더보드, 작업지시 목록, 대화 패널을 엽니다. 대화 패널이 열리면 버튼들은 패널 왼쪽으로 비켜납니다.</td></tr>
+    </table>
+  </section>
+
+  <section id="equipment">
+    <h2><span class="no">4</span>이동과 설비 확인</h2>
+    <h3>이동</h3>
+    <p><span class="key">↑ ↓ ← →</span> 또는 <span class="key">W A S D</span>, 맵의 원하는 곳을 클릭해도 걸어갑니다. 태블릿은 터치하거나 왼쪽 아래 방향 패드를 씁니다.</p>
+    <h3>설비 색</h3>
+    <p><span class="dot" style="background:var(--run)"></span>가동 &nbsp; <span class="dot" style="background:var(--idle)"></span>대기 &nbsp;
+       <span class="dot" style="background:var(--stop)"></span>정지 &nbsp; <span class="dot" style="background:var(--stop)"></span>알람(깜빡임)</p>
+    <p>설비 사이의 선은 공정 라인입니다. 선이 초록 → 노랑 → 주황 → 빨강으로 바뀔수록 중간 재공이 쌓인 것이며, 90%를 넘으면 "라인 정체" 알림이 뜹니다.</p>
+    <h3>설비를 클릭하면 — 상태창</h3>
+    <ul>
+      <li><b>기본 정보</b>: 설비명·코드, 위치(존), 담당자, 현재 상태와 지속 시간</li>
+      <li><b>게이지</b>: 금일 가동 비율, 작업지시 목표 대비 진행률</li>
+      <li><b>최근 이력 · 첨부 문서</b>: 상태 변경 기록과 이 설비 대화방에 올라온 파일</li>
+      <li><b>공정 · 단품</b>: 이 설비가 맡은 공정(공정번호, 사이클 타임, 품질 관리 항목)과 <b>투입되는 부품 목록</b>(사진·품번·품명·규격·수량).
+        <span class="key">🔩 분해도</span>를 누르면 제품 분해도에서 이 공정의 단계가 강조됩니다.</li>
+      <li><b>버튼</b>: <span class="key">💬 대화방 열기</span>(현장에 없어도 원격 참여), <span class="key">📣 담당자 호출</span>(담당자에게 알림 + 이력 기록)</li>
+      <li><b>상태 변경</b>(보전·관리자만): 가동 / 대기 / 정지 / 알람을 누르고, 필요하면 사유를 적습니다.</li>
+    </ul>
+  </section>
+
+  <section id="chat">
+    <h2><span class="no">5</span>대화와 파일 공유</h2>
+    <ul>
+      <li><b>자동 대화방</b>: 같은 설비 가까이(약 2.4칸)에 <b>두 명 이상</b> 모이면 그 설비의 대화방이 자동으로 열립니다.</li>
+      <li><b>대화 패널</b> <span class="key">💬 대화</span>: 📢 전체 채널과 🏭 설비 채널이 탭으로 나뉩니다. 읽지 않은 메시지는 빨간 점으로 표시됩니다.</li>
+      <li><b>파일 보내기</b>: <span class="key">📎</span>를 누르거나 파일을 대화 패널에 끌어다 놓습니다. 사진, PDF, 도면(DWG·DXF), 동영상(MP4), 엑셀·워드·파워포인트, 텍스트·CSV 파일을 25MB까지 올릴 수 있습니다.</li>
+      <li>대화·파일·상태 변경은 <b>그 설비의 이력으로 남고 수정·삭제할 수 없습니다.</b> 업무 내용만 적어 주세요.</li>
+    </ul>
+  </section>
+
+  <section id="alarm">
+    <h2><span class="no">6</span>알람 대응 순서 (예시)</h2>
+    <ol class="steps">
+      <li>"🚨 ○○ 알람 발생!" 알림이 뜨고, 맵에서 해당 설비가 빨갛게 깜빡입니다.</li>
+      <li>현장 작업자와 보전 담당이 각자 캐릭터를 그 설비 앞으로 옮깁니다. 사무실에서는 상태창의 [💬 대화방 열기]로 참여해도 됩니다.</li>
+      <li>두 사람이 가까워지면 설비 대화방이 자동으로 열립니다.</li>
+      <li>현장 사진, 점검 매뉴얼 PDF를 주고받으며 조치 방법을 정합니다.</li>
+      <li>조치가 끝나면 보전 담당이 상태를 <b>가동</b>으로 바꾸고 사유를 적습니다. 알람을 해제한 사람에게 포인트가 쌓입니다.</li>
+      <li>대화·파일·소요 시간이 설비 이력으로 저장되어, 같은 문제가 다시 생기면 찾아볼 수 있습니다.</li>
+    </ol>
+  </section>
+
+  <section id="quest">
+    <h2><span class="no">7</span>작업지시(임무)와 포인트</h2>
+    <ul>
+      <li><span class="key">📜 임무</span>에서 모집 중인 작업지시를 <b>[✋ 수락하기]</b> → 작업 → <b>[✅ 완료 등록]</b>에 양품·불량 수량과 비고를 입력합니다.</li>
+      <li><b>포인트</b>: 작업지시 완료 +100P(불량 0이면 +20P 보너스), 알람 해제 +50P. 포인트가 쌓이면 레벨이 오릅니다.</li>
+      <li><b>뱃지</b>: 🎖 첫 임무 완수 · 🏅 임무 베테랑(5건) · 🚨 알람 해결사(해제 3회) · 💎 무결점(불량 0 실적 3회)</li>
+      <li><span class="key">🏆</span> 리더보드에서 개인 순위(상위 10명)와 팀 순위를 봅니다.</li>
+    </ul>
+  </section>
+
+  <section id="roles">
+    <h2><span class="no">8</span>역할별 권한</h2>
+    <table>
+      <tr><th>기능</th><th class="c">작업자</th><th class="c">보전</th><th class="c">관리자</th></tr>
+      <tr><td>맵 이동, 설비 확인, 대화, 파일 공유, 담당자 호출</td><td class="c ok">○</td><td class="c ok">○</td><td class="c ok">○</td></tr>
+      <tr><td>작업지시 수락·완료 등록</td><td class="c ok">○</td><td class="c ok">○</td><td class="c ok">○</td></tr>
+      <tr><td>설비 상태 변경 (가동·대기·정지·알람)</td><td class="c no-perm">—</td><td class="c ok">○</td><td class="c ok">○</td></tr>
+      <tr><td>관리자 콘솔 (작업지시 발행, 설비·사용자 관리, 분석)</td><td class="c no-perm">—</td><td class="c no-perm">—</td><td class="c ok">○</td></tr>
+    </table>
+    <p>역할은 관리자가 관리자 콘솔 → 사용자 관리에서 정합니다. 권한이 없는 버튼은 흐리게 보이고 눌리지 않습니다.</p>
+  </section>
+
+  <section id="admin">
+    <h2><span class="no">9</span>관리자 콘솔 (관리자)</h2>
+    <p>게임 상단 <span class="key">⚙ 관리 콘솔</span> 또는 주소 뒤에 <code>/admin.html</code>. 왼쪽 메뉴 아래 [← 공장 맵으로]를 누르면 로그인 없이 맵으로 돌아갑니다.</p>
+    <table>
+      <tr><th>메뉴</th><th>할 수 있는 일</th></tr>
+      <tr><td>📊 대시보드</td><td>오늘 알람 수·평균 대응 시간, 대화·파일 수, 접속 인원, 설비별 상태 비율, 설비 게이트웨이 시작/중지, [💾 지금 백업]</td></tr>
+      <tr><td>💬 대화 로그</td><td>설비·기간·키워드로 모든 대화 검색 (열람 전용)</td></tr>
+      <tr><td>🚨 알람 리포트</td><td>알람 발생부터 해제까지 걸린 시간, 해제한 사람, 대화·파일 수</td></tr>
+      <tr><td>📜 작업지시</td><td>설비·제목·목표수량·마감일로 작업지시 발행 → 현장 화면에 임무로 표시, 진행 상황과 실적 확인</td></tr>
+      <tr><td>📈 실적 분석</td><td>설비별 종합효율(가동률·성능·품질), 일별 생산실적, 라인 밸런스(공정별 사이클 타임과 병목)</td></tr>
+      <tr><td>🗺 맵 에디터</td><td>설비 끌어서 배치, 공정 구역(존) 그리기, 🔗 라인 연결, 공장 평면도 배경, 배치 데이터 가져오기/내보내기, [🔩 제품 라인 적용]</td></tr>
+      <tr><td>🏭 설비 관리</td><td>설비 추가·수정, 설비 유형과 공정 연결, 숨김/복원</td></tr>
+      <tr><td>👤 사용자 관리</td><td>사번 사전 등록, 역할·팀 지정, 비밀번호 초기화, 운영 정책(자동 등록, 대화 보존 기간, 하루 계획 가동 시간)</td></tr>
+    </table>
+  </section>
+
+  <section id="faq">
+    <h2><span class="no">10</span>문제 해결</h2>
+    <table>
+      <tr><th style="width:38%">증상</th><th>해결</th></tr>
+      <tr><td>첫 화면이 뜨는 데 30~60초 걸린다</td><td>체험 서버는 무료 서버라 한동안 접속이 없으면 잠듭니다. 잠시 기다리면 열립니다. 사내 서버는 해당 없음.</td></tr>
+      <tr><td>"등록되지 않은 사번"</td><td>관리자에게 사용자 등록을 요청하세요. 등록 후 첫 로그인 때 비밀번호를 정합니다.</td></tr>
+      <tr><td>비밀번호를 잊었다</td><td>관리자에게 비밀번호 초기화를 요청한 뒤, 다음 로그인 때 새 비밀번호를 입력하면 그대로 등록됩니다.</td></tr>
+      <tr><td>상태 변경 버튼이 흐리다</td><td>설비 상태 변경은 보전·관리자만 할 수 있습니다.</td></tr>
+      <tr><td>대화방이 열리지 않는다</td><td>설비에 더 가까이 가거나, 상태창의 [💬 대화방 열기]를 누르세요. 자동 대화방은 두 명 이상일 때 열립니다.</td></tr>
+      <tr><td>화면이 끊기거나 느리다</td><td>상단 <span class="key">⚡</span> 저사양 모드를 켜세요.</td></tr>
+      <tr><td>"세션이 만료되었습니다"</td><td>로그인한 지 12시간이 지났습니다. 다시 로그인하세요.</td></tr>
+      <tr><td>다른 사람 이름으로 들어가 있다</td><td>공용 기기에 이전 사용자의 로그인이 남은 것입니다. <span class="key">🚪</span> 로그아웃 후 본인 사번으로 로그인하세요.</td></tr>
+      <tr><td>체험 서버의 데이터가 사라졌다</td><td>체험 서버는 업데이트될 때마다 초기 데이터로 돌아갑니다. 실제 운영은 사내 서버에서 합니다.</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    더 자세한 설치·운영 방법은 <a href="https://github.com/je31061/game_mes#readme">README</a>와
+    <a href="https://github.com/je31061/game_mes/blob/main/docs/%EC%9A%B4%EC%98%81%EC%A0%84%ED%99%98-%EA%B0%80%EC%9D%B4%EB%93%9C.md">운영 전환 가이드</a>를 참고하세요.
+    · <a href="./">문서 목록으로</a>
+  </footer>
+</main>
+</body>
+</html>
