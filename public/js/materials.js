@@ -408,8 +408,11 @@
               <button class="fwm-new-item fwm-ghost" title="POST /api/admin/materials/items">+ 품목</button>
             </div>
             <div class="fwm-item-form" hidden></div>
-            <div class="fwm-scroll fwm-items-box"></div>
-            <div class="fwm-detail"></div>
+            <!-- 2단: 왼쪽 목록 · 오른쪽 상세 (좁으면 CSS 가 한 단으로 내린다) -->
+            <div class="fwm-split">
+              <div class="fwm-scroll fwm-items-box"></div>
+              <div class="fwm-detail"></div>
+            </div>
           </section>
           <section class="fwm-sec" data-sec="bom" hidden>
             <div class="fwm-filters">
@@ -599,6 +602,7 @@
       fillBomRoots(st);
     } catch (e) { if (e.message === 'auth') return; st.items = []; st.errors.items = e.message; }
     renderItems(st);
+    if (!st.detail) renderDetail(st);   // 2단 오른쪽에 안내를 먼저 띄운다 (아직 고른 품목이 없을 때)
   }
   function visibleItems(st) { return st.classDesc ? st.items.filter(i => st.classDesc.has(Number(i.classId))) : st.items; }
   function renderItems(st) {
@@ -629,7 +633,14 @@
     renderDetail(st);
   }
   function renderDetail(st) {
-    const d = st.detail, { els } = st; if (!d) { els.detail.innerHTML = ''; return; }
+    const d = st.detail, { els } = st;
+    if (!d) {   // 2단 화면이라 오른쪽이 비어 보이지 않게 안내를 둔다
+      els.detail.innerHTML = `<div class="fwm-panel fwm-detail-empty">
+        <b>품목 상세</b>
+        <p class="muted fwm-small">왼쪽 목록에서 품번을 누르면 여기에 속성·어디에 쓰이나(where-used)·BOM 헤더·로트 수가 나옵니다.
+          상세에서 <b>BOM 트리</b>·<b>역전개 경로</b>·<b>로트</b>로 바로 넘어갈 수 있습니다.</p></div>`;
+      return;
+    }
     const it = d.item || {}; const wu = d.whereUsed || []; const hs = d.headers || [];
     const kind = itemKind(it);
     els.detail.innerHTML = `<div class="fwm-panel">

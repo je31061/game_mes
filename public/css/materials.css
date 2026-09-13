@@ -1,6 +1,6 @@
 /* 자재(Material) 관리 화면 (서지안, 인터페이스 §10) — 테마 변수만 사용: --text --muted --accent --run --idle --stop --panel --border --input
  * 강조/연한 배경은 color-mix 로 위 변수에서 파생한다 (다크·라이트 모두 같은 규칙). 외부 라이브러리 없음, 트리는 인라인 HTML. */
-.fwm { color: var(--text); }
+.fwm { color: var(--text); container-type: inline-size; container-name: fwm; }   /* 2단 전환 기준이 뷰포트가 아니라 탭 폭이 되게 */
 .fwm h2 small { font-size: 12px; letter-spacing: 0; font-weight: 400; color: var(--muted); margin-left: 8px; }
 .fwm h2 code, .fwm-foot code { font-size: 11px; background: color-mix(in srgb, var(--text) 8%, transparent); padding: 1px 5px; border-radius: 4px; }
 .fwm h4 { font-size: 11.5px; letter-spacing: 1px; color: var(--muted); font-weight: 600; margin: 12px 0 6px; text-transform: uppercase; }
@@ -126,6 +126,30 @@
 .fwm-props { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 14px; font-size: 12.5px; margin-bottom: 6px; }
 .fwm-props i { display: block; font-style: normal; font-size: 10.5px; color: var(--muted); letter-spacing: 1px; }
 .fwm-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+
+/* ── 품목 2단 (목록 | 상세) ──────────────────────────────────────────────
+ * 상세가 목록 아래로 붙으면 긴 목록에서는 스크롤을 한참 내려야 보인다. 처음부터 오른쪽에 둔다.
+ * 오른쪽은 화면에 붙어 따라오고(sticky), 왼쪽 목록만 스크롤한다. 탭 폭이 좁으면 예전처럼 한 단으로 내린다. */
+.fwm-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 460px); gap: 12px; align-items: start; }
+.fwm-split .fwm-items-box { max-height: 70vh; overflow: auto; }
+.fwm-split .fwm-detail { position: sticky; top: 8px; max-height: 80vh; overflow: auto; }
+.fwm-split .fwm-detail .fwm-panel { margin-top: 0; }
+.fwm-split .fwm-detail .fwm-cols { grid-template-columns: 1fr; }   /* 좁은 단이라 where-used 와 BOM 헤더를 세로로 */
+.fwm-detail-empty { border-style: dashed; }
+.fwm-detail-empty b { font-size: 13px; }
+.fwm-detail-empty p { margin-top: 6px; }
+@container fwm (max-width: 1300px) {   /* 분류 트리(약 230px)를 빼고도 목록이 600px 이상 남을 때만 2단 */
+  .fwm-split { grid-template-columns: 1fr; }
+  .fwm-split .fwm-items-box { max-height: none; }
+  .fwm-split .fwm-detail { position: static; max-height: none; }
+  .fwm-split .fwm-detail .fwm-panel { margin-top: 12px; }
+  .fwm-split .fwm-detail .fwm-cols { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+}
+/* @container 를 모르는 브라우저용 안전장치 — 창이 좁으면 뷰포트 기준으로도 한 단 */
+@media (max-width: 1100px) {
+  .fwm-split { grid-template-columns: 1fr; }
+  .fwm-split .fwm-detail { position: static; max-height: none; }
+}
 .fwm-cols > div { min-width: 0; }
 .fwm-paths { font-size: 12px; margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
 .fwm-path { white-space: nowrap; overflow-x: auto; padding: 4px 8px; background: color-mix(in srgb, var(--text) 4%, transparent); border-radius: 6px; }
