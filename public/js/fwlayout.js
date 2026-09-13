@@ -36,11 +36,76 @@
     target.classList.toggle('pos-below', pos !== 'right');
   }
 
+  // ── 두 단의 경계 ──────────────────────────────────────────────────────────
+  // 기본은 정확히 반반(50%)이다. 경계를 끌면 비율이 바뀌고 그 값도 화면별로 남는다.
+  // 두 번 누르면 다시 정확히 반반으로 돌아온다. 25~75% 밖으로는 못 간다 — 한쪽이 쓸 수 없게 좁아지는 것을 막는다.
+  const SKEY = (k) => 'fw.split.' + k;
+  const DEF_PCT = 50;
+  function getPct(key) {
+    const n = Number(localStorage.getItem(SKEY(key)));
+    return Number.isFinite(n) && n >= 25 && n <= 75 ? n : DEF_PCT;
+  }
+  function setPct(target, key, pct) {
+    const v = Math.min(75, Math.max(25, Math.round(pct * 10) / 10));
+    target.style.setProperty('--fwsplit', v + '%');
+    try { localStorage.setItem(SKEY(key), String(v)); } catch (e) { /* 저장만 못 한다 */ }
+    const h = target.querySelector(':scope > .fwi-split-handle');
+    if (h) h.setAttribute('aria-valuenow', String(Math.round(v)));
+    return v;
+  }
+  // 경계 손잡이를 두 칸 사이에 끼워 넣는다 (화면 모듈은 손대지 않는다)
+  function ensureHandle(target, key) {
+    let h = target.querySelector(':scope > .fwi-split-handle');
+    if (h) return h;
+    h = document.createElement('div');
+    h.className = 'fwi-split-handle';
+    h.setAttribute('role', 'separator');
+    h.setAttribute('aria-orientation', 'vertical');
+    h.setAttribute('aria-label', '목록과 상세의 경계 — 끌어서 비율 조절, 두 번 누르면 반반');
+    h.setAttribute('tabindex', '0');
+    h.setAttribute('aria-valuemin', '25'); h.setAttribute('aria-valuemax', '75');
+    h.innerHTML = '<span></span>';
+    if (target.children.length > 1) target.insertBefore(h, target.children[1]);
+    else target.appendChild(h);
+
+    let dragging = false;
+    const pctFrom = (clientX) => {
+      const r = target.getBoundingClientRect();
+      return r.width ? ((clientX - r.left) / r.width) * 100 : DEF_PCT;
+    };
+    const move = (ev) => { if (dragging) { ev.preventDefault(); setPct(target, key, pctFrom(ev.clientX)); } };
+    const up = () => {
+      if (!dragging) return;
+      dragging = false;
+      target.classList.remove('dragging');
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+    };
+    h.addEventListener('mousedown', (ev) => {
+      if (!target.classList.contains('pos-right')) return;   // 아래 배치일 때는 경계가 없다
+      ev.preventDefault();
+      dragging = true;
+      target.classList.add('dragging');
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+    h.addEventListener('dblclick', () => setPct(target, key, DEF_PCT));
+    h.addEventListener('keydown', (ev) => {
+      const cur = getPct(key);
+      if (ev.key === 'ArrowLeft') { ev.preventDefault(); setPct(target, key, cur - 2); }
+      else if (ev.key === 'ArrowRight') { ev.preventDefault(); setPct(target, key, cur + 2); }
+      else if (ev.key === 'Home' || ev.key === 'Enter') { ev.preventDefault(); setPct(target, key, DEF_PCT); }
+    });
+    return h;
+  }
+
   function mount(slot, opts) {
     const o = opts || {};
     if (!slot || !o.target) return null;
     let pos = get(o.key, o.def);
     apply(o.target, pos);
+    ensureHandle(o.target, o.key);
+    setPct(o.target, o.key, getPct(o.key));
     slot.classList.add('fwi-layout');
     slot.setAttribute('role', 'group');
     slot.setAttribute('aria-label', '상세 위치');
@@ -61,5 +126,5 @@
     return { get: () => pos, set: (p) => { pos = p; set(o.key, p); apply(o.target, p); draw(); } };
   }
 
-  window.FWLayout = { get, set, apply, mount };
+  window.FWLayout = { get, set, apply, mount, getPct, setPct };
 })();
