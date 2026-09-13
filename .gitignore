@@ -24,3 +24,5 @@ data-loadtest/
 
 # 자재 프로토타입·인수 하네스가 만드는 SQLite 산출물 (스크립트로 재생성, 이진 파일 커밋 제외)
 docs/4m/**/*.db
+docs/4m/**/*.db-wal
+docs/4m/**/*.db-shm
