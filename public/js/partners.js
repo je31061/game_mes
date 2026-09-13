@@ -236,7 +236,8 @@
     const buy = rows.filter((l) => l.role === 'BUY'), sell = rows.filter((l) => l.role === 'SELL');
     box.innerHTML = `
       <div class="fwi-bomhead"><b>연결된 품목</b><span>${esc(p.code)} 이(가) 대는 품목과 사 가는 품목 — 연결을 고치는 곳은 <b>품목 세부</b>입니다</span></div>
-      ${rows.length ? `${table('이 거래처에서 사 오는 품목(매입)', buy)}${table('이 거래처에 파는 품목(매출)', sell)}`
+      ${rows.length ? `${table('이 거래처에서 사 오는 품목(매입)', buy)}${table('이 거래처에 파는 품목(매출)', sell)}
+        <p class="fwi-hint">발주단위의 <b>*</b> 는 이 거래처에 따로 정한 값이 아니라 <b>품목의 기본 입고단위</b>를 따랐다는 뜻입니다. 최소발주는 발주단위 기준이고 괄호는 기준단위 환산입니다.</p>`
         : `<p class="fwi-none">연결된 품목이 없습니다. <b>기준정보 › 품목 세부</b>에서 품번을 고른 뒤 이 거래처를 붙이세요.</p>`}`;
     box.querySelectorAll('[data-pn]').forEach((b) => { b.onclick = () => openItem(b.dataset.pn); });
   }
@@ -245,14 +246,15 @@
     if (!rows.length) return '';
     return `<h4 class="fwd-h">${esc(title)} <span class="fwd-cnt">${rows.length}건</span></h4>
       <table class="fwi-bomtable fwd-links">
-        <tr><th>품번</th><th>품명</th><th>거래처 품번</th><th class="r">단가</th><th class="r">리드타임</th><th class="r">최소발주</th><th>주거래</th><th></th></tr>
+        <tr><th>품번</th><th>품명</th><th>거래처 품번</th><th class="r">단가</th><th class="r">리드타임</th><th>발주단위</th><th class="r">최소발주</th><th>주거래</th><th></th></tr>
         ${rows.map((l) => `<tr>
           <td><b>${esc(l.pn)}</b></td>
           <td class="muted">${esc(l.itemName || '')}</td>
           <td class="mono">${esc(l.partnerPn || '')}</td>
           <td class="r">${l.price == null ? '' : esc(Number(l.price).toLocaleString('ko-KR') + ' ' + (l.currency || 'KRW'))}</td>
           <td class="r">${l.leadDays == null ? '' : esc(l.leadDays) + '일'}</td>
-          <td class="r">${l.moq == null ? '' : esc(l.moq) + (l.orderUom ? ' ' + esc(l.orderUom) : '')}</td>
+          <td>${esc(l.effOrderUom || '')}${l.orderSource !== 'partner' ? '<span class="muted">*</span>' : ''}${l.effOrderQty > 1 ? ` <span class="muted">= ${esc(l.effOrderQty)} ${esc(l.baseUom)}</span>` : ''}</td>
+          <td class="r">${l.moq == null ? '' : esc(l.moq) + ' ' + esc(l.effOrderUom) + (l.moqBase != null && l.effOrderQty > 1 ? ` <span class="muted">(${esc(l.moqBase)} ${esc(l.baseUom)})</span>` : '')}</td>
           <td class="c">${l.isPrimary ? '<span class="fwi-badge on">주거래</span>' : ''}</td>
           <td class="r"><button type="button" class="ghost sm" data-pn="${esc(l.pn)}">품목 세부 →</button></td>
         </tr>`).join('')}

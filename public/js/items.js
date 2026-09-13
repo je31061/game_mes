@@ -58,7 +58,7 @@
     { key: 'className', label: '분류', cls: 'dim', pri: 4, get: (i) => i.className },
     { key: 'spec', label: '규격·재질', cls: 'dim', pri: 4, get: (i) => i.spec || '' },
     { key: 'uom', label: '기준단위', cls: 'c', pri: 2, get: (i) => i.uomSymbol || i.uom },
-    { key: 'inUom', label: '입고단위', cls: 'c dim', pri: 3, get: (i) => (i.inUom ? `${i.inUom} = ${fmt(i.inQty)} ${i.uomSymbol || i.uom}` : '') },
+    { key: 'inUom', label: '기본 입고단위', cls: 'c dim', pri: 3, get: (i) => (i.inUom ? `${i.inUom} = ${fmt(i.inQty)} ${i.uomSymbol || i.uom}` : '') },
     { key: 'useFrom', label: '사용 시작일', cls: 'c dim', pri: 3, get: (i) => i.useFrom || '' },
     { key: 'useToEffective', label: '사용 종료일', cls: 'c', pri: 2, sort: (i) => i.useToEffective || '9999-99-99',
       get: (i) => (i.useToEffective ? `${i.useToEffective}${i.useToSource === 'class' ? '*' : ''}` : '무기한') },
@@ -249,7 +249,7 @@
       <label class="req">기준단위
         <select id="fwi-uom">${opts(uomOpts, it ? it.uom : 'EA')}</select>
         <small>재고·BOM·로트가 전부 이 단위로 돕니다. 나중에 바꾸기 어렵습니다.</small></label>
-      <label>입고단위
+      <label>기본 입고단위
         <div class="fwi-inline">
           <input id="fwi-inuom" value="${esc(it ? it.inUom || '' : '')}" placeholder="BOX" maxlength="16" autocomplete="off" list="fwi-inuoms">
           <span>1 =</span>
@@ -331,8 +331,8 @@
     if ($('fwi-inbase')) $('fwi-inbase').textContent = base;
     const el = $('fwi-inprev'); if (!el) return;
     el.innerHTML = u
-      ? `발주·입고는 <b>${esc(u)}</b> 단위로, 재고·BOM 은 <b>${esc(base)}</b> 로 봅니다 — 1 ${esc(u)} = ${q && q > 0 ? q : 1} ${esc(base)}.`
-      : '사는 단위와 쓰는 단위가 다를 때만 적습니다. 예) 1 BOX = 100 EA';
+      ? `이 품목의 <b>기본</b> 포장 단위입니다 — 1 ${esc(u)} = ${q && q > 0 ? q : 1} ${esc(base)}. 공급사마다 포장이 다르면 <b>품목 세부</b>에서 거래처별 발주단위를 따로 정합니다. 재고·BOM 은 언제나 ${esc(base)} 로 돕니다.`
+      : '사는 단위와 쓰는 단위가 다를 때만 적습니다. 예) 1 BOX = 100 EA — 거래처마다 다르면 품목 세부에서 정합니다.';
     shelfHint();
   }
 

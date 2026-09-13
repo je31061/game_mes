@@ -182,16 +182,33 @@ export function registerPartners(app, { requireAdmin, db, afterChange = () => {}
   const IP = '/api/admin/item-partners';
   const hasTable = (n) => !!q(`SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?`).get(n);
   const itemByPn = (pn) => q('SELECT item_id, pn, name, base_uom, in_uom, in_qty FROM item WHERE pn = ?').get(String(pn));
-  const ipJson = (r) => ({
-    id: r.id, pn: r.pn, itemName: r.item_name, partnerCode: r.partner_code, partnerName: r.partner_name,
-    partnerKind: r.partner_kind, partnerStatus: r.partner_status, role: r.role, roleName: r.role === 'BUY' ? '매입처' : '매출처',
-    partnerPn: r.partner_pn, price: r.price, currency: r.currency, priceUom: r.price_uom || r.base_uom,
-    leadDays: r.lead_days, moq: r.moq, orderUom: r.order_uom, isPrimary: !!r.is_primary,
-    validFrom: r.valid_from, validTo: r.valid_to, note: r.note, updatedAt: r.updated_at,
-  });
+  // 발주단위 결정 규칙 — 한 곳에서만 정한다. 거래처별 발주단위 > 품목의 기본 입고단위 > 기준단위.
+  // 공급사마다 포장이 다른 것이 보통이라 거래처 쪽이 이긴다. 둘 다 없으면 낱개(기준단위)로 주문하는 것이다.
+  function orderUnit(r) {
+    if (r.order_uom) return { uom: r.order_uom, qty: r.order_qty ?? 1, source: 'partner' };
+    if (r.item_in_uom) return { uom: r.item_in_uom, qty: r.item_in_qty ?? 1, source: 'item' };
+    return { uom: r.base_uom, qty: 1, source: 'base' };
+  }
+  const ipJson = (r) => {
+    const o = orderUnit(r);
+    return {
+      id: r.id, pn: r.pn, itemName: r.item_name, baseUom: r.base_uom,
+      partnerCode: r.partner_code, partnerName: r.partner_name,
+      partnerKind: r.partner_kind, partnerStatus: r.partner_status, role: r.role, roleName: r.role === 'BUY' ? '매입처' : '매출처',
+      partnerPn: r.partner_pn, price: r.price, currency: r.currency, priceUom: r.price_uom || r.base_uom,
+      leadDays: r.lead_days, isPrimary: !!r.is_primary,
+      // 발주단위: 저장값(orderUom/orderQty)과 실제 적용값(effOrder*)을 함께 낸다. 화면은 적용값을 보여 주고 출처를 표시한다
+      orderUom: r.order_uom, orderQty: r.order_qty,
+      effOrderUom: o.uom, effOrderQty: o.qty, orderSource: o.source,
+      itemInUom: r.item_in_uom, itemInQty: r.item_in_qty,
+      // 최소 발주량은 **발주단위 기준**이다. 기준단위 환산값도 같이 낸다
+      moq: r.moq, moqBase: r.moq == null ? null : Math.round(r.moq * o.qty * 1e6) / 1e6,
+      validFrom: r.valid_from, validTo: r.valid_to, note: r.note, updatedAt: r.updated_at,
+    };
+  };
   const IP_SQL = `
-    SELECT ip.*, i.pn, i.name AS item_name, i.base_uom, p.code AS partner_code, p.name AS partner_name,
-           p.kind AS partner_kind, p.status AS partner_status
+    SELECT ip.*, i.pn, i.name AS item_name, i.base_uom, i.in_uom AS item_in_uom, i.in_qty AS item_in_qty,
+           p.code AS partner_code, p.name AS partner_name, p.kind AS partner_kind, p.status AS partner_status
       FROM item_partner ip JOIN item i ON i.item_id = ip.item_id JOIN partners p ON p.id = ip.partner_id`;
 
   app.get(IP, requireAdmin, (req, res) => {
@@ -226,7 +243,14 @@ export function registerPartners(app, { requireAdmin, db, afterChange = () => {}
     const lead = numOr(b.leadDays, existing?.lead_days ?? null);
     if (lead !== null && (!Number.isFinite(lead) || lead < 0)) throw new Error('리드타임(일)은 0 이상이어야 합니다.');
     const moq = numOr(b.moq, existing?.moq ?? null);
-    if (moq !== null && (!Number.isFinite(moq) || moq <= 0)) throw new Error('최소 발주량은 0 보다 커야 합니다.');
+    if (moq !== null && (!Number.isFinite(moq) || moq <= 0)) throw new Error('최소 발주량은 0 보다 커야 합니다(발주단위 기준).');
+    // 발주단위 — 표기만 있고 환산이 없으면 1:1 로 본다. 단위를 지우면 환산도 같이 지운다(품목 기본 입고단위로 되돌아간다)
+    let orderUom = b.orderUom !== undefined ? orNull(b.orderUom) : (existing?.order_uom ?? null);
+    if (orderUom) orderUom = String(orderUom).slice(0, 16);
+    let orderQty = numOr(b.orderQty, existing?.order_qty ?? null);
+    if (!orderUom) orderQty = null;
+    else if (orderQty === null) orderQty = 1;
+    if (orderQty !== null && (!Number.isFinite(orderQty) || orderQty <= 0)) throw new Error('발주단위 입수량은 0 보다 커야 합니다 — 발주단위 1 = 기준단위 몇 개인가.');
     const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
     const from = isDate(b.validFrom) ? b.validFrom : (existing?.valid_from || new Date().toISOString().slice(0, 10));
     const to = b.validTo !== undefined ? (orNull(b.validTo) === null ? '9999-12-31' : String(b.validTo)) : (existing?.valid_to || '9999-12-31');
@@ -236,17 +260,17 @@ export function registerPartners(app, { requireAdmin, db, afterChange = () => {}
 
     const v = [item.item_id, partner.id, role, orNull(b.partnerPn ?? existing?.partner_pn), price,
       (orNull(b.currency ?? existing?.currency) || partner.currency || 'KRW').toUpperCase(),
-      orNull(b.priceUom ?? existing?.price_uom), lead, moq, orNull(b.orderUom ?? existing?.order_uom), primary, from, to,
+      orNull(b.priceUom ?? existing?.price_uom), lead, moq, orderUom, orderQty, primary, from, to,
       orNull(b.note ?? existing?.note)];
     // 주거래처를 켜면 같은 품목·역할의 기존 주거래처를 먼저 내린다 (부분 UNIQUE 인덱스와 충돌하지 않게)
     if (primary) q(`UPDATE item_partner SET is_primary = 0 WHERE item_id = ? AND role = ? AND id <> ?`).run(item.item_id, role, existing?.id ?? -1);
     if (existing) {
       q(`UPDATE item_partner SET item_id = ?, partner_id = ?, role = ?, partner_pn = ?, price = ?, currency = ?, price_uom = ?, lead_days = ?, moq = ?,
-                order_uom = ?, is_primary = ?, valid_from = ?, valid_to = ?, note = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(...v, existing.id);
+                order_uom = ?, order_qty = ?, is_primary = ?, valid_from = ?, valid_to = ?, note = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(...v, existing.id);
       return existing.id;
     }
-    return Number(q(`INSERT INTO item_partner (item_id, partner_id, role, partner_pn, price, currency, price_uom, lead_days, moq, order_uom, is_primary, valid_from, valid_to, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(...v).lastInsertRowid);
+    return Number(q(`INSERT INTO item_partner (item_id, partner_id, role, partner_pn, price, currency, price_uom, lead_days, moq, order_uom, order_qty, is_primary, valid_from, valid_to, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(...v).lastInsertRowid);
   }
 
   app.post(IP, requireAdmin, (req, res) => {

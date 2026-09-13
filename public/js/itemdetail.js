@@ -127,12 +127,17 @@
           <input id="fwd-price" type="number" min="0" step="any" placeholder="단가">
           <select id="fwd-cur">${opt([['KRW', 'KRW'], ['USD', 'USD'], ['JPY', 'JPY'], ['EUR', 'EUR'], ['CNY', 'CNY']], 'KRW')}</select>
           <input id="fwd-lead" type="number" min="0" step="1" placeholder="리드타임(일)">
+          <input id="fwd-ouom" placeholder="발주단위" maxlength="16" list="fwd-ouoms">
+          <datalist id="fwd-ouoms"><option value="BOX"><option value="CASE"><option value="ROLL"><option value="CAN"><option value="BAG"><option value="PLT"><option value="DRUM"></datalist>
+          <input id="fwd-oqty" type="number" min="0" step="any" placeholder="입수량">
           <input id="fwd-moq" type="number" min="0" step="any" placeholder="최소발주">
           <label class="fwd-chk"><input id="fwd-primary" type="checkbox"> 주거래처</label>
           <button id="fwd-attach" type="button">연결</button>
         </div>
         <p class="fwi-hint">거래처의 <b>거래구분</b>과 역할이 맞아야 붙습니다 — 매출 전용 거래처를 매입처로 붙이려 하면 막습니다.
-          주거래처는 품목·역할당 한 곳이고, 새로 지정하면 이전 주거래처는 자동으로 내려갑니다. 단가·리드타임은 발주 참고값이고 원가 전개에는 쓰지 않습니다.</p>
+          주거래처는 품목·역할당 한 곳이고, 새로 지정하면 이전 주거래처는 자동으로 내려갑니다. 단가·리드타임은 발주 참고값이고 원가 전개에는 쓰지 않습니다.<br>
+          <b>발주단위</b>는 이 거래처에 주문하는 단위입니다 — 비우면 품목의 기본 입고단위(${esc(it.inUom ? `${it.inUom} = ${it.inQty} ${it.uomSymbol || it.uom}` : `${it.uomSymbol || it.uom} 낱개`)})를 따르고, 표에 <b>*</b> 로 표시됩니다.
+          <b>최소발주</b>는 발주단위 기준입니다 — 5 BOX 는 500 EA 로 환산해 함께 보여 줍니다. 재고·BOM 은 언제나 기준단위(${esc(it.uomSymbol || it.uom)})로만 돕니다.</p>
 
         <h4 class="fwd-h">BOM <span class="fwd-cnt">읽기 전용</span></h4>
         <p class="fwi-hint">${it.hasBomText || bomSummary(it)} 구조를 고치는 곳은 📦 품목 등록의 <b>BOM 연결</b>과 🧩 자재 탭입니다.</p>
@@ -152,16 +157,29 @@
       + ` 자체 BOM 은 ${own.length ? `${own.length}개(라인 ${own.reduce((a, h) => a + (h.lineCount || 0), 0)}건)` : '없습니다'}.`;
   }
 
+  // 발주단위 표기: 저장값이 있으면 그대로, 없으면 품목의 기본 입고단위를 물려받았다는 뜻이라 회색 * 로 표시한다
+  const orderCell = (l) => {
+    const conv = l.effOrderQty > 1 ? ` <span class="muted">= ${esc(l.effOrderQty)} ${esc(l.baseUom)}</span>` : '';
+    const mark = l.orderSource === 'partner' ? '' : `<span class="muted" title="${l.orderSource === 'item' ? '품목의 기본 입고단위를 따름' : '발주단위를 따로 정하지 않음(낱개)'}">*</span>`;
+    return `${esc(l.effOrderUom)}${mark}${conv}`;
+  };
+  const moqCell = (l) => {
+    if (l.moq == null) return '';
+    const base = l.moqBase != null && l.effOrderQty > 1 ? ` <span class="muted">(${esc(l.moqBase)} ${esc(l.baseUom)})</span>` : '';
+    return `${esc(l.moq)} ${esc(l.effOrderUom)}${base}`;
+  };
+
   function linkTable(rows, role) {
     if (!rows.length) return `<p class="fwi-none">연결된 ${role === 'BUY' ? '매입처' : '매출처'}가 없습니다.</p>`;
     return `<table class="fwi-bomtable fwd-links">
-      <tr><th>거래처</th><th>거래처 품번</th><th class="r">단가</th><th class="r">리드타임</th><th class="r">최소발주</th><th>유효기간</th><th>주거래</th><th></th></tr>
+      <tr><th>거래처</th><th>거래처 품번</th><th class="r">단가</th><th class="r">리드타임</th><th>발주단위</th><th class="r">최소발주</th><th>유효기간</th><th>주거래</th><th></th></tr>
       ${rows.map((l) => `<tr>
         <td><b>${esc(l.partnerCode)}</b> <span class="muted">${esc(l.partnerName)}</span>${l.partnerStatus !== 'ACTIVE' ? ` <span class="fwi-ph">${esc(l.partnerStatus === 'HOLD' ? '보류' : '종료')}</span>` : ''}</td>
         <td class="mono">${esc(l.partnerPn || '')}</td>
         <td class="r">${esc(money(l.price, l.currency))}${l.price != null ? ` <span class="muted">/ ${esc(l.priceUom || '')}</span>` : ''}</td>
         <td class="r">${l.leadDays != null ? esc(l.leadDays) + '일' : ''}</td>
-        <td class="r">${l.moq != null ? esc(l.moq) + (l.orderUom ? ' ' + esc(l.orderUom) : '') : ''}</td>
+        <td>${orderCell(l)}</td>
+        <td class="r">${moqCell(l)}</td>
         <td class="muted">${esc(l.validFrom)} ~ ${esc(l.validTo === '9999-12-31' ? '' : l.validTo)}</td>
         <td class="c">${l.isPrimary ? '<span class="fwi-badge on">주거래</span>' : `<button type="button" class="ghost sm" data-primary="${l.id}">지정</button>`}</td>
         <td class="r"><button type="button" class="ghost sm" data-del="${l.id}">해제</button></td>
@@ -192,6 +210,7 @@
         body: JSON.stringify({
           pn: S.pn, partnerCode: partner, role: val('fwd-role'), partnerPn: val('fwd-ppn') || null,
           price: val('fwd-price') || null, currency: val('fwd-cur'), leadDays: val('fwd-lead') || null,
+          orderUom: val('fwd-ouom') || null, orderQty: val('fwd-oqty') || null,
           moq: val('fwd-moq') || null, isPrimary: $('fwd-primary').checked,
         }),
       });

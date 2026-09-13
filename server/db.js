@@ -397,8 +397,9 @@ if (materialsSchema.ok) {
       currency    TEXT NOT NULL DEFAULT 'KRW',
       price_uom   TEXT,                                            -- 단가 기준 단위. 비우면 품목 기준단위
       lead_days   INTEGER CHECK (lead_days IS NULL OR lead_days >= 0),
-      moq         REAL CHECK (moq IS NULL OR moq > 0),             -- 최소 발주(주문) 수량
-      order_uom   TEXT,                                            -- 발주 단위 (item.in_uom 과 같은 개념)
+      moq         REAL CHECK (moq IS NULL OR moq > 0),             -- 최소 발주 수량. **발주단위 기준** (현장은 "최소 1박스" 라고 말한다)
+      order_uom   TEXT,                                            -- 발주단위. 비우면 품목의 기본 입고단위(item.in_uom), 그것도 없으면 기준단위
+      order_qty   REAL CHECK (order_qty IS NULL OR order_qty > 0),  -- 발주단위 1 = 기준단위 몇 개인가. 예) 1 BOX = 100 EA → 100
       is_primary  INTEGER NOT NULL DEFAULT 0 CHECK (is_primary IN (0,1)),   -- 주거래처
       valid_from  TEXT NOT NULL DEFAULT (date('now')),
       valid_to    TEXT NOT NULL DEFAULT '9999-12-31',
@@ -408,11 +409,16 @@ if (materialsSchema.ok) {
       CHECK (valid_to >= valid_from)
     );
     CREATE UNIQUE INDEX IF NOT EXISTS ux_item_partner ON item_partner(item_id, partner_id, role);
+    -- 오늘 만든 표라 기존 DB 도 컬럼만 붙이면 된다 (SQLite 는 ADD COLUMN IF NOT EXISTS 가 없다)
     CREATE INDEX IF NOT EXISTS idx_item_partner_item ON item_partner(item_id, role);
     CREATE INDEX IF NOT EXISTS idx_item_partner_partner ON item_partner(partner_id);
     -- 주거래처는 품목·역할당 한 곳만
     CREATE UNIQUE INDEX IF NOT EXISTS ux_item_partner_primary ON item_partner(item_id, role) WHERE is_primary = 1;
   `);
+  if (!db.prepare('PRAGMA table_info(item_partner)').all().some(c => c.name === 'order_qty')) {
+    db.exec('ALTER TABLE item_partner ADD COLUMN order_qty REAL');
+    console.log('[db] item_partner.order_qty 컬럼 추가 (발주단위 환산)');
+  }
 }
 
 export const materialsMigration = migrateMaterials();
