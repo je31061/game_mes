@@ -1,5 +1,38 @@
 # handoff — 최민준 (MES 운영 리더)
 
+## 스프린트 3 라운드 5 — 통합·인수·배포 — 2026-09-13 완료
+
+### 반영한 요청 (되돌린 산출물 없음)
+| 요청 | 발신 | 반영 |
+|---|---|---|
+| 인터페이스 §10 표를 실제 응답대로(헤더 객체·`phantom`·`bop.inOps/outOp`·계보 `edge`·where-used 자기 자신부터·추가 라우트 6개·`PUT links` 규칙) | 서지안 21:30 (1)(4) · 노하린 20:10 (3)·21:30 ①② | `docs/team/인터페이스.md` §10 표 전면 정정(구현 = 계약). `kind` = `item_type` 원값 **FG/SA/PT/RM/CN/PK** + `isPhantom`, `POST lots/:id/consume` 등재 |
+| `PUT process/:op/links` 에서 필드가 없으면 기존 값 유지 (선택) | 서지안 21:30 (2) | **채택** — `server/materials.js`: `cur` 에서 `split_pct/issue_method/note` 를 읽어 `inVals()` 가 `undefined` 필드를 기존 값으로 채움(UPDATE 경로·삭제 후 재삽입 경로 둘 다). OUT 도 `ex` 의 `is_final/out_state/qty_out/note` 유지. 격리 서버 OP-B90: seq 만 PUT → SP-4040 PICK 유지·pmId 불변, 역순 PUT 뒤에도 PICK, 명시하면 덮어씀, OP-A70 OUT `pn` 만 보내도 `QC 합격품` 유지 |
+| 전개 API 호출 전 `v_chk_summary.'R-1'` 확인 — 0 이 아니면 409/400 + 경로 | 노하린 20:10 (1)·21:30 ④ | `bom/:pn`·`where-used/:pn` 앞에 `cycleGuard()`: `v_chk_r1_cycle` 경로를 읽어 요청 품목·결과 노드가 경로에 있으면 **409** `{ error:"R-1: …", warnings:[{rule,count,cycles,touched}] }`, 다른 곳에만 있으면 200 + `warnings[]`, `?force=1` 이면 잘린 결과라도 200. 순환 없으면 `warnings` 키 없음(기존 응답 불변) |
+| README·운영 가이드·manual 에 🧩 자재 절, `?mock=1` 한 줄 | 서지안 21:30 (3) | README 스프린트 3 절(사용법 3항목·파일 위치·이행 링크·라운드 5 반영·인수 수치), 운영 가이드 §3-2, `?mock=1` 은 README·인터페이스에. `manual.html` 은 PM 14:00 한 줄 그대로 |
+| 계획서 F-1·§10.3 `parentName` 정정 | 노하린 → PM 14:00 | PM 수정본 무수정 커밋 |
+
+### 코드 변경 (내 소유 파일만)
+- `server/materials.js` (+41/−10): `r1Cycles()`·`flatPns()`·`cycleGuard()` + `bom/:pn`·`where-used/:pn` 에 적용; `PUT process/:op/links` IN/OUT "없으면 유지".
+- 문서: `README.md`(스프린트 3 절·구조), `docs/design-brief.md`(§3 "4M Material 기준 — 설계·검증 2인 교차 검증 → v1.0 → 구현" 문단 + 진행 순서 10, §4 스프린트 3 완료), `docs/운영전환-가이드.md` §3-2, `docs/team/인터페이스.md` §10, 작업보드 라운드 5, 협업로그.
+
+### 검증 수치 (2026-09-13, 이 PC)
+- `node --check` 26파일(server 8 · drivers 5 · public/js 5 · scripts 4 · acceptance mjs 4) 통과.
+- 미리보기 `factory-world` 재기동(운영 DB, 이행 로그 없음 = 멱등) → 관리자 콘솔 🧩 자재 탭 실제 확인(관리자 토큰은 `data/jwt.secret` 로 2시간짜리 발급, 비밀번호 미입력, 1280px 2단·다크·라이트): 상태줄 `품목 60 · 분류 24 · BOM 헤더 11 · 라인 59 · 로트 0`, 검사 위반 **20 황색**(`D-8 10 · R-10 10`, 나머지 9규칙 0), 품목 60행, BOM 트리 `노드 59 · 기준일 2026-09-13`, SC-1011 `L4 0.85kg G · IN OP-A10`, TMP 배지 3, **말단 합계 76 EA · 0.85 kg · 221 g · 12 SHT · 0.5 m · 환산 COUNT 76 · MASS 1.071 · LENGTH 0.5**, 라인 추가 폼에 자식 `BLDC-500W-48V` → [추가] → 빨간 줄 **`R-1: BOM 순환 참조 — 자식의 하위 구조에 부모가 있다 (또는 깊이 64 초과)`**, 라인 59 불변. 가로 넘침 없음. 운영 DB 변경 없음(거부된 쓰기 1건 롤백).
+- 로트 계보 렌더는 격리 서버(3003, 인수 테스트가 남긴 로트 6건)에서: 시리얼 행 클릭 → **역방향 5노드**(SN → SA-1000 → SC-1010 → TMP-SC1010P → SUB-001 → 코일, `← 투입 @OP-…`·`분할`), 서브로트 → **정방향 4노드**(→ … → SN, `투입 → @OP-…`).
+- 게임 상태창(운영 DB): `FW.onOpenEquipment(16)` 니들 와인더 OP-A40 → `공정 · 단품` 표 `MW-1030 Magnet Wire ↳ Stator (Armature) Assy · 동선 φ0.80 · 180 g · thumb SA-1000.png` — 라운드 4·이행 전과 동일.
+- **노하린 `acceptance.mjs` 직접 실행** ⓐ legacy 36행 DB(`tools/make-legacy-db.py`) → 3004 이행 [1]→[3] 경로: **84건 PASS 83 · FAIL 0 · BLOCK 0 · NOTE 1**(`out/acceptance-2026-09-13T03-28-02.json`, `latest.*`) ⓑ 빈 DB + `FW_SEED_PRODUCT_LINE=bldc` → 3003(과제 지시 경로): 84건 PASS 81 · FAIL 2(AT-91·92 — 시드 DB 는 `*_legacy` 0행이라 전후 대조 전제 없음, 서버 결함 아님) · NOTE 1(`out/acceptance-2026-09-13T03-27-34.json`). NOTE 1 = AT-22b(스크립트에 옛 §10 열거가 하드코딩 — 노하린이 갱신하면 PASS).
+- R-1 방어 검증(격리 3003, INSERT 트리거 잠시 해제 후 DRAFT 헤더로 `GB-8000 → BLDC` 순환 주입): `check {R-1:3}`, `bom/BLDC` 409(경로 3건·touched 2), `?force=1` 200 count 59 + warnings, `bom/SA-1000` 200 + warnings, `where-used/GB-8010`·`SC-1011` 409 / `?force=1` 200 → 정리 후 `{D-8:10,R-10:10}`·warnings 없음·트리거 복구 확인(POST 자기참조 400 `R-1:`).
+- 부하 테스트(격리 3001, 시드 DB, 50명 30초): 접속 50/50 · 오류 0 · 이동 수신 9,845 · 손실 0 · p50 6.8ms · **p95 17.5ms** · max 24.8ms / 채팅 5,250 · p50 1.5ms · **p95 13.2ms** · max 18.4ms → NFR-01 통과.
+
+### 커밋·push·Render
+- 커밋 1: 라운드 5 통합(세 사람 산출물 + PM 정정 + 내 반영). 제외: `data/`, `docs/4m/**/*.db`, `*.log`(노하린 `out/server-2026-09-13.log` 포함), 임시 폴더. `acceptance/out/*.json`·`latest.md` 는 증거로 포함.
+- 커밋 2(`[skip render]`): push 후 Render 폴링 결과를 이 절 아래 "Render 반영 확인" 에 기록.
+
+### 서지안·노하린·PM 에게 (다음)
+- 노하린: AT-22b `contractKinds` → `['FG','SA','PT','RM','CN','PK']` + `isPhantom` 검사로(NOTE → PASS). 9단계는 legacy 0행이면 BLOCK 판정 제안. `out/*.log` 는 `.gitignore` 에 걸린다.
+- 서지안: 응답 `warnings[]`(R-1)가 오면 BOM 트리 상태줄에 경고 띄우기(선택, 지금은 순환이 없어 키 자체가 없다). 409 는 `e.message` 로 이미 빨간 줄에 뜬다.
+- PM: `pn_pending` 승인 → `approved: true` → [🔩 샘플 적재]. 쟁점 3·6 공정 배정.
+
 ## 스프린트 3 라운드 4 — 자재(Material) 관리 시스템 구현 — 2026-09-13 완료 (커밋만, push 는 라운드 5 노하린 인수 뒤)
 
 계약: 인터페이스 §10 · `docs/4m/ddl-v1.sql`(윤태경, 무수정) · `docs/4m/cleansing-v1.json`(무수정) · 계획서 §5.9 기준 쿼리. 게임 계약(`equipment:detail.process.inputs[]`)은 호환 뷰로 유지.

@@ -147,6 +147,7 @@ public/
   js/app.js   로그인 흐름, 소켓 핸들링, HUD/채팅/퀘스트/브리핑 UI
   admin.html, js/admin.js  관리자 콘솔 (SCR-06)
   js/analytics.js, css/analytics.css  실적 분석 화면 (window.FWAnalytics.mount — 없으면 서버가 빈 파일로 대체)
+  js/materials.js, css/materials.css  🧩 자재 탭 화면 (window.FWMaterials.mount — 없으면 서버가 빈 파일로 대체, admin.html?mock=1 이면 목 데이터)
   assets/equipment/  설비 유형 15종 아이소메트릭 스프라이트 PNG(192×192) + manifest.json (없는 유형·generic은 절차적 큐브)
   assets/parts/      제품 분해도 서브어셈블리 이미지 <PN>.png (325×484, 흰 카드) — 🔩 분해도 모달
   assets/parts/thumb/  같은 이름의 96×96 썸네일 — 상태창 투입 단품 표 (없으면 원본으로 폴백)
@@ -154,7 +155,7 @@ assets/blender/  설비 3D 모델 생성·렌더 파이프라인 (build_equipmen
                  contact_sheet.py(3배 확대 검수 시트) · make_part_thumbs.py(분해도 → 썸네일, Blender 불필요)
 server/analytics.js  실적 분석 API — registerAnalytics(app, {requireAdmin, db, queries, settings}) (없으면 건너뜀)
 server/materials.js  자재 v1.0 적재기(loadMaterials — cleansing-v1.json 규칙) + 자재 API registerMaterials(app, {requireAdmin, db, queries, settings, afterChange})
-docs/4m/      자재(Material) 기준 — ddl-v1.sql(스키마·트리거·뷰, 서버가 기동 때 그대로 실행) · cleansing-v1.json(적재 규칙·기대값) · 계획서 v1.0 · 검증보고서 · prototype/(노하린 하네스)
+docs/4m/      자재(Material) 기준 — ddl-v1.sql(스키마·트리거·뷰, 서버가 기동 때 그대로 실행) · cleansing-v1.json(적재 규칙·기대값) · 계획서 v1.0 · 검증보고서 · prototype/(노하린 하네스) · acceptance/(실서버 인수 테스트 84건 + 결과 out/)
 docs/         기획 브리프, 구축 경과 보고, 운영 전환 가이드, 분석-정의(OEE 지표 정의), 도면-AI-연동, 소개 캔버스 작업 파일
 docs/bldc/    BLDC 500W 제품 라인 원천 — bldc-500w-48v.json(BOP·BOM·분해도 단계), layout-bldc-500w.json(배치), source/(xlsx·PDF 원본)
 scripts/bldc/ extract.py — xlsx/PDF → bldc-500w-48v.json + public/assets/parts/*.png 생성
@@ -316,7 +317,7 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
 - 참고: 다크 테마의 `--input/--overlay/--toast-bg`가 자기 참조로 무효 처리되어 상태창·패널 배경이 투명하던 문제를 함께 수정(`public/css/style.css`).
   관리자 콘솔 본문(`.content`)에 `min-width: 0`을 줘서 📈 탭의 넓은 표가 약 1,000px 화면에서 페이지를 가로로 밀지 않고 표 안에서 스크롤되게 했다.
 
-## 스프린트 3: 자재(Material) 관리 — 품목 분류 · BOM 트리 · BOP 연결 · 로트 계보 (2026-09-13 라운드 4, 최민준 구현 / 서지안 화면 진행 중)
+## 스프린트 3: 자재(Material) 관리 — 품목 분류 · BOM 트리 · BOP 연결 · 로트 계보 (2026-09-13 완료 — 라운드 4 구현 · 라운드 5 통합·인수·배포)
 
 4M 중 Material 기준(윤태경 설계 `docs/4m/자재관리-기준-계획서.md` v1.0, 노하린 실증 `docs/4m/검증보고서.md`)을 **구현**했다. 원천 계약 세 파일 — `docs/4m/ddl-v1.sql`(테이블 12·인덱스 20·트리거 34·뷰 19 = 85문, 전부 `IF NOT EXISTS`),
 `docs/4m/cleansing-v1.json`(BLDC 원천 JSON 을 새 구조에 넣는 정제 규칙·기대값), 인터페이스 §10(API·화면) — 을 코드가 그대로 읽는다. 게임 계약(설비 클릭 → 단품 표)은 깨지 않았다.
@@ -331,9 +332,15 @@ data/         factory.db (SQLite) + uploads/ (첨부 실물) + jwt.secret
   적재 후 `expected` 전 항목과 `v_chk_summary`(정상 = `{D-8:10, R-10:10}` — 쟁점 3·6 미배정 10건)를 대조한다. `POST /api/admin/bop/import`·[🔩 제품 라인 적용]·`FW_SEED_PRODUCT_LINE=bldc`(빈 DB 자동 시드, 대조 불일치면 전체 롤백)가 같은 적재기를 쓴다.
 - **API** (`server/materials.js`, 전부 관리자, 트리거 거부는 **400 `{error:"R-1: …"}` 문자열 그대로**): `GET /api/admin/materials/summary|check|uom|classes|items[?q&classId&status&kind]|items/:pn|bom/:pn[?asOf&depth&qty](정전개 트리·말단 합계)|where-used/:pn[?asOf](역전개)|bom-headers/:pn|process|process/:op(공정별 IN/OUT·미배정)|lots[?pn&q]|lots/:id/genealogy?dir=fwd|back`,
   `POST items|bom-headers|bom-lines|lots(분할은 parentLotId)|lots/:id/consume(투입 계보)|import-sample`, `PUT items/:pn|bom-headers/:id(상태 DRAFT→APPROVED→ACTIVE→OBSOLETE)|bom-lines/:id|process/:op/links|lots/:id`, `DELETE bom-lines/:id`(승인 라인은 400 R-11). 전개는 계획서 §5.9 기준 쿼리(Q-1·Q-3·Q-5)를 그대로 쓴다. 응답 예는 `docs/team/handoff-최민준.md`.
-- **관리자 콘솔 🧩 자재** (서지안, `public/js/materials.js` `window.FWMaterials.mount(container, api)` + `css/materials.css`): 요약·분류 트리·품목/where-used·BOM 트리(as-of, 팬텀·미배정)·라인 편집·공정 연결·로트 계보. 파일이 없으면 서버가 빈 JS/CSS 를 주고 탭은 안내 + 요약 한 줄을 보인다.
+- **관리자 콘솔 🧩 자재 탭 사용법** (서지안, `public/js/materials.js` `window.FWMaterials.mount(container, api)` + `css/materials.css`):
+  1. 상단 요약 타일(품목·분류·BOM 헤더·라인·로트·**검사 위반**)과 규칙 칩 11개 — 위반 합계 0 이면 초록, 알려진 쟁점 `{D-8:10, R-10:10}`(쟁점 3·6 미배정 10건)만이면 **황색**, 그 밖의 규칙이 하나라도 뜨면 **적색**. 칩을 누르면 `GET …/check` 상세(순환 경로 등).
+  2. 좌측 **품목 분류 트리**(클릭 = 하위 분류 포함 필터) → 가운데 4개 섹션: **품목**(검색·종류·상태, 행 클릭 = 속성·산출/투입 공정·where-used·헤더·편집) · **BOM 트리**(부모 품번·기준일 as-of·깊이 → 정전개, 팬텀 점선·⚠ 미배정·TMP 배지·IN/◀ 산출 공정 칩, 말단 합계 + 기준단위 환산; 행 클릭 = 라인 편집 폼, [+ 헤더]·상태 전이) · **공정 연결**(공정 선택 → IN/OUT/미배정, 편집 모드에서 순서·출고 방식·미배정 연결) · **로트 계보**(품목/검색 → 로트 표 → 행 클릭 → 역방향(밀시트까지)/정방향(완성품 시리얼까지) 트리, [투입 기록]·[+ 로트]).
+  3. 트리거가 거부한 쓰기는 폼 아래 빨간 줄에 서버 400 문자열(`R-1: …`, `R-11: …`)이 그대로 뜨고 건수는 변하지 않는다. [🔩 샘플 적재]는 `cleansing-v1.json` 을 멱등 UPSERT 하고 `expectedMatch`·`mismatches` 를 보여 준다. 화면 개발용 목 데이터는 `admin.html?mock=1`(상단 "목 데이터" 표식, 운영 URL 에 붙이지 말 것). 파일이 없으면 서버가 빈 JS/CSS 를 주고 탭은 안내 + 요약 한 줄을 보인다.
+- **파일 위치**: DDL `docs/4m/ddl-v1.sql` · 적재 규칙·기대값 `docs/4m/cleansing-v1.json` · 계획서 v1.0 `docs/4m/자재관리-기준-계획서.md`(§5.9 기준 쿼리, §9 이행, §10.3 상태창 값 변화) · 검증보고서 `docs/4m/검증보고서.md`(§6 v1.0 서명, §7 인수) · 프로토타입 `docs/4m/prototype/` · **인수 테스트** `docs/4m/acceptance/`(`acceptance.mjs` 84건, 실행법은 그 폴더 README, 결과 `out/`) · API 계약 `docs/team/인터페이스.md` §10 · **이행·되돌리기** [운영 가이드 §2 "자재 스키마 이행"](docs/운영전환-가이드.md#자재-스키마-이행-스프린트-3-2026-09-13).
+- **라운드 5 반영(2026-09-13)**: ① 전개 API(`bom/:pn`·`where-used/:pn`)는 호출 전 `v_chk_r1_cycle` 을 보고 요청 품목이 순환에 걸리면 **409** `{ error:"R-1: …", warnings:[{cycles, touched}] }`, 다른 곳에만 있으면 200 + `warnings[]`(`?force=1` 이면 잘린 결과라도 200) — 트리거 뒤로는 못 들어오지만 레거시 이행·DB 직접 편집 시점의 방어(노하린 요청). ② `PUT process/:op/links` 는 항목에 `splitPct`·`issueMethod`·`note` 가 없으면 **기존 값 유지**(seq 만 보내도 PICK 이 BACKFLUSH 로 바뀌지 않음, 서지안 제안). ③ 인터페이스 §10 표를 구현 기준으로 정정(`kind` 원값 FG/SA/PT/RM/CN/PK + `isPhantom`, `consume` 등재 등).
 - **상태창에서 달라지는 값** (계획서 §10.3): 투입 행 36→46(OP-B90 이 `PE-6000` 한 줄 대신 팬텀 전개 9종, `TMP-SC1010P`·`TMP-PK0010` 추가), `level` 은 깊이(`SC-1011` L4), `parentPn` 은 단일 부모(`HA-3000` 또는 `EX-5000`), `parentName` 은 부모 품목명. 수량·규격·단위·썸네일은 그대로.
-- **검증(2026-09-13)**: `node --check` 21파일 · 격리 이행 리허설(백업본 → 전후 24대 diff: 공통 35행 수량차 0·순서차 0, 전에만 1·후에만 11) · 빈 DB 시드 · API 전 라우트 + 트리거 400 9종 · 재기동 멱등 · 부하 50명 30초(이동 p95 18.5ms·채팅 p95 8.5ms) · 운영 DB 이행 뒤 게임 상태창(니들 와인더 `MW-1030 … 180 g`)·🧩 탭 실제 확인.
+- **검증(2026-09-13 라운드 4)**: `node --check` 21파일 · 격리 이행 리허설(백업본 → 전후 24대 diff: 공통 35행 수량차 0·순서차 0, 전에만 1·후에만 11) · 빈 DB 시드 · API 전 라우트 + 트리거 400 9종 · 재기동 멱등 · 부하 50명 30초(이동 p95 18.5ms·채팅 p95 8.5ms) · 운영 DB 이행 뒤 게임 상태창(니들 와인더 `MW-1030 … 180 g`)·🧩 탭 실제 확인.
+- **인수·통합 검증(2026-09-13 라운드 5)**: 노하린 `acceptance.mjs` 를 격리 서버에서 직접 실행 — legacy 36행 DB → 이행 [1]→[3] 경로(README 권장): **84건 PASS 83 · FAIL 0 · BLOCK 0 · NOTE 1**(NOTE = AT-22b 의 §10 열거 비교, 문구는 이번에 정정했고 스크립트의 기대 목록 갱신은 노하린) / 빈 DB + `FW_SEED_PRODUCT_LINE=bldc`: PASS 81 · FAIL 2(9단계 AT-91·92 — legacy 행이 없는 시드 DB 에서는 전후 대조 전제가 성립하지 않음, 서버 결함 아님) · NOTE 1. 부하 50명 30초(시드 DB): 접속 50/50·오류 0·이동 p95 **17.5ms**·채팅 p95 **13.2ms**. 운영 DB 콘솔 실제 확인(다크·라이트): 타일 `품목 60 · 분류 24 · 헤더 11 · 라인 59`, 검사 위반 20 황색(`D-8 10 · R-10 10`), BOM 트리 노드 59 · 말단 합계 76 EA·0.85 kg·221 g·12 SHT·0.5 m, 라인 추가 폼에서 자기참조 → 빨간 줄 `R-1: BOM 순환 참조 …`(건수 불변), 격리 서버 로트 계보 역방향 5노드(시리얼→밀시트)·정방향 4노드(코일→시리얼) 렌더, 게임 상태창 OP-A40 `MW-1030 Magnet Wire ↳ Stator (Armature) Assy · 동선 φ0.80 · 180 g`(이행 전과 동일).
 
 ## 다음 단계 후보
 

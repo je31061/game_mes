@@ -583,12 +583,31 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
     for (const k of Object.keys(totalsBase)) totalsBase[k] = r9(totalsBase[k]);
     return { root: { pn: root.pn, name: root.name, kind: root.item_type, uom: root.base_uom, phantom: !!root.is_phantom, status: root.status }, asOf: asof, qty, nodes: top, count: nodes.length, totals, totalsBase };
   }
+  // [노하린 요청 2026-09-13 20:10 (1)] 전개 전 R-1 확인 — Q-1/Q-3 재귀는 순환이 남아 있어도 raise 하지 않고 깊이 가드 64 에서 조용히 잘린다(TC-16).
+  // 트리거 뒤로는 순환이 못 들어오지만 레거시 이행·DB 직접 편집 시점엔 들어올 수 있다. v_chk_r1_cycle(경로) 을 먼저 보고
+  // 요청 품목·결과 노드가 순환에 걸리면 409 { error:'R-1: …', warnings }, 순환이 다른 곳에만 있으면 정상 응답에 warnings[] 를 붙인다. ?force=1 이면 잘린 결과라도 준다.
+  const r1Cycles = () => q('SELECT detail FROM v_chk_r1_cycle').all().map(r => r.detail);
+  const flatPns = (nodes, acc = []) => { for (const n of nodes) { acc.push(n.pn); flatPns(n.children || [], acc); } return acc; };
+  function cycleGuard(pns, force) {
+    const cycles = r1Cycles();
+    if (!cycles.length) return null;
+    const inCycle = new Set(cycles.flatMap(p => p.split(' > ')));
+    const touched = [...new Set(pns.filter(pn => inCycle.has(pn)))];
+    const blocked = touched.length > 0 && !force;
+    const error = blocked
+      ? `R-1: BOM 순환 참조 ${cycles.length}건이 남아 있어 전개 결과를 신뢰할 수 없다 (${touched.join(', ')}) — GET /api/admin/materials/check 의 v_chk_r1_cycle 경로를 끊은 뒤 다시 호출 (force=1 이면 깊이 64 에서 잘린 결과를 준다)`
+      : null;
+    return { blocked, error, warnings: [{ rule: 'R-1', count: cycles.length, cycles, touched }] };
+  }
   app.get(`${B}/bom/:pn`, requireAdmin, (req, res) => {
     try {
       const depth = Math.max(1, Math.min(64, Number(req.query.depth) || 64));
       const qty = Number(req.query.qty) > 0 ? Number(req.query.qty) : 1;
       const r = explode(req.params.pn, { asof: asOf(req.query.asOf), qty, maxDepth: depth });
       if (!r) return res.status(404).json({ error: `품목 ${req.params.pn} 이 없습니다.` });
+      const g = cycleGuard([r.root.pn, ...flatPns(r.nodes)], req.query.force === '1');
+      if (g?.blocked) return res.status(409).json({ error: g.error, warnings: g.warnings });
+      if (g) r.warnings = g.warnings;
       res.json(r);
     } catch (e) { fail(res, e, 500); }
   });
@@ -622,7 +641,9 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
         return ids.map((id, i) => { const per = Number(qs[i]); cum *= per; return { ...nameOf.get(id), qtyPer: r9(per), qtyCum: r9(cum) }; });
       });
       const parents = rows.filter(r => r.depth === 1).map(r => ({ pn: r.pn, name: r.name, qtyPer: r9(r.qty) }));
-      res.json({ pn: item.pn, name: item.name, asOf: asof, paths, parents });
+      const g = cycleGuard([item.pn, ...paths.flat().map(x => x.pn), ...parents.map(x => x.pn)], req.query.force === '1');   // 순환 안의 품목은 n_parents=0 경로가 없어 paths 가 조용히 비므로 먼저 막는다
+      if (g?.blocked) return res.status(409).json({ error: g.error, warnings: g.warnings });
+      res.json({ pn: item.pn, name: item.name, asOf: asof, paths, parents, ...(g ? { warnings: g.warnings } : {}) });
     } catch (e) { fail(res, e, 500); }
   });
 
@@ -790,15 +811,22 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
       tx(() => {
         const ins = links.filter(l => String(l.mode || 'IN').toUpperCase() === 'IN').map((l, i) => ({ ...l, lineId: Number(l.lineId), _i: num(l.seq) ?? (i + 1) })).sort((a, b) => a._i - b._i);
         for (const l of ins) if (!q('SELECT 1 FROM bom_line WHERE line_id = ?').get(l.lineId)) throw new Error(`lineId ${l.lineId} 가 없습니다.`);
-        const cur = q(`SELECT pm_id, line_id FROM process_material WHERE process_id = ? AND io = 'IN' ORDER BY pm_id`).all(pr.id);
+        // [서지안 요청 2026-09-13 21:30 (2) 채택] 항목에 splitPct·issueMethod·note 가 없으면(undefined) 같은 lineId 의 기존 값을 유지한다
+        // — seq 만 보내는 스크립트가 SP-4040 PICK 을 BACKFLUSH 로 덮지 않게. 새 lineId 는 기본값 100 / BACKFLUSH / null. note:'' 는 비우기.
+        const cur = q(`SELECT pm_id, line_id, split_pct, issue_method, note FROM process_material WHERE process_id = ? AND io = 'IN' ORDER BY pm_id`).all(pr.id);
+        const prev = new Map(cur.map(c => [c.line_id, c]));
+        const inVals = (l) => {
+          const p = prev.get(l.lineId);
+          return [num(l.splitPct) ?? p?.split_pct ?? 100,
+                  l.issueMethod ? String(l.issueMethod).toUpperCase() : (p?.issue_method || 'BACKFLUSH'),
+                  l.note === undefined ? (p?.note ?? null) : orNull(l.note)];
+        };
         const sameOrder = cur.length === ins.length && cur.every((c, i) => c.line_id === ins[i].lineId);
         if (sameOrder) {
-          for (let i = 0; i < ins.length; i++) q('UPDATE process_material SET split_pct = ?, issue_method = ?, note = ? WHERE pm_id = ?')
-            .run(num(ins[i].splitPct) ?? 100, String(ins[i].issueMethod || 'BACKFLUSH').toUpperCase(), orNull(ins[i].note), cur[i].pm_id);
+          for (let i = 0; i < ins.length; i++) q('UPDATE process_material SET split_pct = ?, issue_method = ?, note = ? WHERE pm_id = ?').run(...inVals(ins[i]), cur[i].pm_id);
         } else {
           q(`DELETE FROM process_material WHERE process_id = ? AND io = 'IN'`).run(pr.id);
-          for (const l of ins) q(`INSERT INTO process_material (process_id, io, line_id, split_pct, issue_method, note) VALUES (?, 'IN', ?, ?, ?, ?)`)
-            .run(pr.id, l.lineId, num(l.splitPct) ?? 100, String(l.issueMethod || 'BACKFLUSH').toUpperCase(), orNull(l.note));
+          for (const l of ins) q(`INSERT INTO process_material (process_id, io, line_id, split_pct, issue_method, note) VALUES (?, 'IN', ?, ?, ?, ?)`).run(pr.id, l.lineId, ...inVals(l));
         }
         const outs = links.filter(l => String(l.mode || '').toUpperCase() === 'OUT');
         if (outs.length) {
@@ -806,10 +834,13 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
           for (const o of outs) {
             const item = itemRow(o.pn);
             if (!item) throw new Error(`OUT 품목 ${o.pn} 이 없습니다.`);
-            const isFinal = bool01(o.isFinal, 1);
-            const ex = q(`SELECT pm_id FROM process_material WHERE process_id = ? AND item_id = ? AND io = 'OUT'`).get(pr.id, item.item_id);
-            if (ex) { q('UPDATE process_material SET is_final = ?, out_state = ?, qty_out = ?, note = ? WHERE pm_id = ?').run(isFinal, isFinal ? null : orNull(o.outState), num(o.qtyOut), orNull(o.note), ex.pm_id); keep.add(ex.pm_id); }
-            else keep.add(Number(q(`INSERT INTO process_material (process_id, io, item_id, is_final, out_state, qty_out, note) VALUES (?, 'OUT', ?, ?, ?, ?, ?)`).run(pr.id, item.item_id, isFinal, isFinal ? null : orNull(o.outState), num(o.qtyOut), orNull(o.note)).lastInsertRowid));
+            const ex = q(`SELECT pm_id, is_final, out_state, qty_out, note FROM process_material WHERE process_id = ? AND item_id = ? AND io = 'OUT'`).get(pr.id, item.item_id);
+            const isFinal = bool01(o.isFinal, ex ? ex.is_final : 1);   // OUT 도 같은 규칙: 없는 필드는 기존 값 유지
+            const outState = isFinal ? null : (o.outState === undefined ? (ex?.out_state ?? null) : orNull(o.outState));
+            const qtyOut = o.qtyOut === undefined ? (ex?.qty_out ?? null) : num(o.qtyOut);
+            const note = o.note === undefined ? (ex?.note ?? null) : orNull(o.note);
+            if (ex) { q('UPDATE process_material SET is_final = ?, out_state = ?, qty_out = ?, note = ? WHERE pm_id = ?').run(isFinal, outState, qtyOut, note, ex.pm_id); keep.add(ex.pm_id); }
+            else keep.add(Number(q(`INSERT INTO process_material (process_id, io, item_id, is_final, out_state, qty_out, note) VALUES (?, 'OUT', ?, ?, ?, ?, ?)`).run(pr.id, item.item_id, isFinal, outState, qtyOut, note).lastInsertRowid));
           }
           for (const r of q(`SELECT pm_id FROM process_material WHERE process_id = ? AND io = 'OUT'`).all(pr.id)) if (!keep.has(r.pm_id)) q('DELETE FROM process_material WHERE pm_id = ?').run(r.pm_id);
         }

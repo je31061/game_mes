@@ -38,7 +38,7 @@ export function compatDiff(db, { tmpMap = {}, productCode = 'BLDC-500W-48V' } = 
     const st = db.prepare(sql); const out = {}; const order = {};
     for (const { id, op } of procs) {
       const rows = st.all(id); order[op] = rows.map(r => norm(r.pn));
-      for (const r of rows) out[`${op}|${norm(r.pn)}`] = { qty: r.qty, name: r.name, spec: r.spec, unit: r.unit, level: r.level, parentPn: r.parent_pn, image: r.image };
+      for (const r of rows) out[`${op}|${norm(r.pn)}`] = { qty: r.qty, name: r.name, spec: r.spec, unit: r.unit, level: r.level, parentPn: r.parent_pn, parentName: r.parent_name, image: r.image };
     }
     return { rows: out, order };
   };
@@ -58,8 +58,8 @@ export function compatDiff(db, { tmpMap = {}, productCode = 'BLDC-500W-48V' } = 
     const diffs = (f) => common.filter(k => String(before.rows[k][f]) !== String(after.rows[k][f])).map(k => [k, before.rows[k][f], after.rows[k][f]]);
     result.diff = {
       beforeRows: kb.length, afterRows: ka.length, commonRows: common.length, onlyBefore, onlyAfter,
-      qty: diffs('qty'), unit: diffs('unit'), name: diffs('name'), spec: diffs('spec'), level: diffs('level'), parentPn: diffs('parentPn'), image: diffs('image'),
-    };
+      qty: diffs('qty'), unit: diffs('unit'), name: diffs('name'), spec: diffs('spec'), level: diffs('level'), parentPn: diffs('parentPn'), parentName: diffs('parentName'), image: diffs('image'),
+    };   // level·parentPn 은 §10.3 예고분, parentName 은 예고에 없던 값 변화(최민준 handoff ①) — 판정엔 안 넣고 기록만
     const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     result.verdict = {
       onlyBefore: eq(onlyBefore, EXPECTED_DELTA.onlyBefore), onlyAfter: eq(onlyAfter, EXPECTED_DELTA.onlyAfter),

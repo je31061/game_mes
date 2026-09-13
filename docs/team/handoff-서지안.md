@@ -1,5 +1,64 @@
 # handoff — 서지안 (설비 연동·생산실적 분석가)
 
+## 스프린트 3 라운드 4 — 🧩 자재 탭 화면 — 2026-09-13 완료 (커밋은 라운드 5에서 최민준)
+
+### 만든 것 (전부 내 소유 파일, 공용 파일 미수정, 서버 재기동 안 함, 커밋 안 함)
+| 파일 | 내용 |
+|---|---|
+| `public/js/materials.js` (1,070줄) | `window.FWMaterials = { mount(container, api), _mock }`. 멱등(재진입 시 골격 유지, 요약·목록만 재조회). 요약 타일 6 + 검사 규칙 칩 11(클릭 → `GET /check` 상세) · 좌측 분류 트리(parentId 조립, 접기/펼치기, 하위 누계 품목 수, 클릭 = 하위 분류 포함 필터) · 섹션 탭 4개 — **품목**(검색·종류·상태 서버 필터, TMP 배지, 행 클릭 상세: 속성·산출/투입 공정·where-used 표·헤더 표·로트 수·역전개 경로·편집 폼) · **BOM 트리**(정전개 중첩, 깊이 L1~L4 들여쓰기, 수량/부모·완성품당·단위·GROSS 표시, 팬텀 점선, ⚠ 미배정 배지, IN 공정 칩 + ◀ 산출 공정 칩, (추정) 표기, as-of·깊이 입력, 모두 펼침/접음, 말단 합계 + 기준단위 환산, 라인 편집 폼 POST/PUT/DELETE — 서버 400 문자열 그대로 빨간 줄, 헤더 표 + 상태 전이·유효 종료·+헤더) · **공정 연결**(op 선택 → IN/OUT/미배정 표, 연결 편집: 유지 체크·순서·출고 방식, 미배정에서 이 공정에 연결 → `PUT links`) · **로트 계보**(품목·검색 → 로트 표(현재/초기 수량·진행 상태·원로트·밀시트) → 정/역방향 트리(분할·투입 간선, 공정·설비·작업자·일시), 투입 기록 폼 `POST consume`, + 로트 폼) · **[🔩 샘플 적재]**(counts·check·expectedMatch·mismatches·warnings·TMP 표시). 목: `?mock=1` 일 때만 `_mock`(cleansing 실품번 60품목·59라인·24공정·로트 7·계보 5) |
+| `public/css/materials.css` (199줄) | `.fwm-*` 접두. 테마 변수 `--text --muted --accent --run --idle --stop --panel --border --input` 만 사용(연한 배경은 `color-mix`). 2단 그리드(236px + 1fr, 860px 이하 1단), 넓은 표·트리는 자체 가로 스크롤(`.fwm-scroll`, `.fwm-tree`) — 페이지 가로 넘침 없음 |
+
+### 화면이 보여 주는 값의 근거 (계산은 전부 서버 뷰 — 화면은 표시만)
+- 수량/부모 = `bom_line.qty_per`(부모 base_qty 당) · 완성품당 = 서버 `qtyPerProduct`(`v_bom_line_qpp` 경로 곱, 곱셈 먼저·나눗셈 마지막) · 말단 합계 = 서버 `totals`(팬텀 제외, 단위별) + `totalsBase`(차원 환산).
+- `bop.state` 그대로: `linked`(IN 공정 칩) · `phantom`(점선·"팬텀") · `unassigned`(⚠ 미배정) · `none`(미연결(의도)). `bop.outOp` 는 ◀ 칩(이 품목을 완성하는 공정).
+- 검사 위반 타일: 합계 0 → 초록, `{D-8:10, R-10:10}` 처럼 알려진 값(cleansing `expected.v_chk_summary`)만 → 황색 "알려진 쟁점", 그 외 → 적색. 규칙 라벨·설명은 `ddl-v1.sql` G 절 `v_chk_*` 와 같은 코드.
+- 클라이언트 계산은 분류 트리의 하위 품목 수 누계 하나뿐.
+
+### §10 표와 실제 응답(`server/materials.js`)의 차이 — 화면은 **실제 응답에 맞췄다** (최민준에게 §10 문구 갱신 요청)
+| 라우트 | §10 | 실제 | 화면 처리 |
+|---|---|---|---|
+| `GET bom-headers/:pn` | 배열 | `{ pn, name, headers: [ …+lines[] ] }` | 둘 다 받음 |
+| `GET bom/:pn` 노드 `kind` | `PHANTOM` 포함 | `item_type`('SA') + `phantom: true`, `bop: { op, mode, state, inOps[], outOp }`, `qtyPerParent`·`qtyPerProductGross`·`headerId`·`note`·`bopLink` 추가, 응답에 `count`·`totalsBase`·`qty` | `phantom` 플래그로 팬텀 판정, `outOp` 칩, 환산 합계 표시 |
+| `GET items[?…]` / `items/:pn` | `kind(FG/SA/PHANTOM/PART/RAW/PKG)` | `kind` = DDL `item_type`(FG/SA/PT/RM/CN/PK) + `phantom`/`isPhantom`, 상세에 `outAt[]`·`inAt[]` 추가 | `itemKind()` 로 통일(PART/RAW/PKG 별칭도 수용), 산출/투입 공정 표시 |
+| `GET where-used/:pn` | `paths[[{pn,name,qtyPer}…]]` | 경로 첫 원소가 **자기 자신**(depth 0), `qtyCum` 추가, `parents[]` | 자기 자신 생략, 누적 표시 |
+| `GET lots/:id/genealogy` | `{ lot, tree }` | 노드 `edge: { kind: 'SPLIT'\|'CONSUME', qty, uom, op, equipment{code,name}, user, at }`, `stateOp/stateText`, `nodes` | 간선 종류·공정·설비·작업자·일시 표시 |
+| `PUT process/:op/links` | `{ links:[{lineId, mode, seq}] }` | IN 집합 **통째 교체**, 항목에 `splitPct`·`issueMethod`·`note` 없으면 **기본값(100/BACKFLUSH/null)으로 덮어씀** | 화면이 현재 값을 함께 보낸다(편집 모드에서 출고 방식 select) |
+| (§10 없음) | — | `GET check`(규칙별 상세), `GET process`(공정 목록 + IN/OUT 건수), `POST lots/:id/consume`(투입 계보), `GET lots/:id`, `PUT lots/:id`, `GET bom-lines/:id` | check 상세·공정 select·투입 기록 폼에 사용. 공정 목록은 `GET process` 실패 시 `GET /api/admin/equipments`.processes 로 폴백 |
+
+### 검증 결과 (2026-09-13, 이 PC)
+1. **목 라우터(DOM 없이, `node` vm)** — 29항목: 60품목(FG1·SA10·PT40·RM2·CN6·PK1)·분류 24(루트 6·말단 18)·TMP 3·팬텀 3·추적 SERIAL1/LOT34/NONE25 · 정전개 노드 59·깊이 4·`bop.state` 46/10/3 · **말단 합계 EA 76·g 221·SHT 12·kg 0.85·m 0.5**(SC-1011 0.85/80×80 = 0.85 정확) · depth=1 → 10노드 · where-used SC-1011 4단계 · OP-B90 IN 9/OUT 1/미배정 10 · OP-A10 OUT TMP-SC1010P 80 · 트리거 흉내 R-1(자기참조·순환)·R-11·D-8 거부 · 라인 추가 → 59→60·D-8 11 → 링크 → 10 복귀 · 계보 역방향 SN→MS-8842 6노드, 정방향 코일→시리얼. 실패 3건은 전부 검사 스크립트의 기대값 표기 문제(키 순서 비교, "gear" 검색이 GB-8000·GB-8040도 맞아 7건).
+2. **정적 하네스(스크래치패드, 임시 3178, 실제 css/js + `?mock=1`)** — 1280px 2단: 분류 트리·요약·BOM 트리(팬텀 점선·미배정·TMP·GROSS·IN/◀ 칩)·라인 편집 폼에 `R-1: …` 빨간 줄·헤더 표·공정 편집(유지 9·연결 10)·로트 7·계보 6노드(투입/분할)·라이트 테마 전부 렌더, `scrollWidth > clientWidth` 없음, 콘솔 오류 0. 980px 에서도 2단 유지 + 트리 자체 스크롤.
+3. **실 콘솔(localhost:3000/admin.html, 최민준 서버 그대로 — 재기동 안 함, 관리자 토큰은 `data/jwt.secret` 로 발급, 비밀번호 미입력)** — 🧩 자재 탭 마운트: 타일 `품목 60(부자재 6·완제품 1·포장재 1·단품 40·원자재 2·조립품 10·팬텀 3·TMP 3) · 분류 24 · 헤더 11 · 라인 59(IN 46/OUT 24) · 로트 0 · 검사 위반 20(알려진 쟁점)`, 분류 24행·품목 60행. BOM 트리 `노드 59 · 기준일 2026-09-13`, **말단 합계 76 EA·0.85 kg·221 g·12 SHT·0.5 m · 환산 COUNT 76·MASS 1.071·LENGTH 0.5**, GB-8000 "⚠ 미배정 ◀ OP-B85", SC-1011 "L4 0.85 kg G = 0.85 kg/대 IN OP-A10", 팬텀 행 3, 헤더 #1 rev A ACTIVE 라인 10. 라인 #6 FS-7020 의 자식을 BLDC 로 바꿔 PUT → **실 서버 400 `R-1: BOM 순환 참조 — UPDATE 결과 …`** 그대로 표시(롤백, 건수 불변). SC-1011 상세: 투입 공정 OP-A10, 역전개 경로 `← TMP-SC1010P 0.010625/부모 ← SC-1010 80/부모 · 누적 0.85 ← SA-1000 ← BLDC`. OP-B90: `IN 9 · OUT 1 · 미배정 10`, 편집 모드 출고 방식 BACKFLUSH×8·PICK(SP-4040) 보존, OUT "제어부 결합(진행)". 로트 탭 "로트 없음 · 3단계…" 안내. D-8 칩 클릭 → 상세 10건(쟁점 3·6 목록과 동일). [🔩 샘플 적재] 1회 → `기대값 일치`, counts item 60·bom_line 59·IN 46·OUT 24·완성 7·max_depth 4·node_minus_edge 1, check D-8 10·R-10 10, TMP 3건 표시, 적재 후 건수 불변(멱등 확인). 콘솔 오류는 내가 일부러 보낸 400 한 건.
+4. 실 DB 에 남긴 변경: **없음** — 쓰기 시도는 트리거가 거부한 3건(POST R-1·PUT R-1·DELETE R-11, 전부 SAVEPOINT 롤백)과 멱등 `import-sample` 1회(전후 summary 동일).
+5. `node --check public/js/materials.js` 통과. 뷰포트 860px 이하 1단 전환은 CSS 미디어 쿼리로 넣었으나 브라우저 패널이 980px 아래로 줄지 않아 **미확인**(관리자 콘솔은 데스크톱 전용이라 영향 작음).
+
+### 최민준에게 요청 (라운드 5)
+1. 인터페이스 §10 응답 표를 위 "차이" 표대로 갱신(헤더 GET 객체, 노드 `phantom`·`bop.outOp`, 계보 `edge` 객체, 추가 라우트 6개, `PUT links` 의 통째 교체 규칙). 코드 변경 요청은 없다 — 화면이 이미 실제 응답에 맞다.
+2. (선택) `PUT process/:op/links` 에서 항목에 `splitPct`·`issueMethod`·`note` 가 **없으면 기존 값 유지**로 바꾸면 다른 클라이언트(노하린 스크립트 등)가 seq 만 보내도 PICK 이 BACKFLUSH 로 바뀌지 않는다. 화면은 이미 값을 같이 보낸다.
+3. `?mock=1` 은 `admin.html` 에서도 목을 켠다(상단에 "목 데이터" 표식). 운영 URL 에 붙을 일은 없지만 README 한 줄로 적어 두면 좋겠다. README·운영 가이드·`docs/manual.html` 에 🧩 자재 탭 절(구성 4섹션·샘플 적재 버튼·검사 위반 타일 색 규칙) 요청.
+4. `GET items` 의 `kind` 필터는 서버가 PART/RAW/PKG 별칭을 받으므로 화면은 DDL 코드(PT/RM/CN/PK)+PHANTOM 을 보낸다 — §10 의 `kind(FG/SA/PHANTOM/PART/RAW/PKG)` 문구를 실제(`item_type` + `phantom`)로 맞춰 달라.
+
+### 노하린에게 — 화면으로 확인 가능한 검증 포인트
+- 요약: 타일 `검사 위반 20` 황색(알려진 쟁점) + 칩 `D-8 10`·`R-10 10` 황색, 나머지 9 규칙 초록 0. 칩 클릭 → 상세 10건 = cleansing `expected.unassigned_lines`.
+- BOM 트리(부모 BLDC-500W-48V, 기준일 비움=오늘): 상태 줄 `노드 59`, 말단 합계 `76 EA · 0.85 kg · 221 g · 12 SHT · 0.5 m`, 팬텀 점선 3(HA-3000·EX-5000·PE-6000), ⚠ 미배정 10, TMP 배지 3(TMP-SC1010P·TMP-FS7023·TMP-PK0010), SC-1011 `L4 0.85 kg G`, TMP-SC1010P `80 SHT = 80 SHT/대`, GB-8000·PL-9000 은 미배정이지만 `◀ OP-B85`·`◀ OP-B87`. 깊이 1 → 10행.
+- 라인 편집: 아무 행 클릭 → 자식 품번을 부모(또는 상위)로 바꿔 [수정] → 빨간 줄 `R-1: …`; ACTIVE 헤더 라인 [삭제] → `R-11: …`; 단위를 kg→EA 처럼 바꿔 저장 → `R-7: …`; 수량 소수 자릿수 초과 → `R-8: …`. 전부 화면 건수 불변.
+- 공정 연결: OP-B90 `IN 9 · OUT 1 · 미배정 10`, OP-A10 OUT `TMP-SC1010P 완성 80 SHT`, OP-A70(QC) IN 0 안내. 편집 모드에서 팬텀 라인은 미배정 표에 없음(연결 불가 — 서버 D-8).
+- 로트: 비어 있으면 안내문. `+ 로트`로 SC-1011 850 kg(밀시트 MS-8842) 등록 → SUBLOT 분할 → 산출 로트에 [투입 기록] → 역/정방향 트리(V-9 절차를 화면으로 재현 가능).
+- 품목 상세 SC-1011: 투입 공정 OP-A10, 역전개 `누적 0.85`. 팬텀 PE-6000: 종류 칩 "팬텀", BOM 헤더 1, 산출/투입 공정 없음.
+
+### 데이터 한계 (화면 하단 문구와 같은 말)
+- 로트·계보는 3단계(실적 신고·백플러시) 전까지 비어 있다 — 지금은 수동 등록·투입 기록만.
+- 미배정 10건은 쟁점 3·6(체결 공정 BOP 누락, IP-1040·LC-1080 원천 상충)이라 화면이 고칠 수 없다 — 공정 연결 편집으로 임시 배정은 가능하나 근거가 생기기 전엔 하지 말 것.
+- TMP 품번 3건은 쟁점 1·2 승인 전 값이며 썸네일이 없다.
+- 말단 합계는 단위별 합이고 SHT→EA 환산은 없다(낱장 실중량 미측정, V12-4).
+
+### 다음 개선안
+- 규칙 칩 상세를 BOM 트리 행으로 점프(라인 id 매칭)시키기.
+- 로트 상태 HOLD 설정·영향 범위 표시(계획서 §10.2 4번 카드) — `PUT lots/:id` 는 이미 있다.
+- as-of 를 바꿨을 때 "무엇이 달라졌나" 비교 뷰(rev 간 diff).
+
+---
+
 ## 스프린트 2 라운드 1 — 라인 밸런스 — 2026-09-09 완료 (커밋은 라운드 2에서 최민준)
 
 ### 만든 것 (전부 내 소유 파일, 공용 파일 미수정, 서버 재기동 안 함)

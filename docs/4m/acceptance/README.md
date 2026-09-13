@@ -10,19 +10,26 @@ Node 22+ 의 내장 `fetch` 만 쓴다 — `socket.io-client` 불필요, 추가 
 | `acceptance.mjs` | 인수 테스트 본체. 0 인증 → 1 적재·멱등 → 2 마스터 → 3 정전개 → 4 역전개 → 5 공정 IN/OUT → 6 트리거 거부(400+문자열) → 7 as-of·라인 편집 → 8 로트 계보 정·역 → 9 호환 계약·성능 |
 | `lib/compat.mjs` | 호환 계약 검사 — `server/db.js` `queries.processInputs` SQL 을 **문자 그대로** 격리 DB 에 실행해 이행 전(`*_legacy`)·후(뷰) 대조 |
 | `compat-diff.mjs` | 위 검사를 서버 없이 단독 실행 (`--snapshot` / `--against`) |
+| `tools/make-legacy-db.py` | **이행 리허설용 legacy 상태 DB** 생성 — 스프린트 2 표 4개 + 현행 parts 56·process_inputs 36 (`importBop` 규칙). 새 서버가 이 DB 로 뜨면 `db.js` 이행 [1]→[3] 이 실제로 돈다 |
 | `mock/mock-server.mjs` | **도구 자체 시험용 스텁** (프로토타입 DB 위 §10 흉내). 운영 서버가 아니다 — 실서버 인수는 반드시 `server/index.js` 로 |
 | `out/` | 결과. `acceptance-<시각>.json` · `acceptance-latest.json` · `acceptance-latest.md`(판정표) · `compat-diff*.json` |
 
 ## 실행법 — 격리 서버 (운영 DB 를 열지 않는다)
 
 ```bat
-:: 1) 격리 서버 — 임시 데이터 폴더·다른 포트·임시 관리자 비밀번호·시크릿. 운영 data/ 와 포트 3000 은 건드리지 않는다
+:: 0) (권장) 이행 리허설용 legacy 상태 DB — 스프린트 2 표 4개(products·processes·parts 56·process_inputs 36)만, 자재 표 없음.
+::    새 서버가 이 DB 로 뜨면 db.js 이행 [1]→[2]→[3] 이 실제로 돌고 *_legacy 가 남아 9단계 전후 대조가 된다. 운영 DB·백업은 열지 않는다
+python tools\make-legacy-db.py %TEMP%\fw-accept
+
+:: 1) 격리 서버 — 임시 데이터 폴더·다른 포트·임시 관리자 비밀번호·시크릿·임시 백업 폴더. 운영 data/ 와 포트 3000 은 건드리지 않는다
 set FW_DATA_DIR=%TEMP%\fw-accept
+set FW_BACKUP_DIR=%TEMP%\fw-accept-backup
 set PORT=3003
 set FW_SEED_PRODUCT_LINE=bldc
 set FW_ADMIN_PASSWORD=accept-1234
 set FW_JWT_SECRET=accept-secret
 node server\index.js
+:: 기동 로그에 "[db] ddl-v1.sql 85문 실행", "[db] 이행 [1] … expected 대조 일치 · v_chk_summary {"D-8":10,"R-10":10}", "[db] 이행 [3]" 이 찍혀야 한다
 
 :: 2) 다른 창에서 인수 테스트
 cd docs\4m\acceptance

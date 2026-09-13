@@ -1,0 +1,1266 @@
+{
+ "kinds": {
+  "parts_legacy": "table",
+  "process_inputs_legacy": "table",
+  "process_inputs": "view",
+  "parts": "view"
+ },
+ "procs": 24,
+ "state": "compat(전환 후)",
+ "after": {
+  "rows": {
+   "OP-A10|SC-1011": {
+    "qty": 0.85,
+    "name": "규소강판 원소재",
+    "spec": "POSCO 50W470",
+    "unit": "kg",
+    "level": "L4",
+    "parentPn": "TMP-SC1010P",
+    "parentName": "Stator Lamination (블랭킹편)",
+    "image": "SA-1000.png"
+   },
+   "OP-A20|SC-1010P": {
+    "qty": 80,
+    "name": "Stator Lamination (블랭킹편)",
+    "spec": "규소강판 50W470 0.5t 낱장",
+    "unit": "매",
+    "level": "L3",
+    "parentPn": "SC-1010",
+    "parentName": "Stator Core",
+    "image": "SA-1000.png"
+   },
+   "OP-A30|IN-1020U": {
+    "qty": 1,
+    "name": "Insulator Upper",
+    "spec": "PBT+GF30",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A30|IN-1020L": {
+    "qty": 1,
+    "name": "Insulator Lower",
+    "spec": "PBT+GF30",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A30|SC-1010": {
+    "qty": 1,
+    "name": "Stator Core",
+    "spec": "규소강판 50W470",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A40|MW-1030": {
+    "qty": 180,
+    "name": "Magnet Wire",
+    "spec": "동선 φ0.80",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A60|LW-1050": {
+    "qty": 3,
+    "name": "Lead Wire",
+    "spec": "AWG18 L300",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A60|TM-1060": {
+    "qty": 3,
+    "name": "Terminal Lug",
+    "spec": "φ3.2",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A80|IV-1070": {
+    "qty": 15,
+    "name": "Impregnation Varnish",
+    "spec": "에폭시",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator (Armature) Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-B10|SH-2010": {
+    "qty": 1,
+    "name": "Shaft",
+    "spec": "SCM440 QT",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B10|RC-2020": {
+    "qty": 1,
+    "name": "Rotor Core",
+    "spec": "규소강판 적층",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B20|PM-2030": {
+    "qty": 8,
+    "name": "Permanent Magnet",
+    "spec": "NdFeB N42SH",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B20|AD-2040": {
+    "qty": 0.5,
+    "name": "Adhesive",
+    "spec": "락타이트 638",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B40|BW-2050": {
+    "qty": 2,
+    "name": "Balancing Weight",
+    "spec": "Fe계",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B50|SA-1000": {
+    "qty": 1,
+    "name": "Stator (Armature) Assy",
+    "spec": "권선/함침 완료품",
+    "unit": "EA",
+    "level": "L1",
+    "parentPn": "BLDC-500W-48V",
+    "parentName": "BLDC 모터 500W 48V",
+    "image": "SA-1000.png"
+   },
+   "OP-B50|HS-3010": {
+    "qty": 1,
+    "name": "Housing Frame",
+    "spec": "AL6061-T6",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": "HS-3010.png"
+   },
+   "OP-B60|BF-3040": {
+    "qty": 1,
+    "name": "Bearing Front",
+    "spec": "6002ZZ",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": null
+   },
+   "OP-B60|BR-3050": {
+    "qty": 1,
+    "name": "Bearing Rear",
+    "spec": "6001ZZ",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": null
+   },
+   "OP-B60|WW-3060": {
+    "qty": 1,
+    "name": "Wave Washer",
+    "spec": "SUS304 φ12",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": null
+   },
+   "OP-B70|RA-2000": {
+    "qty": 1,
+    "name": "Rotor Assy",
+    "spec": "착자/밸런싱 완료품",
+    "unit": "EA",
+    "level": "L1",
+    "parentPn": "BLDC-500W-48V",
+    "parentName": "BLDC 모터 500W 48V",
+    "image": "RA-2000.png"
+   },
+   "OP-B80|BP-3020F": {
+    "qty": 1,
+    "name": "Bearing Plate Front",
+    "spec": "AL6061",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": null
+   },
+   "OP-B80|BP-3020R": {
+    "qty": 1,
+    "name": "Bearing Plate Rear",
+    "spec": "AL6061",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": null
+   },
+   "OP-B80|BT-3070": {
+    "qty": 8,
+    "name": "Bolt",
+    "spec": "M4×20 SUS304",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000",
+    "parentName": "Housing Assy",
+    "image": null
+   },
+   "OP-B85|GB-8010": {
+    "qty": 1,
+    "name": "Gearbox Housing",
+    "spec": "AL 다이캐스트",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8020": {
+    "qty": 1,
+    "name": "Input Spur Gear",
+    "spec": "Z=18",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8030": {
+    "qty": 1,
+    "name": "Output Spur Gear",
+    "spec": "Z=90",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8040": {
+    "qty": 2,
+    "name": "Gearbox Bearing",
+    "spec": "6003ZZ",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8050": {
+    "qty": 25,
+    "name": "Gear Oil/Grease",
+    "spec": "리튬계",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B87|PL-9010": {
+    "qty": 1,
+    "name": "Parking Gear Ring",
+    "spec": "SCM440",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B87|PL-9020": {
+    "qty": 1,
+    "name": "Parking Pawl",
+    "spec": "SCM435",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B87|PL-9030": {
+    "qty": 1,
+    "name": "Return Spring",
+    "spec": "SUS304",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B87|PL-9040": {
+    "qty": 1,
+    "name": "Actuator Rod",
+    "spec": "솔레노이드봉",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B90|PC-4010": {
+    "qty": 1,
+    "name": "Main PCB",
+    "spec": "FR-4 4L",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|PC-4011": {
+    "qty": 1,
+    "name": "Hall PCB",
+    "spec": "FR-4 2L",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|HS-4020": {
+    "qty": 3,
+    "name": "Hall Sensor",
+    "spec": "SS41F",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|MO-4030": {
+    "qty": 6,
+    "name": "Power MOSFET",
+    "spec": "100V/60A",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|GD-4040": {
+    "qty": 3,
+    "name": "Gate Driver IC",
+    "spec": "Half-Bridge",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|CP-4050": {
+    "qty": 4,
+    "name": "Electrolytic Cap",
+    "spec": "470uF/63V",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|HK-4060": {
+    "qty": 1,
+    "name": "Heatsink",
+    "spec": "AL 방열",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|BB-4070": {
+    "qty": 3,
+    "name": "Bus Bar",
+    "spec": "동 3.0t",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B90|SP-4040": {
+    "qty": 0.5,
+    "name": "Solder Paste",
+    "spec": "SAC305",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B100|CN-4030": {
+    "qty": 1,
+    "name": "Signal Connector",
+    "spec": "JST XH 5P",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics Assy",
+    "image": "PE-6000.png"
+   },
+   "OP-B100|CG-5030": {
+    "qty": 1,
+    "name": "Cable Gland",
+    "spec": "PG9",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "EX-5000",
+    "parentName": "External Parts Set",
+    "image": null
+   },
+   "OP-B100|OR-5020": {
+    "qty": 1,
+    "name": "O-Ring",
+    "spec": "NBR P24",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "EX-5000",
+    "parentName": "External Parts Set",
+    "image": null
+   },
+   "OP-B120|NP-5010": {
+    "qty": 1,
+    "name": "Name Plate",
+    "spec": "AL 에칭",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "EX-5000",
+    "parentName": "External Parts Set",
+    "image": null
+   },
+   "OP-B120|PK-0010": {
+    "qty": 1,
+    "name": "Carton",
+    "spec": "골판지 외장 박스",
+    "unit": "EA",
+    "level": "L1",
+    "parentPn": "BLDC-500W-48V",
+    "parentName": "BLDC 모터 500W 48V",
+    "image": null
+   }
+  },
+  "order": {
+   "OP-A10": [
+    "SC-1011"
+   ],
+   "OP-A20": [
+    "SC-1010P"
+   ],
+   "OP-A30": [
+    "IN-1020U",
+    "IN-1020L",
+    "SC-1010"
+   ],
+   "OP-A40": [
+    "MW-1030"
+   ],
+   "OP-A50": [],
+   "OP-A60": [
+    "LW-1050",
+    "TM-1060"
+   ],
+   "OP-A70": [],
+   "OP-A80": [
+    "IV-1070"
+   ],
+   "OP-A90": [],
+   "OP-A100": [],
+   "OP-B10": [
+    "SH-2010",
+    "RC-2020"
+   ],
+   "OP-B20": [
+    "PM-2030",
+    "AD-2040"
+   ],
+   "OP-B30": [],
+   "OP-B40": [
+    "BW-2050"
+   ],
+   "OP-B50": [
+    "SA-1000",
+    "HS-3010"
+   ],
+   "OP-B60": [
+    "BF-3040",
+    "BR-3050",
+    "WW-3060"
+   ],
+   "OP-B70": [
+    "RA-2000"
+   ],
+   "OP-B80": [
+    "BP-3020F",
+    "BP-3020R",
+    "BT-3070"
+   ],
+   "OP-B85": [
+    "GB-8010",
+    "GB-8020",
+    "GB-8030",
+    "GB-8040",
+    "GB-8050"
+   ],
+   "OP-B87": [
+    "PL-9010",
+    "PL-9020",
+    "PL-9030",
+    "PL-9040"
+   ],
+   "OP-B90": [
+    "PC-4010",
+    "PC-4011",
+    "HS-4020",
+    "MO-4030",
+    "GD-4040",
+    "CP-4050",
+    "HK-4060",
+    "BB-4070",
+    "SP-4040"
+   ],
+   "OP-B100": [
+    "CN-4030",
+    "CG-5030",
+    "OR-5020"
+   ],
+   "OP-B110": [],
+   "OP-B120": [
+    "NP-5010",
+    "PK-0010"
+   ]
+  }
+ },
+ "partsAfter": 59,
+ "listProcesses": {
+  "OP-A10": 1,
+  "OP-A20": 1,
+  "OP-A30": 3,
+  "OP-A40": 1,
+  "OP-A50": 0,
+  "OP-A60": 2,
+  "OP-A70": 0,
+  "OP-A80": 1,
+  "OP-A90": 0,
+  "OP-A100": 0,
+  "OP-B10": 2,
+  "OP-B20": 2,
+  "OP-B30": 0,
+  "OP-B40": 1,
+  "OP-B50": 2,
+  "OP-B60": 3,
+  "OP-B70": 1,
+  "OP-B80": 3,
+  "OP-B85": 5,
+  "OP-B87": 4,
+  "OP-B90": 9,
+  "OP-B100": 3,
+  "OP-B110": 0,
+  "OP-B120": 2
+ },
+ "before": {
+  "rows": {
+   "OP-A10|SC-1011": {
+    "qty": 0.85,
+    "name": "규소강판 원소재",
+    "spec": "POSCO 50W470",
+    "unit": "kg",
+    "level": "L3",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A30|IN-1020U": {
+    "qty": 1,
+    "name": "Insulator Upper",
+    "spec": "PBT+GF30",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A30|IN-1020L": {
+    "qty": 1,
+    "name": "Insulator Lower",
+    "spec": "PBT+GF30",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A30|SC-1010": {
+    "qty": 1,
+    "name": "Stator Core",
+    "spec": "규소강판 50W470",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A40|MW-1030": {
+    "qty": 180,
+    "name": "Magnet Wire",
+    "spec": "동선 φ0.80",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A60|LW-1050": {
+    "qty": 3,
+    "name": "Lead Wire",
+    "spec": "AWG18 L300",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A60|TM-1060": {
+    "qty": 3,
+    "name": "Terminal Lug",
+    "spec": "φ3.2",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-A80|IV-1070": {
+    "qty": 15,
+    "name": "Impregnation Varnish",
+    "spec": "에폭시",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "SA-1000",
+    "parentName": "Stator Assy",
+    "image": "SA-1000.png"
+   },
+   "OP-B10|SH-2010": {
+    "qty": 1,
+    "name": "Shaft",
+    "spec": "SCM440 QT",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B10|RC-2020": {
+    "qty": 1,
+    "name": "Rotor Core",
+    "spec": "규소강판 적층",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B20|PM-2030": {
+    "qty": 8,
+    "name": "Permanent Magnet",
+    "spec": "NdFeB N42SH",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B20|AD-2040": {
+    "qty": 0.5,
+    "name": "Adhesive",
+    "spec": "락타이트 638",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B40|BW-2050": {
+    "qty": 2,
+    "name": "Balancing Weight",
+    "spec": "Fe계",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "RA-2000",
+    "parentName": "Rotor Assy",
+    "image": "RA-2000.png"
+   },
+   "OP-B50|SA-1000": {
+    "qty": 1,
+    "name": "Stator (Armature) Assy",
+    "spec": "권선/함침 완료품",
+    "unit": "EA",
+    "level": "L1",
+    "parentPn": "BLDC-500W-48V",
+    "parentName": "BLDC 모터 500W 48V",
+    "image": "SA-1000.png"
+   },
+   "OP-B50|HS-3010": {
+    "qty": 1,
+    "name": "Housing Frame",
+    "spec": "AL6061-T6",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": "HS-3010.png"
+   },
+   "OP-B60|BF-3040": {
+    "qty": 1,
+    "name": "Bearing Front",
+    "spec": "6002ZZ",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B60|BR-3050": {
+    "qty": 1,
+    "name": "Bearing Rear",
+    "spec": "6001ZZ",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B60|WW-3060": {
+    "qty": 1,
+    "name": "Wave Washer",
+    "spec": "SUS304 φ12",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B70|RA-2000": {
+    "qty": 1,
+    "name": "Rotor Assy",
+    "spec": "착자/밸런싱 완료품",
+    "unit": "EA",
+    "level": "L1",
+    "parentPn": "BLDC-500W-48V",
+    "parentName": "BLDC 모터 500W 48V",
+    "image": "RA-2000.png"
+   },
+   "OP-B80|BP-3020F": {
+    "qty": 1,
+    "name": "Bearing Plate Front",
+    "spec": "AL6061",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B80|BP-3020R": {
+    "qty": 1,
+    "name": "Bearing Plate Rear",
+    "spec": "AL6061",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B80|BT-3070": {
+    "qty": 8,
+    "name": "Bolt",
+    "spec": "M4×20 SUS304",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B85|GB-8010": {
+    "qty": 1,
+    "name": "Gearbox Housing",
+    "spec": "AL 다이캐스트",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8020": {
+    "qty": 1,
+    "name": "Input Spur Gear",
+    "spec": "Z=18",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8030": {
+    "qty": 1,
+    "name": "Output Spur Gear",
+    "spec": "Z=90",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8040": {
+    "qty": 2,
+    "name": "Gearbox Bearing",
+    "spec": "6003ZZ",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B85|GB-8050": {
+    "qty": 25,
+    "name": "Gear Oil/Grease",
+    "spec": "리튬계",
+    "unit": "g",
+    "level": "L2",
+    "parentPn": "GB-8000",
+    "parentName": "Gearbox Assy",
+    "image": "GB-8000.png"
+   },
+   "OP-B87|PL-9010": {
+    "qty": 1,
+    "name": "Parking Gear Ring",
+    "spec": "SCM440",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B87|PL-9020": {
+    "qty": 1,
+    "name": "Parking Pawl",
+    "spec": "SCM435",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B87|PL-9030": {
+    "qty": 1,
+    "name": "Return Spring",
+    "spec": "SUS304",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B87|PL-9040": {
+    "qty": 1,
+    "name": "Actuator Rod",
+    "spec": "솔레노이드봉",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PL-9000",
+    "parentName": "Parking Lock Assy",
+    "image": "PL-9000.png"
+   },
+   "OP-B90|PE-6000": {
+    "qty": 1,
+    "name": "Power Electronics Assy",
+    "spec": "인버터/제어 PCB",
+    "unit": "EA",
+    "level": "L1",
+    "parentPn": "BLDC-500W-48V",
+    "parentName": "BLDC 모터 500W 48V",
+    "image": "PE-6000.png"
+   },
+   "OP-B100|CN-4030": {
+    "qty": 1,
+    "name": "Signal Connector",
+    "spec": "JST XH 5P",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "PE-6000",
+    "parentName": "Power Electronics",
+    "image": "PE-6000.png"
+   },
+   "OP-B100|CG-5030": {
+    "qty": 1,
+    "name": "Cable Gland",
+    "spec": "PG9",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B100|OR-5020": {
+    "qty": 1,
+    "name": "O-Ring",
+    "spec": "NBR P24",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   },
+   "OP-B120|NP-5010": {
+    "qty": 1,
+    "name": "Name Plate",
+    "spec": "AL 에칭",
+    "unit": "EA",
+    "level": "L2",
+    "parentPn": "HA-3000/EX-5000",
+    "parentName": "Housing/External",
+    "image": null
+   }
+  },
+  "order": {
+   "OP-A10": [
+    "SC-1011"
+   ],
+   "OP-A20": [],
+   "OP-A30": [
+    "IN-1020U",
+    "IN-1020L",
+    "SC-1010"
+   ],
+   "OP-A40": [
+    "MW-1030"
+   ],
+   "OP-A50": [],
+   "OP-A60": [
+    "LW-1050",
+    "TM-1060"
+   ],
+   "OP-A70": [],
+   "OP-A80": [
+    "IV-1070"
+   ],
+   "OP-A90": [],
+   "OP-A100": [],
+   "OP-B10": [
+    "SH-2010",
+    "RC-2020"
+   ],
+   "OP-B20": [
+    "PM-2030",
+    "AD-2040"
+   ],
+   "OP-B30": [],
+   "OP-B40": [
+    "BW-2050"
+   ],
+   "OP-B50": [
+    "SA-1000",
+    "HS-3010"
+   ],
+   "OP-B60": [
+    "BF-3040",
+    "BR-3050",
+    "WW-3060"
+   ],
+   "OP-B70": [
+    "RA-2000"
+   ],
+   "OP-B80": [
+    "BP-3020F",
+    "BP-3020R",
+    "BT-3070"
+   ],
+   "OP-B85": [
+    "GB-8010",
+    "GB-8020",
+    "GB-8030",
+    "GB-8040",
+    "GB-8050"
+   ],
+   "OP-B87": [
+    "PL-9010",
+    "PL-9020",
+    "PL-9030",
+    "PL-9040"
+   ],
+   "OP-B90": [
+    "PE-6000"
+   ],
+   "OP-B100": [
+    "CN-4030",
+    "CG-5030",
+    "OR-5020"
+   ],
+   "OP-B110": [],
+   "OP-B120": [
+    "NP-5010"
+   ]
+  }
+ },
+ "partsBefore": 56,
+ "diff": {
+  "beforeRows": 36,
+  "afterRows": 46,
+  "commonRows": 35,
+  "onlyBefore": [
+   [
+    "OP-B90",
+    "PE-6000"
+   ]
+  ],
+  "onlyAfter": [
+   [
+    "OP-A20",
+    "SC-1010P"
+   ],
+   [
+    "OP-B120",
+    "PK-0010"
+   ],
+   [
+    "OP-B90",
+    "BB-4070"
+   ],
+   [
+    "OP-B90",
+    "CP-4050"
+   ],
+   [
+    "OP-B90",
+    "GD-4040"
+   ],
+   [
+    "OP-B90",
+    "HK-4060"
+   ],
+   [
+    "OP-B90",
+    "HS-4020"
+   ],
+   [
+    "OP-B90",
+    "MO-4030"
+   ],
+   [
+    "OP-B90",
+    "PC-4010"
+   ],
+   [
+    "OP-B90",
+    "PC-4011"
+   ],
+   [
+    "OP-B90",
+    "SP-4040"
+   ]
+  ],
+  "qty": [],
+  "unit": [],
+  "name": [],
+  "spec": [],
+  "level": [
+   [
+    "OP-A10|SC-1011",
+    "L3",
+    "L4"
+   ]
+  ],
+  "parentPn": [
+   [
+    "OP-A10|SC-1011",
+    "SA-1000",
+    "TMP-SC1010P"
+   ],
+   [
+    "OP-B50|HS-3010",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B60|BF-3040",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B60|BR-3050",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B60|WW-3060",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B80|BP-3020F",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B80|BP-3020R",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B80|BT-3070",
+    "HA-3000/EX-5000",
+    "HA-3000"
+   ],
+   [
+    "OP-B100|CG-5030",
+    "HA-3000/EX-5000",
+    "EX-5000"
+   ],
+   [
+    "OP-B100|OR-5020",
+    "HA-3000/EX-5000",
+    "EX-5000"
+   ],
+   [
+    "OP-B120|NP-5010",
+    "HA-3000/EX-5000",
+    "EX-5000"
+   ]
+  ],
+  "parentName": [
+   [
+    "OP-A10|SC-1011",
+    "Stator Assy",
+    "Stator Lamination (블랭킹편)"
+   ],
+   [
+    "OP-A30|IN-1020U",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-A30|IN-1020L",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-A30|SC-1010",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-A40|MW-1030",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-A60|LW-1050",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-A60|TM-1060",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-A80|IV-1070",
+    "Stator Assy",
+    "Stator (Armature) Assy"
+   ],
+   [
+    "OP-B50|HS-3010",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B60|BF-3040",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B60|BR-3050",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B60|WW-3060",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B80|BP-3020F",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B80|BP-3020R",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B80|BT-3070",
+    "Housing/External",
+    "Housing Assy"
+   ],
+   [
+    "OP-B100|CN-4030",
+    "Power Electronics",
+    "Power Electronics Assy"
+   ],
+   [
+    "OP-B100|CG-5030",
+    "Housing/External",
+    "External Parts Set"
+   ],
+   [
+    "OP-B100|OR-5020",
+    "Housing/External",
+    "External Parts Set"
+   ],
+   [
+    "OP-B120|NP-5010",
+    "Housing/External",
+    "External Parts Set"
+   ]
+  ],
+  "image": []
+ },
+ "verdict": {
+  "onlyBefore": true,
+  "onlyAfter": true,
+  "rows": true,
+  "qtyUnitNameSpec": true,
+  "parts": true,
+  "all": true
+ }
+}
