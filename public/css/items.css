@@ -63,12 +63,13 @@
 .fwi-sheet tbody tr:hover td.stick { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
 .fwi-sheet tbody tr.on td.stick { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
 
-/* 화면(정확히는 탭 폭)에 따라 덜 중요한 열부터 숨는다. pri1 = 품번·품명·품목구분·상태는 항상 남는다.
- * 뷰포트가 아니라 컨테이너 기준이라 사이드바가 접히거나 창을 반으로 나눠도 맞게 동작한다. */
-@container fwi (max-width: 1340px) { .fwi-sheet .pri4 { display: none; } }
-@container fwi (max-width: 1080px) { .fwi-sheet .pri3 { display: none; } }
-@container fwi (max-width: 820px)  { .fwi-sheet .pri2 { display: none; } }
-@container fwi (max-width: 620px) {
+/* 시트가 실제로 쓰는 폭에 따라 덜 중요한 열부터 숨는다. pri1 = 품번·품명·품목구분·상태는 항상 남는다.
+ * 기준은 뷰포트도 탭 폭도 아닌 **시트가 놓인 칸(.fwi-sheetcol)** 이다 — 상세를 오른쪽에 두면 시트 칸이 좁아지므로
+ * 탭 폭을 보면 열이 넘쳐 가로 스크롤이 생긴다(실제로 그랬다). */
+@container fwisheet (max-width: 1340px) { .fwi-sheet .pri4 { display: none; } }
+@container fwisheet (max-width: 1080px) { .fwi-sheet .pri3 { display: none; } }
+@container fwisheet (max-width: 820px)  { .fwi-sheet .pri2 { display: none; } }
+@container fwisheet (max-width: 620px) {
   .fwi-sheet th, .fwi-sheet td { padding: 5px 6px; font-size: 12px; }
   .fwi-sheet td.stick, .fwi-sheet th.stick { position: static; }   /* 좁으면 고정이 오히려 자리를 먹는다 */
   .fwi-bar input { width: 100%; }
@@ -135,3 +136,40 @@
 .fwd-chk input { width: auto; }
 #fwd-add input { max-width: 130px; }
 #fwd-add input#fwd-partner { max-width: 170px; }
+
+/* ── 상세 위치 토글 (js/fwlayout.js 와 짝) ─────────────────────────────────
+ * 목록과 상세를 한 그리드에 두고, 클래스로만 배치를 바꾼다. JS 는 폭을 재지 않는다 —
+ * 오른쪽을 골랐어도 폭이 모자라면 아래 @container 규칙이 아래로 내린다. */
+.fwi-split { display: grid; gap: 12px; align-items: start; }
+.fwi-split.pos-below { grid-template-columns: minmax(0, 1fr); }
+.fwi-split.pos-right { grid-template-columns: minmax(0, 1fr) minmax(360px, 470px); }
+.fwi-split .fwi-sheetcol { min-width: 0; }
+.fwi-sheetcol { container-type: inline-size; container-name: fwisheet; }   /* 열 숨김 기준 */
+.fwi-split.pos-right .fwi-sheetwrap { max-height: 72vh; }
+.fwi-split.pos-right > .fwi-main { position: sticky; top: 8px; max-height: 84vh; overflow: auto; margin-top: 0; }
+.fwi-split.pos-right > .fwi-main .fwi-grid { grid-template-columns: 1fr; }   /* 좁은 단이라 폼을 한 줄씩 */
+.fwi-split.pos-right > .fwi-main .fwi-attach { gap: 5px; }
+.fwi-split.pos-right > .fwi-main .fwi-attach input { max-width: 110px; }
+@container fwi (max-width: 1200px) {
+  /* 오른쪽에 두기엔 좁다 — 지정과 무관하게 아래로 */
+  .fwi-split.pos-right { grid-template-columns: minmax(0, 1fr); }
+  .fwi-split.pos-right .fwi-sheetwrap { max-height: 60vh; }
+  .fwi-split.pos-right > .fwi-main { position: static; max-height: none; margin-top: 14px; }
+  .fwi-split.pos-right > .fwi-main .fwi-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+}
+@media (max-width: 1200px) {   /* @container 를 모르는 브라우저 대비 */
+  .fwi-split.pos-right { grid-template-columns: minmax(0, 1fr); }
+  .fwi-split.pos-right > .fwi-main { position: static; max-height: none; }
+}
+
+/* 토글 버튼 자체 — 도구줄에 들어간다 */
+.fwi-layout { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: 8px; padding: 2px 4px 2px 7px; }
+.fwi-layout-t { font-size: 10.5px; color: var(--muted); margin-right: 3px; letter-spacing: .5px; }
+.fwi-layout button { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.fwi-layout button i { font-style: normal; }
+.fwi-layout button svg rect { fill: currentColor; opacity: .45; }
+.fwi-layout button svg rect.d { opacity: .9; }
+.fwi-layout button.on { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.fwi-layout button:hover { color: var(--accent); }
+@container fwi (max-width: 1200px) { .fwi-layout button i { display: none; } }   /* 좁으면 아이콘만 */

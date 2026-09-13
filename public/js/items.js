@@ -88,11 +88,16 @@
           <input id="fwi-q" placeholder="품번·품명·규격 검색" autocomplete="off">
           <button id="fwi-new" type="button">+ 새 품목</button>
           <button id="fwi-csv" type="button" class="ghost">⬇ 엑셀(CSV)</button>
+          <span id="fwi-layout"></span>
           <span class="fwi-count" id="fwi-count"></span>
         </div>
         <div class="fwi-chips" id="fwi-chips"></div>
+        <!-- 시트 + 등록 폼을 한 그리드에 둔다. 상세를 아래/오른쪽 어디에 둘지는 도구줄 토글(js/fwlayout.js)이 클래스로 정한다 -->
+        <div class="fwi-split" id="fwi-split">
+        <div class="fwi-sheetcol">
         <div class="fwi-sheetwrap"><table class="fwi-sheet" id="fwi-sheet"></table></div>
         <p class="fwi-hint" id="fwi-sheethint">머리글을 누르면 그 열로 정렬합니다. 행을 누르면 아래에서 고칠 수 있습니다. 사용 종료일의 <b>*</b> 는 저장된 값이 아니라 분류 기본 일수로 계산해 보여 주는 날짜입니다. 화면이 좁아지면 덜 중요한 열부터 숨습니다.</p>
+        </div>
         <section class="fwi-main" id="fwi-editor" hidden>
           <div class="fwi-head">
             <b id="fwi-title">새 품목</b>
@@ -107,6 +112,7 @@
           </div>
           <div class="fwi-bom" id="fwi-bom"></div>
         </section>
+        </div>
       </div>`;
     $('fwi-q').addEventListener('input', (e) => { S.filter = e.target.value.trim(); loadList(); });
     $('fwi-new').onclick = () => { S.sel = null; S.touched.clear(); openEditor(); msg(''); };
@@ -114,6 +120,8 @@
     $('fwi-csv').onclick = exportCsv;
     $('fwi-reset').onclick = () => { S.touched.clear(); renderForm(); msg(''); };
     $('fwi-save').onclick = save;
+    // 상세(등록 폼) 위치 — 아래 / 오른쪽. 기본은 오른쪽(2단)이고 폭이 모자라면 CSS 가 아래로 내린다
+    if (window.FWLayout) window.FWLayout.mount($('fwi-layout'), { key: 'items', target: $('fwi-split'), def: 'right' });
   }
 
   async function reload() {

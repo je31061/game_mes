@@ -53,12 +53,16 @@
           <input id="fwp-q" placeholder="코드·상호·사업자번호·대표자·담당자 검색" autocomplete="off">
           <button id="fwp-new" type="button">+ 새 거래처</button>
           <button id="fwp-csv" type="button" class="ghost">⬇ 엑셀(CSV)</button>
+          <span id="fwp-layout"></span>
           <span class="fwi-count" id="fwp-count"></span>
         </div>
         <div class="fwi-chips" id="fwp-chips"></div>
+        <div class="fwi-split" id="fwp-split">
+        <div class="fwi-sheetcol">
         <div class="fwi-sheetwrap"><table class="fwi-sheet" id="fwp-sheet"></table></div>
         <p class="fwi-hint">머리글을 누르면 그 열로 정렬합니다. 행을 누르면 아래에서 고칠 수 있습니다.
           <b>매입</b>이나 <b>매출</b>을 고르면 <b>매입·매출</b> 거래처도 함께 나옵니다 — 실제로 그 역할을 하기 때문입니다.</p>
+        </div>
         <section class="fwi-main" id="fwp-editor" hidden>
           <div class="fwi-head">
             <b id="fwp-title">새 거래처</b>
@@ -73,6 +77,7 @@
           </div>
           <div class="fwi-bom" id="fwp-items"></div>
         </section>
+        </div>
       </div>`;
     $('fwp-q').addEventListener('input', (e) => { S.filter = e.target.value.trim(); load(); });
     $('fwp-new').onclick = () => { S.sel = null; openEditor(); msg(''); };
@@ -80,6 +85,7 @@
     $('fwp-csv').onclick = exportCsv;
     $('fwp-reset').onclick = () => { renderForm(); msg(''); };
     $('fwp-save').onclick = save;
+    if (window.FWLayout) window.FWLayout.mount($('fwp-layout'), { key: 'partners', target: $('fwp-split'), def: 'right' });
   }
 
   const $ = (id) => root.querySelector('#' + id);

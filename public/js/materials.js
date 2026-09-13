@@ -406,6 +406,7 @@
               <button class="fwm-search">조회</button>
               <span class="fwm-items-count muted"></span>
               <button class="fwm-new-item fwm-ghost" title="POST /api/admin/materials/items">+ 품목</button>
+              <span class="fwm-layout-tg"></span>
             </div>
             <div class="fwm-item-form" hidden></div>
             <!-- 2단: 왼쪽 목록 · 오른쪽 상세 (좁으면 CSS 가 한 단으로 내린다) -->
@@ -460,7 +461,7 @@
     const els = {
       status: $('.fwm-status'), msg: $('.fwm-msg'), cards: $('.fwm-cards'), check: $('.fwm-check'), importBtn: $('.fwm-import'), importResult: $('.fwm-import-result'), reload: $('.fwm-reload'), mockflag: $('.fwm-mockflag'),
       ctree: $('.fwm-ctree'), asideSub: $('.fwm-aside-sub'), treeAll: $('.fwm-tree-all'), tabs: [...container.querySelectorAll('.fwm-tabs button')], secs: [...container.querySelectorAll('.fwm-sec')],
-      q: $('.fwm-q'), kind: $('.fwm-kind'), statusF: $('.fwm-status-f'), search: $('.fwm-search'), itemsCount: $('.fwm-items-count'), newItem: $('.fwm-new-item'), itemForm: $('.fwm-item-form'), itemsBox: $('.fwm-items-box'), detail: $('.fwm-detail'),
+      q: $('.fwm-q'), kind: $('.fwm-kind'), statusF: $('.fwm-status-f'), search: $('.fwm-search'), itemsCount: $('.fwm-items-count'), newItem: $('.fwm-new-item'), itemForm: $('.fwm-item-form'), itemsBox: $('.fwm-items-box'), detail: $('.fwm-detail'), split: $('.fwm-split'), layoutSlot: $('.fwm-layout-tg'),
       bomRoot: $('.fwm-bom-root'), asOf: $('.fwm-asof'), depth: $('.fwm-depth'), bomGo: $('.fwm-bom-go'), bomExpand: $('.fwm-bom-expand'), bomCollapse: $('.fwm-bom-collapse'), bomStatus: $('.fwm-bom-status'), bomBox: $('.fwm-bom-box'), lineForm: $('.fwm-line-form'), headers: $('.fwm-headers'),
       op: $('.fwm-op'), procGo: $('.fwm-proc-go'), procStatus: $('.fwm-proc-status'), procBox: $('.fwm-proc-box'),
       lotPn: $('.fwm-lot-pn'), lotQ: $('.fwm-lot-q'), lotGo: $('.fwm-lot-go'), newLot: $('.fwm-new-lot'), lotForm: $('.fwm-lot-form'), lotStatus: $('.fwm-lot-status'), lotsBox: $('.fwm-lots-box'), genBox: $('.fwm-gen-box'), pnList: $('#fwm-pn-list'),
@@ -484,6 +485,8 @@
     els.q.onkeydown = (ev) => { if (ev.key === 'Enter') loadItems(container); };
     els.kind.onchange = els.statusF.onchange = () => loadItems(container);
     els.newItem.onclick = () => renderItemForm(container, null);
+    // 상세 위치(아래/오른쪽) — 공용 토글. 기본은 오른쪽(2단), 폭이 모자라면 CSS 가 아래로 내린다
+    if (window.FWLayout && els.layoutSlot && els.split) window.FWLayout.mount(els.layoutSlot, { key: 'materials', target: els.split, def: 'right' });
     els.bomGo.onclick = () => { st.bom.pn = els.bomRoot.value; st.bom.asOf = els.asOf.value; st.bom.depth = Number(els.depth.value) || 0; loadBom(container); };
     els.bomRoot.onchange = els.bomGo.onclick;
     els.bomExpand.onclick = () => { st.bom.collapsed.clear(); renderBom(container); };
