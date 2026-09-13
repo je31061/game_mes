@@ -1,0 +1,2355 @@
+{
+  "schema": "normalized-bom/0.1",
+  "meta": {
+    "root": "BLDC-500W-48V",
+    "product": "BLDC 모터 500W 48V",
+    "sourceJson": "bldc-500w-48v.json",
+    "sourceXlsx": "BLDC_500W_48V_BOM_BOP_Master.xlsx",
+    "splitComposite": false,
+    "counts": {
+      "items": 57,
+      "edges": 58,
+      "processes": 24,
+      "processInputs": 36,
+      "issues": 35
+    },
+    "issuesBySeverity": {
+      "ERROR": 13,
+      "WARN": 18,
+      "INFO": 4
+    }
+  },
+  "items": [
+    {
+      "pn": "AD-2040",
+      "name": "Adhesive",
+      "spec": "락타이트 638",
+      "unit": "g",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BB-4070",
+      "name": "Bus Bar",
+      "spec": "동 3.0t",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BF-3040",
+      "name": "Bearing Front",
+      "spec": "6002ZZ",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BLDC-500W-48V",
+      "name": "BLDC 모터 500W 48V",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L0",
+      "roles": [
+        "product"
+      ],
+      "sources": [
+        "json.product"
+      ]
+    },
+    {
+      "pn": "BP-3020F",
+      "name": "Bearing Plate Front",
+      "spec": "AL6061",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BP-3020R",
+      "name": "Bearing Plate Rear",
+      "spec": "AL6061",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BR-3050",
+      "name": "Bearing Rear",
+      "spec": "6001ZZ",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BT-3070",
+      "name": "Bolt",
+      "spec": "M4×20 SUS304",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "BW-2050",
+      "name": "Balancing Weight",
+      "spec": "Fe계",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "CG-5030",
+      "name": "Cable Gland",
+      "spec": "PG9",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "CN-4030",
+      "name": "Signal Connector",
+      "spec": "JST XH 5P",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "CP-4050",
+      "name": "Electrolytic Cap",
+      "spec": "470uF/63V",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "EX-5000",
+      "name": "External Parts Set",
+      "spec": "",
+      "unit": "SET",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "FS-7010",
+      "name": "Main Flange Shaft No.1",
+      "spec": "SCM440",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly",
+        "part"
+      ],
+      "sources": [
+        "json.subassemblies",
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "FS-7020",
+      "name": "Flange Shaft No.2 Assy",
+      "spec": "AL 다이캐스트",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly",
+        "part"
+      ],
+      "sources": [
+        "json.subassemblies",
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "FS-7021",
+      "name": "Top Bushing",
+      "spec": "황동",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "FS-7022",
+      "name": "Internal Shaft",
+      "spec": "SCM415",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "GB-8000",
+      "name": "Gearbox Assy",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "GB-8010",
+      "name": "Gearbox Housing",
+      "spec": "AL 다이캐스트",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "GB-8020",
+      "name": "Input Spur Gear",
+      "spec": "Z=18",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "GB-8030",
+      "name": "Output Spur Gear",
+      "spec": "Z=90",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "GB-8040",
+      "name": "Gearbox Bearing",
+      "spec": "6003ZZ",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "GB-8050",
+      "name": "Gear Oil/Grease",
+      "spec": "리튬계",
+      "unit": "g",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "GD-4040",
+      "name": "Gate Driver IC",
+      "spec": "Half-Bridge",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "HA-3000",
+      "name": "Housing Assy",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "HK-4060",
+      "name": "Heatsink",
+      "spec": "AL 방열",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "HS-3010",
+      "name": "Housing Frame",
+      "spec": "AL6061-T6",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "HS-4020",
+      "name": "Hall Sensor",
+      "spec": "SS41F",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "IN-1020L",
+      "name": "Insulator Lower",
+      "spec": "PBT+GF30",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "IN-1020U",
+      "name": "Insulator Upper",
+      "spec": "PBT+GF30",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "IP-1040",
+      "name": "Insulation Paper",
+      "spec": "Nomex 410",
+      "unit": "매",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "IV-1070",
+      "name": "Impregnation Varnish",
+      "spec": "에폭시",
+      "unit": "g",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "LC-1080",
+      "name": "Lacing Cord",
+      "spec": "폴리에스터",
+      "unit": "m",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "LW-1050",
+      "name": "Lead Wire",
+      "spec": "AWG18 L300",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "MO-4030",
+      "name": "Power MOSFET",
+      "spec": "100V/60A",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "MW-1030",
+      "name": "Magnet Wire",
+      "spec": "동선 φ0.80",
+      "unit": "g",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "NP-5010",
+      "name": "Name Plate",
+      "spec": "AL 에칭",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "OR-5020",
+      "name": "O-Ring",
+      "spec": "NBR P24",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "OR-7025",
+      "name": "O-Ring",
+      "spec": "NBR",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PC-4010",
+      "name": "Main PCB",
+      "spec": "FR-4 4L",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PC-4011",
+      "name": "Hall PCB",
+      "spec": "FR-4 2L",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PE-6000",
+      "name": "Power Electronics Assy",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "PL-9000",
+      "name": "Parking Lock Assy",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "PL-9010",
+      "name": "Parking Gear Ring",
+      "spec": "SCM440",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PL-9020",
+      "name": "Parking Pawl",
+      "spec": "SCM435",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PL-9030",
+      "name": "Return Spring",
+      "spec": "SUS304",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PL-9040",
+      "name": "Actuator Rod",
+      "spec": "솔레노이드봉",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "PM-2030",
+      "name": "Permanent Magnet",
+      "spec": "NdFeB N42SH",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "RA-2000",
+      "name": "Rotor Assy",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "RC-2020",
+      "name": "Rotor Core",
+      "spec": "규소강판 적층",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "SA-1000",
+      "name": "Stator (Armature) Assy",
+      "spec": "",
+      "unit": "EA",
+      "srcLevel": "L1",
+      "roles": [
+        "subassembly"
+      ],
+      "sources": [
+        "json.subassemblies"
+      ]
+    },
+    {
+      "pn": "SC-1010",
+      "name": "Stator Core",
+      "spec": "규소강판 50W470",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "SC-1011",
+      "name": "규소강판 원소재",
+      "spec": "POSCO 50W470",
+      "unit": "kg",
+      "srcLevel": "L3",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "SH-2010",
+      "name": "Shaft",
+      "spec": "SCM440 QT",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "SP-4040",
+      "name": "Solder Paste",
+      "spec": "SAC305",
+      "unit": "g",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "TM-1060",
+      "name": "Terminal Lug",
+      "spec": "φ3.2",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    },
+    {
+      "pn": "WW-3060",
+      "name": "Wave Washer",
+      "spec": "SUS304 φ12",
+      "unit": "EA",
+      "srcLevel": "L2",
+      "roles": [
+        "part"
+      ],
+      "sources": [
+        "json.parts"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "EX-5000",
+      "qtyPerParent": 1.0,
+      "unit": "SET",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "네임플레이트/오링/글랜드"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "FS-7010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "메인 출력축"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "FS-7020",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "하부 지지축"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "GB-8000",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "스퍼기어 2단"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "HA-3000",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "하우징+베어링플레이트"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "PE-6000",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "인버터/제어 PCB"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "PL-9000",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "래칫+파울"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "RA-2000",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "착자/밸런싱 완료품"
+    },
+    {
+      "parentPn": "BLDC-500W-48V",
+      "childPn": "SA-1000",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L1",
+      "source": "json.subassemblies",
+      "derived": false,
+      "note": "권선/함침 완료품"
+    },
+    {
+      "parentPn": "FS-7010",
+      "childPn": "FS-7010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "FS-7020",
+      "childPn": "FS-7020",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "FS-7020",
+      "childPn": "FS-7021",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "FS-7020",
+      "childPn": "FS-7022",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "FS-7020",
+      "childPn": "OR-7025",
+      "qtyPerParent": 2.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "GB-8000",
+      "childPn": "GB-8010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "GB-8000",
+      "childPn": "GB-8020",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "GB-8000",
+      "childPn": "GB-8030",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "GB-8000",
+      "childPn": "GB-8040",
+      "qtyPerParent": 2.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "GB-8000",
+      "childPn": "GB-8050",
+      "qtyPerParent": 25.0,
+      "unit": "g",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "BF-3040",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "BP-3020F",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "BP-3020R",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "BR-3050",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "BT-3070",
+      "qtyPerParent": 8.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "CG-5030",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "HS-3010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "NP-5010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "OR-5020",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "HA-3000/EX-5000",
+      "childPn": "WW-3060",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "BB-4070",
+      "qtyPerParent": 3.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "CN-4030",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "CP-4050",
+      "qtyPerParent": 4.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "GD-4040",
+      "qtyPerParent": 3.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "HK-4060",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "HS-4020",
+      "qtyPerParent": 3.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "MO-4030",
+      "qtyPerParent": 6.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "PC-4010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "PC-4011",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PE-6000",
+      "childPn": "SP-4040",
+      "qtyPerParent": 0.5,
+      "unit": "g",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PL-9000",
+      "childPn": "PL-9010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PL-9000",
+      "childPn": "PL-9020",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PL-9000",
+      "childPn": "PL-9030",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "PL-9000",
+      "childPn": "PL-9040",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "RA-2000",
+      "childPn": "AD-2040",
+      "qtyPerParent": 0.5,
+      "unit": "g",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "RA-2000",
+      "childPn": "BW-2050",
+      "qtyPerParent": 2.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "RA-2000",
+      "childPn": "PM-2030",
+      "qtyPerParent": 8.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "RA-2000",
+      "childPn": "RC-2020",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "RA-2000",
+      "childPn": "SH-2010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "IN-1020L",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "IN-1020U",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "IP-1040",
+      "qtyPerParent": 12.0,
+      "unit": "매",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "IV-1070",
+      "qtyPerParent": 15.0,
+      "unit": "g",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "LC-1080",
+      "qtyPerParent": 0.5,
+      "unit": "m",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "LW-1050",
+      "qtyPerParent": 3.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "MW-1030",
+      "qtyPerParent": 180.0,
+      "unit": "g",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "SC-1010",
+      "qtyPerParent": 1.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "SC-1011",
+      "qtyPerParent": 0.85,
+      "unit": "kg",
+      "srcLevel": "L3",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    },
+    {
+      "parentPn": "SA-1000",
+      "childPn": "TM-1060",
+      "qtyPerParent": 3.0,
+      "unit": "EA",
+      "srcLevel": "L2",
+      "source": "json.parts",
+      "derived": false,
+      "note": ""
+    }
+  ],
+  "processes": [
+    {
+      "op": "OP-A10",
+      "seq": 1,
+      "line": "아마추어 라인",
+      "name": "규소강판 블랭킹",
+      "ctSec": 0.5,
+      "kind": "표준",
+      "stagePn": "SA-1000",
+      "output": "스테이터 편(片)",
+      "inputText": "SC-1011"
+    },
+    {
+      "op": "OP-A20",
+      "seq": 2,
+      "line": "아마추어 라인",
+      "name": "코어 적층/결합",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "stagePn": "SA-1000",
+      "output": "SC-1010",
+      "inputText": "블랭킹편 ×80"
+    },
+    {
+      "op": "OP-A30",
+      "seq": 3,
+      "line": "아마추어 라인",
+      "name": "인슐레이터 조립",
+      "ctSec": 20.0,
+      "kind": "표준",
+      "stagePn": "SA-1000",
+      "output": "인슐레이터 결합코어",
+      "inputText": "IN-1020U/L, SC-1010"
+    },
+    {
+      "op": "OP-A40",
+      "seq": 4,
+      "line": "아마추어 라인",
+      "name": "Needle Winding (권선)",
+      "ctSec": 90.0,
+      "kind": "병목",
+      "stagePn": "SA-1000",
+      "output": "3상 권선 스테이터",
+      "inputText": "MW-1030"
+    },
+    {
+      "op": "OP-A50",
+      "seq": 5,
+      "line": "아마추어 라인",
+      "name": "결선/포밍",
+      "ctSec": 40.0,
+      "kind": "표준",
+      "stagePn": "SA-1000",
+      "output": "결선 완료품",
+      "inputText": "-"
+    },
+    {
+      "op": "OP-A60",
+      "seq": 6,
+      "line": "아마추어 라인",
+      "name": "리드선 납땜",
+      "ctSec": 30.0,
+      "kind": "표준",
+      "stagePn": "SA-1000",
+      "output": "리드 부착품",
+      "inputText": "LW-1050, TM-1060"
+    },
+    {
+      "op": "OP-A70",
+      "seq": 7,
+      "line": "아마추어 라인",
+      "name": "절연저항/내전압",
+      "ctSec": 15.0,
+      "kind": "QC",
+      "stagePn": "SA-1000",
+      "output": "QC 합격품",
+      "inputText": "-"
+    },
+    {
+      "op": "OP-A80",
+      "seq": 8,
+      "line": "아마추어 라인",
+      "name": "바니시 함침 (VPI)",
+      "ctSec": 300.0,
+      "kind": "배치",
+      "stagePn": "SA-1000",
+      "output": "함침 스테이터",
+      "inputText": "IV-1070"
+    },
+    {
+      "op": "OP-A90",
+      "seq": 9,
+      "line": "아마추어 라인",
+      "name": "큐어링/건조",
+      "ctSec": 3600.0,
+      "kind": "배치",
+      "stagePn": "SA-1000",
+      "output": "경화 완료품",
+      "inputText": "-"
+    },
+    {
+      "op": "OP-A100",
+      "seq": 10,
+      "line": "아마추어 라인",
+      "name": "아마추어 최종검사",
+      "ctSec": 20.0,
+      "kind": "완성",
+      "stagePn": "SA-1000",
+      "output": "SA-1000 완성",
+      "inputText": "-"
+    },
+    {
+      "op": "OP-B10",
+      "seq": 1,
+      "line": "조립 라인",
+      "name": "샤프트/로터코어 압입",
+      "ctSec": 15.0,
+      "kind": "표준",
+      "stagePn": "RA-2000",
+      "output": "로터 서브",
+      "inputText": "SH-2010, RC-2020"
+    },
+    {
+      "op": "OP-B20",
+      "seq": 2,
+      "line": "조립 라인",
+      "name": "마그넷 접착",
+      "ctSec": 40.0,
+      "kind": "표준",
+      "stagePn": "RA-2000",
+      "output": "마그넷 부착 로터",
+      "inputText": "PM-2030, AD-2040"
+    },
+    {
+      "op": "OP-B30",
+      "seq": 3,
+      "line": "조립 라인",
+      "name": "마그넷 착자",
+      "ctSec": 10.0,
+      "kind": "표준",
+      "stagePn": "RA-2000",
+      "output": "착자 로터",
+      "inputText": "-"
+    },
+    {
+      "op": "OP-B40",
+      "seq": 4,
+      "line": "조립 라인",
+      "name": "로터 다이나믹 밸런싱",
+      "ctSec": 45.0,
+      "kind": "표준",
+      "stagePn": "RA-2000",
+      "output": "RA-2000 완성",
+      "inputText": "BW-2050"
+    },
+    {
+      "op": "OP-B50",
+      "seq": 5,
+      "line": "조립 라인",
+      "name": "스테이터 압입 (Housing)",
+      "ctSec": 30.0,
+      "kind": "표준",
+      "stagePn": "HS-3010",
+      "output": "하우징+스테이터",
+      "inputText": "SA-1000, HS-3010"
+    },
+    {
+      "op": "OP-B60",
+      "seq": 6,
+      "line": "조립 라인",
+      "name": "베어링 압입",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "stagePn": "BP-3020",
+      "output": "브라켓 서브",
+      "inputText": "BF-3040, BR-3050, WW-3060"
+    },
+    {
+      "op": "OP-B70",
+      "seq": 7,
+      "line": "조립 라인",
+      "name": "로터 삽입",
+      "ctSec": 20.0,
+      "kind": "표준",
+      "stagePn": "RA-2000",
+      "output": "로터 삽입 완료",
+      "inputText": "RA-2000"
+    },
+    {
+      "op": "OP-B80",
+      "seq": 8,
+      "line": "조립 라인",
+      "name": "브라켓 체결",
+      "ctSec": 30.0,
+      "kind": "표준",
+      "stagePn": "BP-3020",
+      "output": "하우징 완성",
+      "inputText": "BP-3020F/R, BT-3070"
+    },
+    {
+      "op": "OP-B85",
+      "seq": 9,
+      "line": "조립 라인",
+      "name": "기어박스 조립",
+      "ctSec": 50.0,
+      "kind": "표준",
+      "stagePn": "GB-8000",
+      "output": "GB-8000 완성",
+      "inputText": "GB-8010~8050"
+    },
+    {
+      "op": "OP-B87",
+      "seq": 10,
+      "line": "조립 라인",
+      "name": "파킹락 조립",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "stagePn": "PL-9000",
+      "output": "PL-9000 완성",
+      "inputText": "PL-9010~9040"
+    },
+    {
+      "op": "OP-B90",
+      "seq": 11,
+      "line": "조립 라인",
+      "name": "Power Electronics 조립",
+      "ctSec": 60.0,
+      "kind": "표준",
+      "stagePn": "PE-6000",
+      "output": "제어부 결합",
+      "inputText": "PE-6000 자재"
+    },
+    {
+      "op": "OP-B100",
+      "seq": 12,
+      "line": "조립 라인",
+      "name": "커넥터/케이블 결선",
+      "ctSec": 25.0,
+      "kind": "표준",
+      "stagePn": "PE-6000",
+      "output": "결선 완료",
+      "inputText": "CN-4030, CG-5030, OR-5020"
+    },
+    {
+      "op": "OP-B110",
+      "seq": 13,
+      "line": "조립 라인",
+      "name": "성능/기능 시험",
+      "ctSec": 60.0,
+      "kind": "병목",
+      "stagePn": null,
+      "output": "시험 합격품",
+      "inputText": "-"
+    },
+    {
+      "op": "OP-B120",
+      "seq": 14,
+      "line": "조립 라인",
+      "name": "각인/외관검사/포장",
+      "ctSec": 30.0,
+      "kind": "완성",
+      "stagePn": null,
+      "output": "출하품",
+      "inputText": "NP-5010, Carton"
+    }
+  ],
+  "processInputs": [
+    {
+      "op": "OP-A10",
+      "pn": "SC-1011",
+      "qty": 0.85,
+      "unit": "kg",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A30",
+      "pn": "IN-1020U",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A30",
+      "pn": "IN-1020L",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A30",
+      "pn": "SC-1010",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A40",
+      "pn": "MW-1030",
+      "qty": 180.0,
+      "unit": "g",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A60",
+      "pn": "LW-1050",
+      "qty": 3.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A60",
+      "pn": "TM-1060",
+      "qty": 3.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-A80",
+      "pn": "IV-1070",
+      "qty": 15.0,
+      "unit": "g",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B10",
+      "pn": "SH-2010",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B10",
+      "pn": "RC-2020",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B20",
+      "pn": "PM-2030",
+      "qty": 8.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B20",
+      "pn": "AD-2040",
+      "qty": 0.5,
+      "unit": "g",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B40",
+      "pn": "BW-2050",
+      "qty": 2.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B50",
+      "pn": "SA-1000",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B50",
+      "pn": "HS-3010",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B60",
+      "pn": "BF-3040",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B60",
+      "pn": "BR-3050",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B60",
+      "pn": "WW-3060",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B70",
+      "pn": "RA-2000",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B80",
+      "pn": "BP-3020F",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B80",
+      "pn": "BP-3020R",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B80",
+      "pn": "BT-3070",
+      "qty": 8.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B85",
+      "pn": "GB-8010",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B85",
+      "pn": "GB-8020",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B85",
+      "pn": "GB-8030",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B85",
+      "pn": "GB-8040",
+      "qty": 2.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B85",
+      "pn": "GB-8050",
+      "qty": 25.0,
+      "unit": "g",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B87",
+      "pn": "PL-9010",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B87",
+      "pn": "PL-9020",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B87",
+      "pn": "PL-9030",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B87",
+      "pn": "PL-9040",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B90",
+      "pn": "PE-6000",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B100",
+      "pn": "CN-4030",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B100",
+      "pn": "CG-5030",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B100",
+      "pn": "OR-5020",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    },
+    {
+      "op": "OP-B120",
+      "pn": "NP-5010",
+      "qty": 1.0,
+      "unit": "EA",
+      "source": "json.processes.inputs"
+    }
+  ],
+  "units": {
+    "EA": {
+      "code": "EA",
+      "convert": null,
+      "desc": "낱개"
+    },
+    "SET": {
+      "code": "SET",
+      "convert": null,
+      "desc": "세트 — 구성 전개 필요"
+    },
+    "g": {
+      "code": "g",
+      "convert": [
+        "kg",
+        0.001
+      ],
+      "desc": "그램"
+    },
+    "kg": {
+      "code": "kg",
+      "convert": [
+        "g",
+        1000.0
+      ],
+      "desc": "킬로그램"
+    },
+    "m": {
+      "code": "m",
+      "convert": [
+        "mm",
+        1000.0
+      ],
+      "desc": "미터"
+    },
+    "매": {
+      "code": "SHT",
+      "convert": null,
+      "desc": "장(sheet) — 한글 단위, 코드화 필요"
+    }
+  },
+  "issues": [
+    {
+      "code": "COMPOSITE_PARENT",
+      "severity": "ERROR",
+      "title": "부모 칸에 P/N이 둘 이상 적혀 있다 (한 칸에 다부모)",
+      "subject": "HA-3000/EX-5000",
+      "detail": "부모 칸에 'HA-3000/EX-5000' — P/N 2개가 한 칸에. 자식 10건이 어느 부모 소속인지 판정 불가.",
+      "evidence": {
+        "children": [
+          "HS-3010",
+          "BP-3020F",
+          "BP-3020R",
+          "BF-3040",
+          "BR-3050",
+          "WW-3060",
+          "BT-3070",
+          "NP-5010",
+          "OR-5020",
+          "CG-5030"
+        ],
+        "candidates": [
+          "HA-3000",
+          "EX-5000"
+        ]
+      }
+    },
+    {
+      "code": "SELF_PARENT",
+      "severity": "ERROR",
+      "title": "자기 자신을 부모로 참조한다",
+      "subject": "FS-7010",
+      "detail": "FS-7010 의 부모가 자기 자신이다 (길이 1 순환).",
+      "evidence": {
+        "edge": {
+          "parentPn": "FS-7010",
+          "childPn": "FS-7010",
+          "qtyPerParent": 1.0,
+          "unit": "EA",
+          "srcLevel": "L2",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "SELF_PARENT",
+      "severity": "ERROR",
+      "title": "자기 자신을 부모로 참조한다",
+      "subject": "FS-7020",
+      "detail": "FS-7020 의 부모가 자기 자신이다 (길이 1 순환).",
+      "evidence": {
+        "edge": {
+          "parentPn": "FS-7020",
+          "childPn": "FS-7020",
+          "qtyPerParent": 1.0,
+          "unit": "EA",
+          "srcLevel": "L2",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "LEVEL_PARENT_MISMATCH",
+      "severity": "WARN",
+      "title": "레벨 표기와 실제 부모 깊이가 어긋난다",
+      "subject": "SC-1011",
+      "detail": "SC-1011(L3) 의 부모 SA-1000(L1) — 레벨 차가 1이 아니다.",
+      "evidence": {
+        "edge": {
+          "parentPn": "SA-1000",
+          "childPn": "SC-1011",
+          "qtyPerParent": 0.85,
+          "unit": "kg",
+          "srcLevel": "L3",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "QTY_FRACTIONAL",
+      "severity": "INFO",
+      "title": "소수 수량 (단위 정책·반올림 규칙 필요)",
+      "subject": "SC-1011",
+      "detail": "SA-1000 당 0.85 kg",
+      "evidence": {
+        "edge": {
+          "parentPn": "SA-1000",
+          "childPn": "SC-1011",
+          "qtyPerParent": 0.85,
+          "unit": "kg",
+          "srcLevel": "L3",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "QTY_FRACTIONAL",
+      "severity": "INFO",
+      "title": "소수 수량 (단위 정책·반올림 규칙 필요)",
+      "subject": "LC-1080",
+      "detail": "SA-1000 당 0.5 m",
+      "evidence": {
+        "edge": {
+          "parentPn": "SA-1000",
+          "childPn": "LC-1080",
+          "qtyPerParent": 0.5,
+          "unit": "m",
+          "srcLevel": "L2",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "QTY_FRACTIONAL",
+      "severity": "INFO",
+      "title": "소수 수량 (단위 정책·반올림 규칙 필요)",
+      "subject": "AD-2040",
+      "detail": "RA-2000 당 0.5 g",
+      "evidence": {
+        "edge": {
+          "parentPn": "RA-2000",
+          "childPn": "AD-2040",
+          "qtyPerParent": 0.5,
+          "unit": "g",
+          "srcLevel": "L2",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "QTY_FRACTIONAL",
+      "severity": "INFO",
+      "title": "소수 수량 (단위 정책·반올림 규칙 필요)",
+      "subject": "SP-4040",
+      "detail": "PE-6000 당 0.5 g",
+      "evidence": {
+        "edge": {
+          "parentPn": "PE-6000",
+          "childPn": "SP-4040",
+          "qtyPerParent": 0.5,
+          "unit": "g",
+          "srcLevel": "L2",
+          "source": "json.parts",
+          "derived": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "code": "UNIT_NONSTANDARD",
+      "severity": "WARN",
+      "title": "단위 표기가 한글·비표준이라 코드화가 필요하다",
+      "subject": "매",
+      "detail": "단위 '매' → 코드 'SHT' 로 치환 필요. 사용 품목: IP-1040",
+      "evidence": {
+        "pns": [
+          "IP-1040"
+        ]
+      }
+    },
+    {
+      "code": "UNIT_SET_NO_CONTENT",
+      "severity": "WARN",
+      "title": "SET 단위인데 구성 내역이 없다",
+      "subject": "EX-5000",
+      "detail": "EX-5000 은 SET 인데 자식 edge가 0건 — 몇 EA인지 알 수 없다.",
+      "evidence": {}
+    },
+    {
+      "code": "PN_DUAL_ROLE",
+      "severity": "WARN",
+      "title": "같은 P/N이 어셈블리와 단품 양쪽에 있다",
+      "subject": "FS-7010",
+      "detail": "FS-7010 이 L1 어셈블리이면서 단품 행으로도 있다.",
+      "evidence": {}
+    },
+    {
+      "code": "PN_DUAL_ROLE",
+      "severity": "WARN",
+      "title": "같은 P/N이 어셈블리와 단품 양쪽에 있다",
+      "subject": "FS-7020",
+      "detail": "FS-7020 이 L1 어셈블리이면서 단품 행으로도 있다.",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-A20",
+      "detail": "OP-A20 코어 적층/결합 — 투입 자재 0건 (inputText='블랭킹편 ×80')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-A50",
+      "detail": "OP-A50 결선/포밍 — 투입 자재 0건 (inputText='-')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-A70",
+      "detail": "OP-A70 절연저항/내전압 — 투입 자재 0건 (inputText='-')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-A90",
+      "detail": "OP-A90 큐어링/건조 — 투입 자재 0건 (inputText='-')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-A100",
+      "detail": "OP-A100 아마추어 최종검사 — 투입 자재 0건 (inputText='-')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-B30",
+      "detail": "OP-B30 마그넷 착자 — 투입 자재 0건 (inputText='-')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_STAGE_UNKNOWN",
+      "severity": "WARN",
+      "title": "공정의 단계 P/N이 품목 목록에 없다",
+      "subject": "BP-3020",
+      "detail": "OP-B60 의 단계 P/N BP-3020 이 품목에 없다.",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_STAGE_UNKNOWN",
+      "severity": "WARN",
+      "title": "공정의 단계 P/N이 품목 목록에 없다",
+      "subject": "BP-3020",
+      "detail": "OP-B80 의 단계 P/N BP-3020 이 품목에 없다.",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_NO_INPUT",
+      "severity": "WARN",
+      "title": "투입 자재가 하나도 없는 공정",
+      "subject": "OP-B110",
+      "detail": "OP-B110 성능/기능 시험 — 투입 자재 0건 (inputText='-')",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_UNCONSUMED",
+      "severity": "WARN",
+      "title": "어느 공정에서도 투입되지 않는 품목",
+      "subject": "20건",
+      "detail": "어느 공정에서도 투입되지 않는 품목: BB-4070, CP-4050, EX-5000, FS-7010, FS-7020, FS-7021, FS-7022, GB-8000, GD-4040, HA-3000, HK-4060, HS-4020, IP-1040, LC-1080, MO-4030, OR-7025, PC-4010, PC-4011, PL-9000, SP-4040",
+      "evidence": {
+        "pns": [
+          "BB-4070",
+          "CP-4050",
+          "EX-5000",
+          "FS-7010",
+          "FS-7020",
+          "FS-7021",
+          "FS-7022",
+          "GB-8000",
+          "GD-4040",
+          "HA-3000",
+          "HK-4060",
+          "HS-4020",
+          "IP-1040",
+          "LC-1080",
+          "MO-4030",
+          "OR-7025",
+          "PC-4010",
+          "PC-4011",
+          "PL-9000",
+          "SP-4040"
+        ]
+      }
+    },
+    {
+      "code": "BOP_MIXED_LEVEL",
+      "severity": "WARN",
+      "title": "어셈블리와 그 구성품이 같은 BOP에 섞여 있다 (합산 시 이중 계상)",
+      "subject": "PE-6000",
+      "detail": "PE-6000 이 어셈블리로도 투입되고 그 구성품도 따로 투입된다 — process_inputs 단순합은 이중 계상.",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_MIXED_LEVEL",
+      "severity": "WARN",
+      "title": "어셈블리와 그 구성품이 같은 BOP에 섞여 있다 (합산 시 이중 계상)",
+      "subject": "RA-2000",
+      "detail": "RA-2000 이 어셈블리로도 투입되고 그 구성품도 따로 투입된다 — process_inputs 단순합은 이중 계상.",
+      "evidence": {}
+    },
+    {
+      "code": "BOP_MIXED_LEVEL",
+      "severity": "WARN",
+      "title": "어셈블리와 그 구성품이 같은 BOP에 섞여 있다 (합산 시 이중 계상)",
+      "subject": "SA-1000",
+      "detail": "SA-1000 이 어셈블리로도 투입되고 그 구성품도 따로 투입된다 — process_inputs 단순합은 이중 계상.",
+      "evidence": {}
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "HS-3010",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "BP-3020F",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "BP-3020R",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "BF-3040",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "BR-3050",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "WW-3060",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "BT-3070",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "NP-5010",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "OR-5020",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    },
+    {
+      "code": "SRC_MISMATCH",
+      "severity": "ERROR",
+      "title": "원천끼리 값이 다르다 (엑셀 vs JSON)",
+      "subject": "CG-5030",
+      "detail": "06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'",
+      "evidence": {
+        "sheet": "06_BOM_L2_Housing",
+        "sheetParent": "HA-3000",
+        "flatParent": "HA-3000/EX-5000"
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+﻿pn,name,spec,unit,srcLevel,roles,sources
+AD-2040,Adhesive,락타이트 638,g,L2,part,json.parts
+BB-4070,Bus Bar,동 3.0t,EA,L2,part,json.parts
+BF-3040,Bearing Front,6002ZZ,EA,L2,part,json.parts
+BLDC-500W-48V,BLDC 모터 500W 48V,,EA,L0,product,json.product
+BP-3020F,Bearing Plate Front,AL6061,EA,L2,part,json.parts
+BP-3020R,Bearing Plate Rear,AL6061,EA,L2,part,json.parts
+BR-3050,Bearing Rear,6001ZZ,EA,L2,part,json.parts
+BT-3070,Bolt,M4×20 SUS304,EA,L2,part,json.parts
+BW-2050,Balancing Weight,Fe계,EA,L2,part,json.parts
+CG-5030,Cable Gland,PG9,EA,L2,part,json.parts
+CN-4030,Signal Connector,JST XH 5P,EA,L2,part,json.parts
+CP-4050,Electrolytic Cap,470uF/63V,EA,L2,part,json.parts
+EX-5000,External Parts Set,,SET,L1,subassembly,json.subassemblies
+FS-7010,Main Flange Shaft No.1,SCM440,EA,L1,"subassembly,part","json.subassemblies,json.parts"
+FS-7020,Flange Shaft No.2 Assy,AL 다이캐스트,EA,L1,"subassembly,part","json.subassemblies,json.parts"
+FS-7021,Top Bushing,황동,EA,L2,part,json.parts
+FS-7022,Internal Shaft,SCM415,EA,L2,part,json.parts
+GB-8000,Gearbox Assy,,EA,L1,subassembly,json.subassemblies
+GB-8010,Gearbox Housing,AL 다이캐스트,EA,L2,part,json.parts
+GB-8020,Input Spur Gear,Z=18,EA,L2,part,json.parts
+GB-8030,Output Spur Gear,Z=90,EA,L2,part,json.parts
+GB-8040,Gearbox Bearing,6003ZZ,EA,L2,part,json.parts
+GB-8050,Gear Oil/Grease,리튬계,g,L2,part,json.parts
+GD-4040,Gate Driver IC,Half-Bridge,EA,L2,part,json.parts
+HA-3000,Housing Assy,,EA,L1,subassembly,json.subassemblies
+HK-4060,Heatsink,AL 방열,EA,L2,part,json.parts
+HS-3010,Housing Frame,AL6061-T6,EA,L2,part,json.parts
+HS-4020,Hall Sensor,SS41F,EA,L2,part,json.parts
+IN-1020L,Insulator Lower,PBT+GF30,EA,L2,part,json.parts
+IN-1020U,Insulator Upper,PBT+GF30,EA,L2,part,json.parts
+IP-1040,Insulation Paper,Nomex 410,매,L2,part,json.parts
+IV-1070,Impregnation Varnish,에폭시,g,L2,part,json.parts
+LC-1080,Lacing Cord,폴리에스터,m,L2,part,json.parts
+LW-1050,Lead Wire,AWG18 L300,EA,L2,part,json.parts
+MO-4030,Power MOSFET,100V/60A,EA,L2,part,json.parts
+MW-1030,Magnet Wire,동선 φ0.80,g,L2,part,json.parts
+NP-5010,Name Plate,AL 에칭,EA,L2,part,json.parts
+OR-5020,O-Ring,NBR P24,EA,L2,part,json.parts
+OR-7025,O-Ring,NBR,EA,L2,part,json.parts
+PC-4010,Main PCB,FR-4 4L,EA,L2,part,json.parts
+PC-4011,Hall PCB,FR-4 2L,EA,L2,part,json.parts
+PE-6000,Power Electronics Assy,,EA,L1,subassembly,json.subassemblies
+PL-9000,Parking Lock Assy,,EA,L1,subassembly,json.subassemblies
+PL-9010,Parking Gear Ring,SCM440,EA,L2,part,json.parts
+PL-9020,Parking Pawl,SCM435,EA,L2,part,json.parts
+PL-9030,Return Spring,SUS304,EA,L2,part,json.parts
+PL-9040,Actuator Rod,솔레노이드봉,EA,L2,part,json.parts
+PM-2030,Permanent Magnet,NdFeB N42SH,EA,L2,part,json.parts
+RA-2000,Rotor Assy,,EA,L1,subassembly,json.subassemblies
+RC-2020,Rotor Core,규소강판 적층,EA,L2,part,json.parts
+SA-1000,Stator (Armature) Assy,,EA,L1,subassembly,json.subassemblies
+SC-1010,Stator Core,규소강판 50W470,EA,L2,part,json.parts
+SC-1011,규소강판 원소재,POSCO 50W470,kg,L3,part,json.parts
+SH-2010,Shaft,SCM440 QT,EA,L2,part,json.parts
+SP-4040,Solder Paste,SAC305,g,L2,part,json.parts
+TM-1060,Terminal Lug,φ3.2,EA,L2,part,json.parts
+WW-3060,Wave Washer,SUS304 φ12,EA,L2,part,json.parts

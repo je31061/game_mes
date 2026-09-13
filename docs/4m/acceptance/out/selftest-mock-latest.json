@@ -1,0 +1,746 @@
+{
+ "run": "2026-09-13T03-03-43",
+ "url": "http://localhost:3009",
+ "summary": {
+  "PASS": 82,
+  "FAIL": 0,
+  "BLOCK": 0,
+  "NOTE": 1
+ },
+ "results": [
+  {
+   "tc": "AT-00",
+   "group": "0",
+   "desc": "토큰 없이 summary → 401",
+   "verdict": "PASS",
+   "expect": "401",
+   "actual": "401 {\"error\":\"인증이 필요합니다.\"}",
+   "ms": 34
+  },
+  {
+   "tc": "AT-02",
+   "group": "0",
+   "desc": "GET summary 응답 키 (items·classes·bomHeaders·bomLines·lots·check)",
+   "verdict": "PASS",
+   "expect": "items,classes,bomHeaders,bomLines,lots,check",
+   "actual": "[\"items\",\"classes\",\"bomHeaders\",\"bomLines\",\"lots\",\"check\"]",
+   "ms": 6
+  },
+  {
+   "tc": "AT-10",
+   "group": "1",
+   "desc": "import-sample #1 → ok · expectedMatch true · mismatches []",
+   "verdict": "PASS",
+   "expect": "expectedMatch true",
+   "actual": "{\"status\":200,\"expectedMatch\":true,\"mismatches\":[],\"counts\":{\"item\":60,\"bom_line\":59,\"process_material\":70}}",
+   "ms": 151
+  },
+  {
+   "tc": "AT-11",
+   "group": "1",
+   "desc": "import-sample.check = {D-8:10, R-10:10}",
+   "verdict": "PASS",
+   "expect": "{D-8:10,R-10:10}",
+   "actual": "{\"D-8\":10,\"R-10\":10}"
+  },
+  {
+   "tc": "AT-12",
+   "group": "1",
+   "desc": "import-sample #2 (멱등) → summary 건수·counts 동일",
+   "verdict": "PASS",
+   "expect": "동일",
+   "actual": "{\"s1\":{\"items\":60,\"classes\":24,\"bomHeaders\":11,\"bomLines\":59,\"lots\":0,\"check\":{\"D-8\":10,\"R-10\":10}},\"s2\":{\"items\":60,\"classes\":24,\"bomHeaders\":11,\"bomLines\":59,\"lots\":0,\"check\":{\"D-8\":10,\"R-10\":10}},\"counts2\":{\"item\":60,\"bom_line\":59,\"process_material\":70}}",
+   "ms": 134
+  },
+  {
+   "tc": "AT-13",
+   "group": "1",
+   "desc": "summary 건수 = expected (item 60 · header 11 · line 59 · class 24)",
+   "verdict": "PASS",
+   "expect": "60/11/59/24",
+   "actual": "{\"items\":60,\"classes\":24,\"bomHeaders\":11,\"bomLines\":59,\"lots\":0,\"check\":{\"D-8\":10,\"R-10\":10}}"
+  },
+  {
+   "tc": "AT-14",
+   "group": "1",
+   "desc": "summary.check = {D-8:10, R-10:10} (그 밖의 규칙 0)",
+   "verdict": "PASS",
+   "expect": "{D-8:10,R-10:10}",
+   "actual": "{\"D-8\":10,\"R-10\":10}"
+  },
+  {
+   "tc": "AT-20",
+   "group": "2",
+   "desc": "uom 5종 (EA·SHT·kg·g·m) · SET 없음 · decimals EA0 SHT0 kg3 g2 m2",
+   "verdict": "PASS",
+   "expect": "EA,SHT,g,kg,m",
+   "actual": "{\"codes\":[\"EA\",\"SHT\",\"g\",\"kg\",\"m\"],\"dec\":{\"EA\":0,\"SHT\":0,\"kg\":3,\"g\":2,\"m\":2}}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-21",
+   "group": "2",
+   "desc": "classes 24 · 최상위 6 · 말단 18 · itemCount 합 60",
+   "verdict": "PASS",
+   "expect": "24/6/18/60",
+   "actual": "{\"n\":24,\"roots\":6,\"leaves\":18,\"itemSum\":60}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-22",
+   "group": "2",
+   "desc": "items 60 · isTmp 3 (TMP-)",
+   "verdict": "PASS",
+   "expect": "60 / 3",
+   "actual": "{\"n\":60,\"tmp\":[\"TMP-FS7023\",\"TMP-PK0010\",\"TMP-SC1010P\"],\"byKind\":{\"FG\":1,\"SA\":7,\"PHANTOM\":3,\"PART\":40,\"RAW\":2,\"CN\":6,\"PKG\":1}}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-22b",
+   "group": "2",
+   "desc": "items[].kind 값이 §10 열거(FG/SA/PHANTOM/PART/RAW/PKG) 안인가",
+   "verdict": "NOTE",
+   "expect": "FG/SA/PHANTOM/PART/RAW/PKG",
+   "actual": "[\"CN\",\"FG\",\"PART\",\"PHANTOM\",\"PKG\",\"RAW\",\"SA\"]",
+   "note": "§10 열거에 CN(부자재 6종)이 없고 서버는 item_type 원값(FG/SA/PT/RM/CN/PK)을 낸다 — 계약 문구 정정 필요(서지안 화면 매핑 확인)"
+  },
+  {
+   "tc": "AT-23",
+   "group": "2",
+   "desc": "items?kind=PHANTOM → 3 (HA-3000·EX-5000·PE-6000)",
+   "verdict": "PASS",
+   "expect": "3",
+   "actual": "[\"HA-3000\",\"PE-6000\",\"EX-5000\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-23b",
+   "group": "2",
+   "desc": "items?q=SC-10 → SC-1010 · SC-1011 (TMP-SC1010P 는 승인 전이라 문자열에 안 걸린다)",
+   "verdict": "PASS",
+   "expect": "SC-1010,SC-1011",
+   "actual": "[\"SC-1010\",\"SC-1011\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-23c",
+   "group": "2",
+   "desc": "items?classId=PT-BRG → BF-3040 · BR-3050 · GB-8040",
+   "verdict": "PASS",
+   "expect": "3",
+   "actual": "[\"BF-3040\",\"BR-3050\",\"GB-8040\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-24",
+   "group": "2",
+   "desc": "items/OR-5020 → whereUsed 부모 EX-5000 · headers [] · lots 0",
+   "verdict": "PASS",
+   "expect": "EX-5000 / [] / 0",
+   "actual": "{\"status\":200,\"wu\":[{\"parentPn\":\"EX-5000\",\"parentName\":\"External Parts Set\",\"qtyPer\":1,\"uom\":\"EA\",\"headerId\":6,\"status\":\"ACTIVE\"}],\"headers\":0,\"lots\":0}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-24b",
+   "group": "2",
+   "desc": "items/SA-1000 → headers 1 (ACTIVE, lineCount 9 — SC-1011 은 SC-1010P 밑) · whereUsed 부모 BLDC-500W-48V",
+   "verdict": "PASS",
+   "expect": "1 ACTIVE 9 / BLDC",
+   "actual": "{\"headers\":[{\"id\":2,\"status\":\"ACTIVE\",\"effFrom\":\"2026-01-01\",\"effTo\":\"9999-12-31\",\"rev\":\"A\",\"lineCount\":9}],\"wu\":[{\"parentPn\":\"BLDC-500W-48V\",\"parentName\":\"BLDC 모터 500W 48V\",\"qtyPer\":1,\"uom\":\"EA\",\"headerId\":1,\"status\":\"ACTIVE\"}]}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-24c",
+   "group": "2",
+   "desc": "items/NO-SUCH-PN → 404 {error}",
+   "verdict": "PASS",
+   "expect": "404",
+   "actual": "404 {\"error\":\"no item\"}",
+   "ms": 0
+  },
+  {
+   "tc": "AT-30",
+   "group": "3",
+   "desc": "bom/BLDC-500W-48V totals = EA 76 · g 221 · SHT(매) 12 · kg 0.85 · m 0.5",
+   "verdict": "PASS",
+   "expect": "{\"EA\":76,\"g\":221,\"SHT\":12,\"kg\":0.85,\"m\":0.5}",
+   "actual": "{\"EA\":76,\"g\":221,\"SHT\":12,\"m\":0.5,\"kg\":0.85}",
+   "ms": 5
+  },
+  {
+   "tc": "AT-31",
+   "group": "3",
+   "desc": "nodes 59 · 최대 level 4 · 팬텀 3 · bop.state linked 46 / unassigned 10 / phantom 3",
+   "verdict": "PASS",
+   "expect": "59/4/3/46/10/3",
+   "actual": "{\"n\":59,\"maxLv\":4,\"phantoms\":[\"EX-5000\",\"HA-3000\",\"PE-6000\"],\"states\":{\"linked\":46,\"unassigned\":10,\"phantom\":3}}"
+  },
+  {
+   "tc": "AT-32",
+   "group": "3",
+   "desc": "SC-1011 노드 level 4 · qtyPerProduct 정확히 0.85 kg · SC-1010P qtyPer 80 SHT",
+   "verdict": "PASS",
+   "expect": "L4 0.85 kg / 80 SHT",
+   "actual": "{\"sc\":{\"level\":4,\"q\":0.85,\"uom\":\"kg\"},\"scp\":{\"qtyPer\":80,\"uom\":\"SHT\",\"qpp\":80}}"
+  },
+  {
+   "tc": "AT-33",
+   "group": "3",
+   "desc": "미배정 10 = 쟁점 3·6 목록",
+   "verdict": "PASS",
+   "expect": "BLDC-500W-48V>FS-7010,BLDC-500W-48V>FS-7020,BLDC-500W-48V>GB-8000,BLDC-500W-48V>PL-9000,SA-1000>IP-1040,SA-1000>LC-1080,FS-7020>FS-7023,FS-7020>FS-7021,FS-7020>FS-7022,FS-7020>OR-7025",
+   "actual": "[\"BLDC-500W-48V>FS-7010\",\"BLDC-500W-48V>FS-7020\",\"BLDC-500W-48V>GB-8000\",\"BLDC-500W-48V>PL-9000\",\"FS-7020>FS-7021\",\"FS-7020>FS-7022\",\"FS-7020>FS-7023\",\"FS-7020>OR-7025\",\"SA-1000>IP-1040\",\"SA-1000>LC-1080\"]"
+  },
+  {
+   "tc": "AT-34",
+   "group": "3",
+   "desc": "depth=1 → 완성품 직하 10 (서브어셈블리 9 + PK-0010)",
+   "verdict": "PASS",
+   "expect": "10 · level 1",
+   "actual": "{\"n\":10,\"pns\":[\"SA-1000\",\"RA-2000\",\"HA-3000\",\"PE-6000\",\"FS-7010\",\"FS-7020\",\"GB-8000\",\"PL-9000\",\"EX-5000\",\"TMP-PK0010\"]}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-35",
+   "group": "3",
+   "desc": "bom/HA-3000 (팬텀 루트) → 자식 7 · totals EA 14",
+   "verdict": "PASS",
+   "expect": "7 / EA 14",
+   "actual": "{\"n\":7,\"totals\":{\"EA\":14}}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-36",
+   "group": "3",
+   "desc": "bom/GB-8000 → totals EA 5 · g 25",
+   "verdict": "PASS",
+   "expect": "EA 5 g 25",
+   "actual": "{\"EA\":5,\"g\":25}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-37",
+   "group": "3",
+   "desc": "bom/NO-SUCH → 404",
+   "verdict": "PASS",
+   "expect": "404",
+   "actual": "404",
+   "ms": 0
+  },
+  {
+   "tc": "AT-38",
+   "group": "3",
+   "desc": "as-of 2025-12-31 (valid_from 2026-01-01 이전) → 노드 0 · totals {}",
+   "verdict": "PASS",
+   "expect": "0 / {}",
+   "actual": "{\"n\":0,\"totals\":{}}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-40",
+   "group": "4",
+   "desc": "where-used/OR-5020 → 경로 OR-5020 … EX-5000 … BLDC-500W-48V (루트까지)",
+   "verdict": "PASS",
+   "expect": "[OR-5020 > EX-5000 > BLDC-500W-48V]",
+   "actual": "[\"OR-5020 > EX-5000 > BLDC-500W-48V\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-41",
+   "group": "4",
+   "desc": "where-used/BF-3040 → 경로 BF-3040 … HA-3000 … BLDC-500W-48V (루트까지)",
+   "verdict": "PASS",
+   "expect": "[BF-3040 > HA-3000 > BLDC-500W-48V]",
+   "actual": "[\"BF-3040 > HA-3000 > BLDC-500W-48V\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-42",
+   "group": "4",
+   "desc": "where-used/BT-3070 → 경로 BT-3070 … HA-3000 … BLDC-500W-48V (루트까지)",
+   "verdict": "PASS",
+   "expect": "[BT-3070 > HA-3000 > BLDC-500W-48V]",
+   "actual": "[\"BT-3070 > HA-3000 > BLDC-500W-48V\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-43",
+   "group": "4",
+   "desc": "where-used/SC-1011 → 4단 경로 (SC-1011 > SC-1010P > SC-1010 > SA-1000 > BLDC)",
+   "verdict": "PASS",
+   "expect": "5 노드",
+   "actual": "[\"SC-1011\",\"TMP-SC1010P\",\"SC-1010\",\"SA-1000\",\"BLDC-500W-48V\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-44",
+   "group": "4",
+   "desc": "where-used/NO-SUCH → 404 (500 아님)",
+   "verdict": "PASS",
+   "expect": "404",
+   "actual": "404",
+   "ms": 0
+  },
+  {
+   "tc": "AT-45",
+   "group": "4",
+   "desc": "where-used/BLDC-500W-48V (루트) → paths [] · 오류 아님",
+   "verdict": "PASS",
+   "expect": "200 []",
+   "actual": "200 []",
+   "ms": 1
+  },
+  {
+   "tc": "AT-50",
+   "group": "5",
+   "desc": "24공정 process/:op → IN 합 46 · OUT 24 · 완성(isFinal) 7 · 오류 0",
+   "verdict": "PASS",
+   "expect": "46/24/7",
+   "actual": "{\"nin\":46,\"nout\":24,\"nfinal\":7,\"bad\":[]}",
+   "ms": 25
+  },
+  {
+   "tc": "AT-51",
+   "group": "5",
+   "desc": "OP-B90 inputs 9 = BOP 표기 순서 (PC-4010 … SP-4040)",
+   "verdict": "PASS",
+   "expect": "PC-4010…SP-4040",
+   "actual": "[\"PC-4010\",\"PC-4011\",\"HS-4020\",\"MO-4030\",\"GD-4040\",\"CP-4050\",\"HK-4060\",\"BB-4070\",\"SP-4040\"]"
+  },
+  {
+   "tc": "AT-52",
+   "group": "5",
+   "desc": "OP-A10 IN [SC-1011] · OUT SC-1010P(final) · OP-A70 IN [] · OUT SA-1000(진행)",
+   "verdict": "PASS",
+   "expect": "A10 / A70",
+   "actual": "{\"A10\":{\"in\":[\"SC-1011\"],\"out\":[{\"pn\":\"SC-1010P\",\"final\":true}],\"un\":10},\"A70\":{\"in\":[],\"out\":[{\"pn\":\"SA-1000\",\"final\":false}],\"un\":10}}"
+  },
+  {
+   "tc": "AT-53",
+   "group": "5",
+   "desc": "process/OP-ZZ → 404",
+   "verdict": "PASS",
+   "expect": "404",
+   "actual": "404",
+   "ms": 0
+  },
+  {
+   "tc": "AT-54",
+   "group": "5",
+   "desc": "GET /api/admin/bop (기존 계약) → summary.inputs 46 · parts 59 · OP-B90 inputCount 9 · processes 24",
+   "verdict": "PASS",
+   "expect": "46/59/9/24",
+   "actual": "{\"summary\":{\"processes\":24,\"parts\":59,\"inputs\":46},\"b90\":9}",
+   "ms": 2,
+   "note": "호환 뷰(process_inputs·parts) 위에서 기존 listProcesses·countParts 가 그대로 도는지"
+  },
+  {
+   "tc": "AT-55",
+   "group": "5",
+   "desc": "GET check (있으면) → details D-8 10건 = 미배정 목록",
+   "verdict": "PASS",
+   "expect": "10",
+   "actual": "[\"BLDC-500W-48V > FS-7010\",\"BLDC-500W-48V > FS-7020\",\"BLDC-500W-48V > GB-8000\",\"BLDC-500W-48V > PL-9000\",\"SA-1000 > IP-1040\",\"SA-1000 > LC-1080\",\"FS-7020 > TMP-FS7023\",\"FS-7020 > FS-7021\",\"FS-7020 > FS-7022\",\"FS-7020 > OR-7025\"]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-60",
+   "group": "6",
+   "desc": "R-1 순환: GB-8000 BOM 에 BLDC-500W-48V 를 자식으로 → 400 \"R-1:\"",
+   "verdict": "PASS",
+   "expect": "400 R-1:",
+   "actual": "400 {\"error\":\"R-1: BOM 순환 참조 — 자식의 하위 구조에 부모가 있다 (또는 깊이 64 초과)\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-61",
+   "group": "6",
+   "desc": "R-9 겹침: PL-9000 에 PL-9010 을 2026-03-01 부터 한 번 더 → 400 \"R-9:\"",
+   "verdict": "PASS",
+   "expect": "400 R-9:",
+   "actual": "400 {\"error\":\"R-9: 같은 부모·자식·대체그룹의 라인 유효기간이 겹친다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-61b",
+   "group": "6",
+   "desc": "R-3 중복: 같은 자식·같은 시작일 → 400 (R-9 또는 UNIQUE)",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"R-9: 같은 부모·자식·대체그룹의 라인 유효기간이 겹친다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-62",
+   "group": "6",
+   "desc": "R-6 수량 0 → 400",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"qtyPer 는 0 보다 커야 합니다.\"}",
+   "ms": 0
+  },
+  {
+   "tc": "AT-63",
+   "group": "6",
+   "desc": "R-8 소수: 0.5 EA → 400 \"R-8:\"",
+   "verdict": "PASS",
+   "expect": "400 R-8:",
+   "actual": "400 {\"error\":\"R-8: 수량의 소수 자릿수가 단위 허용 자릿수(uom.decimals)를 넘는다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-64",
+   "group": "6",
+   "desc": "R-7 단위: EA 품목에 g → 400 \"R-7:\"",
+   "verdict": "PASS",
+   "expect": "400 R-7:",
+   "actual": "400 {\"error\":\"R-7: 라인 단위가 자식 기준단위와 다르고 uom_conv 환산도 없다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-64b",
+   "group": "6",
+   "desc": "D-6 valid_to < valid_from → 400",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"CHECK constraint failed: valid_to >= valid_from\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-65",
+   "group": "6",
+   "desc": "R-11 승인 라인 삭제 → 400 \"R-11:\"",
+   "verdict": "PASS",
+   "expect": "400 R-11:",
+   "actual": "400 {\"error\":\"R-11: 승인된 BOM 의 라인은 삭제하지 않는다 — valid_to 를 끊어라\"}",
+   "ms": 0
+  },
+  {
+   "tc": "AT-65b",
+   "group": "6",
+   "desc": "DELETE items/:pn → 거부 (405/400, R-11)",
+   "verdict": "PASS",
+   "expect": "405|400",
+   "actual": "405 {\"error\":\"R-11: item 은 삭제하지 않는다\"}",
+   "ms": 0
+  },
+  {
+   "tc": "AT-66a",
+   "group": "6",
+   "desc": "POST items (대체 자석 시험 품목) → 200/201",
+   "verdict": "PASS",
+   "expect": "201",
+   "actual": "201 {\"ok\":true,\"item\":{\"pn\":\"ATC9P4-PM-X\",\"name\":\"대체 자석(시험)\",\"spec\":null,\"kind\":\"PART\",\"classId\":11,\"className\":\"영구자석\",\"uom\":\"EA\",\"status\":\"ACTIVE\",\"traceKind\":\"LOT\",\"isTmp\":false}}",
+   "ms": 3
+  },
+  {
+   "tc": "AT-66b",
+   "group": "6",
+   "desc": "PUT bom-lines PM-2030 altGroup=MAG priority 1 → 200",
+   "verdict": "PASS",
+   "expect": "200",
+   "actual": "200 {\"ok\":true}",
+   "ms": 3
+  },
+  {
+   "tc": "AT-66c",
+   "group": "6",
+   "desc": "D-13 우선순위 중복 (1,1) → 400 \"D-13:\"",
+   "verdict": "PASS",
+   "expect": "400 D-13:",
+   "actual": "400 {\"error\":\"D-13: 같은 대체 그룹에 같은 우선순위가 같은 기간에 둘이다 — 주자재를 정할 수 없다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-66d",
+   "group": "6",
+   "desc": "대체품 우선순위 2 → 201 (동시 유효 허용)",
+   "verdict": "PASS",
+   "expect": "201",
+   "actual": "201 {\"ok\":true,\"line\":{\"id\":60}}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-66e",
+   "group": "6",
+   "desc": "TC-44 대체품 있는 전개 — 주자재 PM-2030 만 계상 · totals EA 76 불변",
+   "verdict": "PASS",
+   "expect": "PM-2030 8 · EA 76",
+   "actual": "{\"magNodes\":[{\"pn\":\"PM-2030\",\"q\":8}],\"totals\":{\"EA\":76,\"g\":221,\"SHT\":12,\"m\":0.5,\"kg\":0.85}}",
+   "ms": 4
+  },
+  {
+   "tc": "AT-67",
+   "group": "6",
+   "desc": "R-9b 같은 부모 ACTIVE rev B 같은 기간 → 400 \"R-9b:\"",
+   "verdict": "PASS",
+   "expect": "400 R-9b:",
+   "actual": "400 {\"error\":\"R-9b: 같은 부모의 승인 BOM 유효기간이 겹친다 — 직전 rev 의 valid_to 를 먼저 끊어라\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-67b",
+   "group": "6",
+   "desc": "DRAFT rev B → 201 (ECO 준비 허용)",
+   "verdict": "PASS",
+   "expect": "201",
+   "actual": "201 {\"ok\":true,\"header\":{\"id\":12,\"status\":\"DRAFT\",\"effFrom\":\"2026-01-01\",\"effTo\":\"9999-12-31\",\"rev\":\"B\",\"lineCount\":0,\"lines\":[]}}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-67c",
+   "group": "6",
+   "desc": "DRAFT → ACTIVE 승격 (직전 rev 미종료) → 400 \"R-9b:\"",
+   "verdict": "PASS",
+   "expect": "400 R-9b:",
+   "actual": "400 {\"error\":\"R-9b: UPDATE 결과 같은 부모의 승인 BOM 유효기간이 겹친다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-67d",
+   "group": "6",
+   "desc": "R-7b 헤더 base_uom ≠ 품목 base_uom → 400 \"R-7b:\"",
+   "verdict": "PASS",
+   "expect": "400 R-7b:",
+   "actual": "400 {\"error\":\"R-7b: bom_header.base_uom 은 부모 품목의 base_uom 과 같아야 한다\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-68",
+   "group": "6",
+   "desc": "D-8 팬텀 라인(BLDC>HA-3000)에 IN 연결 → 400 \"D-8:\"",
+   "verdict": "PASS",
+   "expect": "400 D-8:",
+   "actual": "400 {\"error\":\"D-8: 팬텀(PHANTOM)·미연결(NONE) 라인에는 투입(IN) 행을 둘 수 없다\"}",
+   "ms": 3
+  },
+  {
+   "tc": "AT-68b",
+   "group": "6",
+   "desc": "거부된 links 편집 뒤 OP-B50 IN 이 원래대로 (롤백)",
+   "verdict": "PASS",
+   "expect": "1,25",
+   "actual": "1,25",
+   "ms": 1
+  },
+  {
+   "tc": "AT-68c",
+   "group": "6",
+   "desc": "같은 links 를 다시 PUT (순서 동일) → 200 · pm_id 불변",
+   "verdict": "PASS",
+   "expect": "pmId 동일",
+   "actual": "{\"before\":[39,40],\"after\":[39,40]}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-69",
+   "group": "6",
+   "desc": "R-14 비말단 분류(PT)에 품목 → 400 \"R-14:\"",
+   "verdict": "PASS",
+   "expect": "400 R-14:",
+   "actual": "400 {\"error\":\"R-14: 품목은 말단(is_leaf=1) 분류에만 붙는다\"}",
+   "ms": 0
+  },
+  {
+   "tc": "AT-69b",
+   "group": "6",
+   "desc": "R-20 pn 에 \"/\" → 400 (CHECK)",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"CHECK constraint failed: pn NOT LIKE '%/%' AND pn NOT LIKE '% %' AND length(pn) <= 32\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-69c",
+   "group": "6",
+   "desc": "TC-29 코드표에 없는 단위 \"말\" → 400 (FK)",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"FOREIGN KEY constraint failed\"}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-70",
+   "group": "7",
+   "desc": "PL-9000 에 2027-01-01 부터 유효한 라인 추가 → 201",
+   "verdict": "PASS",
+   "expect": "201",
+   "actual": "201 {\"ok\":true,\"line\":{\"id\":61}}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-71",
+   "group": "7",
+   "desc": "as-of 2026-06-01 에는 없고 2027-06-01 에는 있다",
+   "verdict": "PASS",
+   "expect": "false / true",
+   "actual": "{\"inNow\":false,\"inFut\":true}"
+  },
+  {
+   "tc": "AT-72",
+   "group": "7",
+   "desc": "as-of 2027-06-01 완성품 전개 EA 77 (76 + 시험 품목 1)",
+   "verdict": "PASS",
+   "expect": "77",
+   "actual": "{\"EA\":77,\"g\":221,\"SHT\":12,\"m\":0.5,\"kg\":0.85}",
+   "ms": 5
+  },
+  {
+   "tc": "AT-73",
+   "group": "7",
+   "desc": "TC-14/57b GB-8000 2개 → GB-8010 qpp 2 · GB-8040 4 · totals EA 81 g 246 · process/OP-B85 GB-8010 2",
+   "verdict": "PASS",
+   "expect": "2/4/81/246/2",
+   "actual": "{\"put\":200,\"g10\":2,\"g40\":4,\"totals\":{\"EA\":81,\"g\":246,\"SHT\":12,\"m\":0.5,\"kg\":0.85},\"p10\":2}"
+  },
+  {
+   "tc": "AT-74",
+   "group": "7",
+   "desc": "되돌린 뒤 totals 원상 (EA 76)",
+   "verdict": "PASS",
+   "expect": "EA 76",
+   "actual": "{\"EA\":76,\"g\":221,\"SHT\":12,\"m\":0.5,\"kg\":0.85}"
+  },
+  {
+   "tc": "AT-80",
+   "group": "8",
+   "desc": "POST lots 코일 입고 로트 850 kg (POSCO / MS-8842) → 201",
+   "verdict": "PASS",
+   "expect": "201 id",
+   "actual": "201 {\"ok\":true,\"lot\":{\"id\":1,\"lotNo\":\"ATC9P4-LOT-SC1011-A\",\"pn\":\"SC-1011\",\"kind\":\"LOT\",\"parentLotId\":null,\"qty\":850,\"qtyInit\":850,\"uom\":\"kg\",\"status\":\"AVAILABLE\",\"supplier\":\"POSCO\",\"supplierLot\":\"MS-8842\"}}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-81",
+   "group": "8",
+   "desc": "분할 서브로트 0.85 kg (parentLotId) → 201 · 원로트 잔량 849.15 (D-17 차감)",
+   "verdict": "PASS",
+   "expect": "201 / 849.15 / init 850",
+   "actual": "{\"status\":201,\"qty\":849.15,\"qtyInit\":850,\"text\":\"{\\\"ok\\\":true,\\\"lot\\\":{\\\"id\\\":2,\\\"lotNo\\\":\\\"ATC9P4-SUB-001\\\",\\\"pn\\\":\\\"SC-1011\\\",\\\"kind\\\":\\\"SUBLOT\\\",\\\"parentLotId\\\":1,\\\"qty\\\":0.85,\\\"qtyInit\\\":0.85,\\\"uom\\\":\\\"kg\\\",\\\"status\\\":\\\"AVAILABLE\\\",\\\"supplier\\\":null,\\\"supplierLot\\\":null}}\"}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-81b",
+   "group": "8",
+   "desc": "잔량보다 큰 분할 → 400 (D-17)",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"D-17: 부모 로트 잔량(849.15)보다 큰 수량은 분할할 수 없습니다.\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-82",
+   "group": "8",
+   "desc": "consume: SC-1010P 로트 ← 서브로트 0.85 kg @OP-A10 → 201 · 서브로트 잔량 0/CONSUMED",
+   "verdict": "PASS",
+   "expect": "201 / 0",
+   "actual": "201 {\"ok\":true,\"outLot\":{\"id\":3,\"lotNo\":\"ATC9P4-LOT-SC1010P-7\",\"pn\":\"TMP-SC1010P\",\"kind\":\"LOT\",\"parentLotId\":null,\"qty\":80,\"qtyInit\":80,\"uom\":\"SHT\",\"status\":\"AVAILABLE\",\"supplier\":null,\"supplierLot\":null},\"inLot\":{\"id\":2,\"lotNo\":\"ATC9P4-SUB-001\",\"pn\":\"SC-1011\",\"kind\":\"SUBLOT\",\"parentLotId\":1,\"qty\":0,\"qt",
+   "ms": 2
+  },
+  {
+   "tc": "AT-83",
+   "group": "8",
+   "desc": "계보 4단 등록 (SC-1010P → SC-1010 → SA-1000 → 시리얼) → 201",
+   "verdict": "PASS",
+   "expect": "201",
+   "actual": "201 {\"ok\":true,\"outLot\":{\"id\":6,\"lotNo\":\"ATC9P4-SN-000481\",\"pn\":\"BLDC-500W-48V\",\"kind\":\"SERIAL\",\"parentLotId\":null,\"qty\":1,\"qtyInit\":1,\"uom\":\"EA\",\"status\":\"AVAILABLE\",\"supplier\":null,\"supplierLot\":null},\"inLot\":{\"id\":5,\"lotNo\":\"ATC9P4-LOT-SA1000-31\",\"pn\":\"SA-1000\",\"kind\":\"LOT\",\"parentLotId\":null,\"qty\":0",
+   "ms": 2
+  },
+  {
+   "tc": "AT-84",
+   "group": "8",
+   "desc": "genealogy fwd (코일 → 시리얼): SC-1011·SC-1010P·SC-1010·SA-1000·BLDC 전부 도달 · 시리얼 1",
+   "verdict": "PASS",
+   "expect": "5품목 · SERIAL 1",
+   "actual": "{\"reach\":[\"SC-1011\",\"SC-1010P\",\"SC-1010\",\"SA-1000\",\"BLDC-500W-48V\"],\"serial\":[\"ATC9P4-SN-000481\"]}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-85",
+   "group": "8",
+   "desc": "genealogy back (시리얼 → 코일): 밀시트 MS-8842 · 공급사 POSCO 까지 도달 · 간선에 공정·수량",
+   "verdict": "PASS",
+   "expect": "MS-8842 / OP-A10 0.85",
+   "actual": "{\"reach\":[\"SA-1000\",\"SC-1010\",\"SC-1010P\",\"SC-1011\"],\"coil\":{\"supplier\":\"POSCO\",\"supplierLot\":\"MS-8842\"},\"edges\":[[\"CONSUME\",\"OP-B120\",1],[\"CONSUME\",\"OP-A100\",1],[\"CONSUME\",\"OP-A20\",80],[\"CONSUME\",\"OP-A10\",0.85],[\"SPLIT\",null,0.85]]}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-86",
+   "group": "8",
+   "desc": "R-13 계보 순환 (서브로트 ← SC-1010P 로트) → 400 \"R-13:\"",
+   "verdict": "PASS",
+   "expect": "400 R-13:",
+   "actual": "400 {\"error\":\"R-13: 로트 계보 순환 — 산출 로트의 하류에 투입 로트가 이미 있다 (또는 깊이 64 초과)\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-86b",
+   "group": "8",
+   "desc": "R-13 자기참조 (in = out) → 400",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"R-13: 로트 계보 순환 — 산출 로트의 하류에 투입 로트가 이미 있다 (또는 깊이 64 초과)\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-86c",
+   "group": "8",
+   "desc": "D-16 같은 간선(out,in,공정) 중복 → 400 (UNIQUE)",
+   "verdict": "PASS",
+   "expect": "400",
+   "actual": "400 {\"error\":\"UNIQUE constraint failed: index 'ux_gen_edge'\"}",
+   "ms": 1
+  },
+  {
+   "tc": "AT-87",
+   "group": "8",
+   "desc": "lots?pn=SC-1011 → 이번 실행 로트 2 (원로트 + 서브로트)",
+   "verdict": "PASS",
+   "expect": "2",
+   "actual": "[[\"ATC9P4-LOT-SC1011-A\",849.15,\"AVAILABLE\"],[\"ATC9P4-SUB-001\",0,\"CONSUMED\"]]",
+   "ms": 1
+  },
+  {
+   "tc": "AT-88",
+   "group": "8",
+   "desc": "계보 등록 뒤 v_chk_summary 에 D-17(수량 보존 위반) 0",
+   "verdict": "PASS",
+   "expect": "D-17 없음",
+   "actual": "{\"D-8\":10,\"R-10\":10}",
+   "ms": 2
+  },
+  {
+   "tc": "AT-90",
+   "group": "9",
+   "desc": "process_inputs · parts 가 뷰(이행 [3]) 이고 *_legacy 표가 남아 있다",
+   "verdict": "PASS",
+   "expect": "view/view/table/table",
+   "actual": "{\"parts_legacy\":\"table\",\"process_inputs_legacy\":\"table\",\"process_inputs\":\"view\",\"parts\":\"view\"}"
+  },
+  {
+   "tc": "AT-91",
+   "group": "9",
+   "desc": "queries.processInputs SQL 그대로 — legacy 36행 ↔ 뷰 46행 · 전에만 (B90,PE-6000) · 후에만 11 · 공통 35 수량/단위/이름/규격 차 0",
+   "verdict": "PASS",
+   "expect": "verdict all true",
+   "actual": "{\"verdict\":{\"onlyBefore\":true,\"onlyAfter\":true,\"rows\":true,\"qtyUnitNameSpec\":true,\"parts\":true,\"all\":true},\"onlyBefore\":[[\"OP-B90\",\"PE-6000\"]],\"onlyAfter\":11,\"qty\":[],\"unit\":[],\"name\":0,\"spec\":0,\"level\":[[\"OP-A10|SC-1011\",\"L3\",\"L4\"]],\"parentPn\":11}",
+   "note": "level·parentPn 변화는 계획서 §10.3 예고분(값만 바뀐다)"
+  },
+  {
+   "tc": "AT-92",
+   "group": "9",
+   "desc": "parts_legacy 56 · parts(뷰) 59 · listProcesses input_count 합 46",
+   "verdict": "PASS",
+   "expect": "56/59/46",
+   "actual": "{\"partsBefore\":56,\"partsAfter\":59,\"sum\":46}"
+  },
+  {
+   "tc": "AT-93",
+   "group": "9",
+   "desc": "응답 시간 — 전개·역전개·요약·품목·공정·bop 각 < 1,000 ms",
+   "verdict": "PASS",
+   "expect": "< 1000",
+   "actual": "[[\"/bom/BLDC-500W-48V?asOf=2026-06-01\",5],[\"/where-used/BF-3040\",1],[\"/summary\",4],[\"/items\",1],[\"/process/OP-B90\",1],[\"/api/admin/bop\",1]]"
+  }
+ ]
+}

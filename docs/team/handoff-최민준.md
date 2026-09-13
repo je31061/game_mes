@@ -1,5 +1,77 @@
 # handoff — 최민준 (MES 운영 리더)
 
+## 스프린트 3 라운드 4 — 자재(Material) 관리 시스템 구현 — 2026-09-13 완료 (커밋만, push 는 라운드 5 노하린 인수 뒤)
+
+계약: 인터페이스 §10 · `docs/4m/ddl-v1.sql`(윤태경, 무수정) · `docs/4m/cleansing-v1.json`(무수정) · 계획서 §5.9 기준 쿼리. 게임 계약(`equipment:detail.process.inputs[]`)은 호환 뷰로 유지.
+
+### 한 일 (전부 내 소유 파일 + 신규 `server/materials.js`)
+| 파일 | 변경 |
+|---|---|
+| `server/db.js` | ① `docs/4m/ddl-v1.sql` 을 **파일로 읽어 문 단위로 `exec`** — `splitSqlStatements()` 가 주석·문자열·`BEGIN/CASE…END` 깊이를 보고 **85문**으로 나눠 한 트랜잭션에서 실행, 실패하면 `[db] ddl-v1.sql 실행 실패 — 문 #n/85 "머리말": 오류` 로그 후 롤백(서버는 기동, `materialsSchema.ok=false`). 파일을 코드에 복사하지 않았다(원천 하나). ② 이행 `migrateMaterials()` — `parts` 가 표이면: legacy 데이터가 있고 `item` 이 비었을 때 적재기(strict) → expected 대조 → 실패 시 롤백·legacy 유지 / 성공 시 `process_inputs`·`parts` → `*_legacy` rename + 같은 이름 뷰(DDL 절 H 그대로). 이미 뷰인 DB 는 건너뜀(재기동 멱등). ③ `queries.upsertPart`·`deleteProcessInputs`·`addProcessInput` 제거(뷰에 INSERT 는 prepare 단계에서 실패). `countParts`·`processInputs`·`listProcesses` **무수정** |
+| `server/materials.js` (신규, 내 소유) | `loadMaterials(db, { source, cleansing, strict })` — `loader_algorithm` 1~7 그대로(uom→uom_conv→mat_class→item→bom_header→bom_line→OUT 24→IN 46, `SAVEPOINT`, 전부 UPSERT·삭제 없음, `bop_link` 안 넣음, `pn_pending.approved=false` → `TMP-`), `verifyLoad()` 가 `expected` 전 키 + `v_chk_summary` 대조. `registerMaterials(app, { requireAdmin, db, queries, settings, afterChange })` — §10 라우트 전부 + 추가 라우트(아래). `readMaterialFiles()`. **db.js 를 import 하지 않는다**(db.js 가 적재기를 import) |
+| `server/index.js` | `importBop()` 은 products/processes 만 upsert 하고 단품·투입은 `loadMaterials` 로(규칙 `fg_pn` ≠ 제품이면 공정만 갱신 + 경고). `apply-sample`(콘솔 버튼)·`FW_SEED_PRODUCT_LINE`(자동 시드, **strict** — 대조가 어긋나면 적용 전체 롤백) 공용. `/js/materials.js`·`/css/materials.css` 빈 파일 대체. `registerMaterials` 동적 import(분석과 같은 훅, `afterChange` = `world:refresh` 로 열린 상태창 갱신) |
+| `public/admin.html` · `public/js/admin.js` | 탭 `data-tab="materials"`(🧩 자재) · `#tab-materials` · `css/materials.css` · `js/materials.js` 링크, 활성화 시 `window.FWMaterials.mount($('tab-materials'), api)` — 없으면 안내 + summary 한 줄(품목·분류·헤더·라인·로트·점검) |
+| 문서 | README 스프린트 3 절·구조, 인터페이스 §10 구현 메모, 운영 가이드 §2 이행·되돌리기, 작업보드 스프린트 3 절, 협업로그 |
+
+### 스키마·이행 결과 (운영 DB `data/factory.db`, 2026-09-13 11:56 — 백업 `OneDrive/FactoryWorld-백업/fw-backup-20260913-115025` 먼저)
+- 기동 로그: `ddl-v1.sql 85문 실행 — 객체 85개 생성` → `이행 [1] 자재 적재(BLDC-500W-48V) — item 60·bom_header 11·bom_line 59·IN 46·OUT 24(완성 7) · [2] expected 대조 일치 · v_chk_summary {"D-8":10,"R-10":10} · 임시 품번 TMP-SC1010P, TMP-FS7023, TMP-PK0010` → `이행 [3] — parts(56행)·process_inputs(36행) → parts_legacy·process_inputs_legacy 보존, 같은 이름의 호환 뷰로 전환`.
+- 행 수: `item 60 · bom_header 11 · bom_line 59 · process_material 70(IN 46·OUT 24) · parts_legacy 56 · process_inputs_legacy 36 · parts(뷰) 59 · process_inputs(뷰) 46 · mat_lot 0`. `sqlite_master`: `parts`/`process_inputs` = view, `*_legacy` = table.
+- **설비 24대 `equipment:detail.process.inputs[]` 전후 diff** (legacy 표 vs 뷰 vs 소켓 응답 — 소켓 응답 = 뷰 SQL 결과 100% 동일):
+  행 36 → 46 · **공통 35행 수량 차 0 · 공정 안 순서 차 0** · 전에만 1행(`OP-B90: PE-6000`) · 후에만 11행(`OP-A20: TMP-SC1010P`, `OP-B90: PC-4010·PC-4011·HS-4020·MO-4030·GD-4040·CP-4050·HK-4060·BB-4070·SP-4040`, `OP-B120: TMP-PK0010`) = 계획서 §9.3 [2] ④ 그대로.
+  값이 바뀐 필드(공통 행): `level` 1건(`SC-1011` L3→L4), `parentPn` 11건(`HA-3000/EX-5000` → `HA-3000` 7·`EX-5000` 3, `SC-1011` → `TMP-SC1010P`), `parentName` 19건(원천 단품 표의 짧은 라벨 "Stator Assy"·"Housing/External"·"Power Electronics" → 부모 품목의 `item.name` "Stator (Armature) Assy"·"Housing Assy"·"External Parts Set"·"Power Electronics Assy"·"Stator Lamination (블랭킹편)"). `name`·`spec`·`unit`·`image` 차 0. "구 NULL 2행(SA-1000@B50, RA-2000@B70)" 은 실제 운영 DB 에는 없었다(전에도 qty 1.0).
+- 리허설(백업본 → 격리 `FW_DATA_DIR`, 포트 3002)에서 같은 결과를 먼저 확인한 뒤 운영 DB 에 적용. 격리 DB 재기동 시 이행 로그 없음·행 수 불변.
+
+### API (전부 `requireAdmin`, 오류 `{ error }`, 트리거 거부 = 400 에 RAISE 문자열 그대로) — `server/materials.js`
+§10 표 그대로: `GET summary` · `GET uom` · `GET classes` · `GET items?q&classId&status&kind` · `GET items/:pn` · `POST items` · `PUT items/:pn` · `GET bom/:pn?asOf&depth(&qty)` · `GET where-used/:pn?asOf` · `GET bom-headers/:pn` · `POST bom-headers` · `PUT bom-headers/:id` · `POST bom-lines` · `PUT bom-lines/:id` · `DELETE bom-lines/:id` · `GET process/:op` · `PUT process/:op/links` · `GET lots?pn&q(&status)` · `POST lots` · `GET lots/:id/genealogy?dir=fwd|back` · `POST import-sample`.
+**추가**: `GET check`(v_chk_* 상세 — 콘솔 무결성 카드용) · `GET process`(24공정 IN/OUT 건수 목록) · `GET bom-lines/:id` · `GET lots/:id` · `PUT lots/:id`(status HOLD 등) · `POST lots/:id/consume`(투입 계보 `lot_genealogy` 1행 + 투입 로트 qty 차감 — 계보 조회를 시험하려면 이게 필요) · `DELETE items/:pn` → 405(R-11 안내).
+응답 예(운영 DB, 발췌):
+- `summary` → `{"items":60,"classes":24,"bomHeaders":11,"bomLines":59,"lots":0,"processMaterial":{"in":46,"out":24},"itemsByKind":{"CN":6,"FG":1,"PK":1,"PT":40,"RM":2,"SA":10},"phantoms":3,"tmpItems":3,"check":{"D-8":10,"R-10":10},"schema":{"compatViews":true,"legacyTables":false}}`
+- `items` 원소 → `{"itemId":50,"pn":"GB-8010","name":"Gearbox Housing","nameKo":null,"spec":"AL 다이캐스트","kind":"PT","classId":13,"classCode":"PT-MCH","className":"기계가공품","uom":"EA","uomSymbol":"EA","status":"ACTIVE","traceKind":"NONE","isTmp":false,"isPhantom":false,"phantom":false,"sourceType":"BUY","image":"GB-8000.png",…}` · `items/:pn` → `{ item, whereUsed:[{lineId,parentPn,parentName,qtyPer,uom,headerId,status,bopLink,effFrom,effTo}], headers:[…], lots:0, outAt:[{op,isFinal,outState,qtyOut}], inAt:["OP-B85"] }`
+- `bom/BLDC-500W-48V` → `{ root:{pn,name,kind,uom,phantom,status}, asOf:"2026-09-13", qty:1, nodes:[…트리 중첩…], count:59, totals:{"EA":76,"kg":0.85,"g":221,"SHT":12,"m":0.5}, totalsBase:{"COUNT(EA)":76,"MASS(kg)":1.071,"LENGTH(m)":0.5} }`. 노드: `{"lineId":1,"headerId":1,"rev":"A","level":1,"lineNo":10,"parentPn":"BLDC-500W-48V","pn":"SA-1000","name":"Stator (Armature) Assy","kind":"SA","uom":"EA","itemUom":"EA","qtyPer":1,"baseQty":1,"qtyPerParent":1,"qtyPerProduct":1,"qtyPerProductGross":1,"scrapRate":0,"qtyBasis":"NET","phantom":false,"traceKind":"LOT","itemStatus":"ACTIVE","image":"SA-1000.png","altGroup":null,"altPriority":null,"isOptional":false,"bopLink":"REQUIRED","bop":{"op":"OP-B50","mode":"IN","state":"linked","inOps":["OP-B50"],"outOp":"OP-A100"},"effFrom":"2026-01-01","effTo":"9999-12-31","note":null,"children":[…9]}`. `asOf=2025-12-31` → `nodes:[]`(유효 전).
+- `where-used/SC-1011` → `{"pn":"SC-1011","paths":[[{"pn":"SC-1011","qtyPer":1,"qtyCum":1},{"pn":"TMP-SC1010P","qtyPer":0.010625,"qtyCum":0.010625},{"pn":"SC-1010","qtyPer":80,"qtyCum":0.85},{"pn":"SA-1000","qtyPer":1,"qtyCum":0.85},{"pn":"BLDC-500W-48V","qtyPer":1,"qtyCum":0.85}]],"parents":[…]}` (각 원소에 `name` 포함)
+- `process/OP-B90` → `{ op, process:{id,productCode,op,seq,line,name,kind,output,inputText}, inputs:[{pmId,seq,lineId,parentPn,parentName,pn,name,kind,traceKind,image,qtyPer,baseQty,qtyPerProduct,uom,uomSymbol,splitPct,issueMethod,note,mode:"IN"}×9], outputs:[{pmId,pn:"BLDC-500W-48V",isFinal:false,outState:"제어부 결합",qtyOut:null,mode:"OUT"}], unassigned:[{lineId,parentPn,pn,name,qtyPerProduct,uom}×10] }`
+- `lots` 원소 → `{"id":2,"lotNo":"LOT-SC1011-260913-A1","pn":"SC-1011","name":"규소강판 원소재","kind":"SUBLOT","parentLotId":1,"parentLotNo":"LOT-SC1011-260913-A","qty":39.15,"qtyInit":40,"uom":"kg","status":"AVAILABLE","statePmId":null,"stateOp":null,"stateText":null,"supplier":null,"supplierLot":null,…}` · `lots/3/genealogy?dir=back` → `{ lot, dir:"back", tree:[{lotId:2,lotNo,pn,kind:"SUBLOT",qty,uom,status,depth:1,edge:{kind:"CONSUME",qty:0.85,uom:"kg",op:"OP-A10",equipment:null,user:"관리자",at,genId:1},children:[{lotId:1,…,edge:{kind:"SPLIT",qty:40,…},children:[]}]}], nodes:2 }`
+- 400 예: `R-1: BOM 순환 참조 — 자식의 하위 구조에 부모가 있다 (또는 깊이 64 초과)` · `R-11: 승인된 BOM 의 라인은 삭제하지 않는다 — valid_to 를 끊어라` · `R-7: …` · `R-8: …` · `R-9b: …` · `R-14: …` · `R-22: …` · `R-13: …` · `CHECK constraint failed: pn NOT LIKE '%/%' …`
+- `import-sample` → `{ ok, product, counts, check, expectedMatch, mismatches:[{key,expected,actual}], tmp:{"SC-1010P":"TMP-SC1010P",…}, warnings }` (재적재는 UPSERT — 리허설에서 편집으로 남은 TEST 품목·rev B 헤더가 `item 60→61`·`bom_header 11→12` 로 정직하게 mismatch 보고, 행 중복 없음)
+
+### 적재 검산 (`verifyLoad`, 운영·격리·빈 DB 3곳 동일)
+`uom 5 · uom_conv 1 · mat_class 24(leaf 18) · item 60 {FG 1, SA 10, PT 40, RM 2, CN 6, PK 1} · 팬텀 3 · trace {SERIAL 1, LOT 34, NONE 25} · bom_header 11 · bom_line 59 {REQUIRED 56, PHANTOM 3, NONE 0} · 노드−간선 1 · 최대 깊이 4 · IN 46 · OUT 24(final 7) · bop_status {ASSIGNED 46, UNASSIGNED 10, PHANTOM 3} · 미배정 10건 목록 일치 · 말단 합계 EA 76 · g 221 · SHT 12 · kg 0.85 · m 0.5 (MASS 1.071 kg) · 호환 뷰 process_inputs 46 · parts 59 · v_chk_summary {D-8:10, R-10:10}` = `expected` 전부 일치.
+
+### 검증 수치 (2026-09-13)
+- `node --check` server 8·drivers 5·public/js 4(내 파일)·scripts 4 통과. (`public/js/materials.js` 는 서지안이 작성 중이라 62행에서 끝나 있음 — 그 파일만 실패, 내 것 아님.)
+- 격리 이행 리허설(백업본, 포트 3002): 위 diff 그대로 · API 60여 호출(정상 2xx, 404, 트리거 400 9종) · 재기동 멱등.
+- 빈 DB + `FW_SEED_PRODUCT_LINE=bldc`(포트 3003): `[bop] 제품 라인 적용(자동 시드) — 공정 24·품목 60·단품(뷰) 59·투입 46 · 자재 expected 일치 · v_chk {"D-8":10,"R-10":10} / 설비 +24 … 라인 +23`, 재기동 시 건너뜀.
+- 부하 테스트(격리 서버 3001, 시드 적용, 50명 30초): 접속 50/50 · 오류 0 · 이동 수신 9,898 · 손실 1 · p50 6.3ms · **p95 18.5ms** · max 23.9ms / 채팅 5,100 · p50 1.8ms · **p95 8.5ms** · max 21.0ms → 통과(NFR-01), 서버 오류 로그 0.
+- 운영 DB: 백업 → 미리보기 `factory-world` 재기동(이행 로그 위) → 게임에서 니들 와인더(OP-A40) 실제 클릭 → "공정 · 단품" 표 `MW-1030 Magnet Wire ↳ Stator (Armature) Assy · 동선 φ0.80 · 180 g · thumb SA-1000.png`(이전과 동일, 부모 라벨만 위 규칙) · 관리자 콘솔 🧩 자재 탭 = 안내 + `품목 60 · 분류 24 · BOM 헤더 11 · 라인 59 · 로트 0 · 점검: D-8 10 · R-10 10` · `/api/admin/bop` summary `processes 24·parts 59·inputs 46·linked 24` · 라인 밸런스 UPH 60·일 1,020 그대로 · OEE·설비·분해도 API 200.
+- 관리자 토큰은 로컬 `data/jwt.secret` 로 2시간짜리를 발급해 썼다(비밀번호 입력 없음). 격리 서버는 무작위 `FW_JWT_SECRET`·`FW_ADMIN_PASSWORD`.
+
+### §10 과 달라진 점 (인터페이스 §10 구현 메모에도 적음)
+1. `items[].kind` 는 §10 표기(FG/SA/PHANTOM/PART/RAW/PKG)가 아니라 **DDL `item_type` 코드(FG/SA/PT/RM/CN/PK)**, 팬텀은 별도 `isPhantom`(=`phantom`). 필터 `kind=` 는 두 표기 다 받는다(`PHANTOM`→`is_phantom=1`, `PART`→PT, `RAW`→RM, `PKG`→PK).
+2. `bom/:pn` 노드에 §10 필드 외 `headerId, rev, lineNo, itemUom, baseQty, qtyPerProductGross, traceKind, itemStatus, image, altGroup, altPriority, isOptional, bopLink, note` 와 `bop.inOps[]·outOp` 추가. `bop.state` 는 `linked | unassigned | phantom | none`(NONE 라인). `totalsBase` 추가. `qty=` 쿼리로 n 대 전개.
+3. `where-used` 경로는 **품목 자신부터 루트까지** `[{pn,name,qtyPer,qtyCum}]`, 직계 부모 `parents[]` 별도.
+4. `PUT process/:op/links` — `links` 의 IN 항목이 그 공정 IN 집합 전체를 대체(순서 = `seq`, 같은 집합·순서면 UPDATE 만, 아니면 삭제 후 재삽입 → pm_id 갱신). `mode:"OUT"` 항목이 하나라도 있으면 OUT 집합도 대체(`pn, isFinal, outState, qtyOut`).
+5. `POST lots` 에 `parentLotId`(또는 `parentLotNo`) 가 있으면 SUBLOT + **부모 qty 차감**(D-17 서비스 계층), `stateOp` 로 `state_pm_id` 지정. 추가 라우트 `POST lots/:id/consume`·`PUT lots/:id`·`GET lots/:id`.
+6. `bom-headers` 상태 전이는 **앞으로만**(`DRAFT→APPROVED→ACTIVE→OBSOLETE`, 역행 400). 승인 시 `approved_by/approved_at` 자동.
+7. `import-sample` 는 기본 비-strict(커밋 후 `expectedMatch`·`mismatches` 보고), `{ "strict": true }` 본문이면 불일치 시 롤백 400.
+8. 추가 `GET check`·`GET process`·`GET bom-lines/:id`, `DELETE items/:pn` → 405.
+
+### 적재 규칙에서 내가 정한 것 (윤태경 확인 요청 — DDL·cleansing 파일은 한 글자도 안 고쳤다)
+- `parts.parent_name` 의 짧은 라벨은 새 구조에 저장 자리가 없다 → 호환 뷰 `parent_name` = 부모 `item.name`(위 19건 값 변화). 라벨을 보존하려면 `item.name_ko` 가 아니라 별도 컬럼이 필요 — 필요하면 DDL 에 제안.
+- `item.image` = 자기 `<pn>.png` → 없으면 **가장 가까운 조상**의 `<pn>.png`(현행 `pn → parentPn` 규칙의 다단 일반화). 그래서 `SC-1011`(부모 TMP-SC1010P) 이 전처럼 `SA-1000.png` 를 유지하고, `HA-3000`·`EX-5000` 자식은 전처럼 `null`(파일 없음). TMP 품번은 논리 pn 파일도 찾는다.
+- 이름·규격: FG `spec` = 사양의 정격 출력/전압/회전수 3값 `"500 W / 48 VDC / 3,000 RPM"`(원천 값 조합). 서브어셈블리 `spec` = 같은 P/N 단품 행의 규격(FS-7010 DEMOTE 는 같은 물건이라 `SCM440` 채택, FS-7020 RENUMBER_CHILD 는 자식 규격이라 미채택 → `note`). `item.name_ko` 는 `new_items.name_ko` 3건만.
+- note 형식: `bom_header.note` = 표의 note + `valid_from 2026-01-01: <_valid_from_note>`, `bom_line.note` = `원천: <extra_lines.source>` · `line_attrs.note`, `process_material(IN).note` = `[CONFIRMED] <reason>`.
+- `pn_pending[x].rejected === true` 이면 `reparent.fallback_to` 를 쓴다(P-3b 부결 경로 — 파일 형식 확장, 지금은 안 씀). `approved: true` 로 바꾸고 재적재하면 `UPDATE item SET pn` 1건(리허설 미실행 — PM 결정 뒤 노하린이 TC 로).
+- `uom_conv` 는 `INSERT OR IGNORE`(식 인덱스 `ux_uom_conv` 기준). 재적재 시 `item` 의 `status`·`bom_header` 의 `status/valid_*` 는 덮어쓰지 않는다(운영 중 바뀐 값 보존).
+
+### 훅 위치 · 되돌리기
+- 서지안: `public/js/materials.js`(`window.FWMaterials = { mount(container, api) }`)·`public/css/materials.css` 만 놓으면 된다. 지금 두 파일이 없을 때 서버가 빈 파일을 200 으로 준다(`index.js` 상단). `api(path, opts)` 는 admin.js 의 인증 fetch 래퍼(JSON, 4xx 는 `Error(data.error)` throw — 트리거 문자열이 `e.message`).
+- 되돌리기(운영 가이드 §2): `DROP VIEW process_inputs; DROP VIEW parts; ALTER TABLE process_inputs_legacy RENAME TO process_inputs; ALTER TABLE parts_legacy RENAME TO parts;` — 다음 기동 때 `migrateMaterials` 가 `item` 이 이미 있으므로 적재 없이 뷰로 다시 전환한다. 완전 롤백은 이전 커밋 + 백업 DB.
+
+### 다음 (라운드 5)
+- 노하린: 실서버 API 로 TC-01~59 인수 — 접점은 협업로그. 격리 실행: `FW_DATA_DIR=<임시> PORT=3005 FW_SEED_PRODUCT_LINE=bldc FW_JWT_SECRET=<임의> FW_ADMIN_PASSWORD=<임의> node server/index.js`, 토큰은 `FW_JWT_SECRET` 으로 HS256 `{uid: admin id, emp:"admin", exp}` 서명(`server/auth.js` 형식).
+- 서지안: `materials.js`·`materials.css` 완성 → 내가 실제 화면 확인·통합·push.
+- PM: `pn_pending` 승인(쟁점 1·2) → `cleansing-v1.json` `approved: true` → 콘솔 `import-sample`(또는 재기동 없이 `POST /api/admin/materials/import-sample`).
+
 ## 스프린트 2 라운드 2 (통합·배포) — 2026-09-10 완료
 
 ### 반영한 요청

@@ -7,6 +7,7 @@
 <script>try{var t=localStorage.getItem('fw.theme');if(t==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/analytics.css"><!-- 실적 분석 화면 스타일 (서지안, 인터페이스 §5) -->
+<link rel="stylesheet" href="css/materials.css"><!-- 자재 탭 스타일 (서지안, 인터페이스 §10) — 파일이 없으면 서버가 빈 CSS 로 대체 -->
 <style>
   html, body { overflow: auto; }
   body { background: var(--bg); }
@@ -96,6 +97,7 @@
       <button data-tab="alarms">🚨 알람 리포트</button>
       <button data-tab="workorders">📜 작업지시</button>
       <button data-tab="analytics">📈 실적 분석</button>
+      <button data-tab="materials">🧩 자재</button>
       <button data-tab="mapeditor">🗺 맵 에디터</button>
       <button data-tab="equipments">🏭 설비 관리</button>
       <button data-tab="users">👤 사용자 관리</button>
@@ -183,6 +185,9 @@
 
     <!-- 실적 분석 (서지안): js/analytics.js 의 window.FWAnalytics.mount(container, api) 가 이 컨테이너를 채운다 -->
     <div class="tabview" id="tab-analytics"></div>
+
+    <!-- 자재 (서지안, 인터페이스 §10): js/materials.js 의 window.FWMaterials.mount(container, api) 가 이 컨테이너를 채운다 -->
+    <div class="tabview" id="tab-materials"></div>
 
     <div class="tabview" id="tab-mapeditor">
       <h2>맵 에디터 <small class="muted">설비 드래그로 이동 · 존 영역은 [영역 그리기] 후 드래그</small></h2>
@@ -338,5 +343,6 @@
 
 <script src="js/admin.js"></script>
 <script src="js/analytics.js"></script><!-- 실적 분석 화면 (서지안): window.FWAnalytics = { mount(container, api) } -->
+<script src="js/materials.js"></script><!-- 자재 탭 (서지안, §10): window.FWMaterials = { mount(container, api) } — 파일이 없으면 서버가 빈 JS 로 대체 -->
 </body>
 </html>

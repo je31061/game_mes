@@ -10,6 +10,7 @@ import { db, queries, settings, DATA_DIR, EQUIPMENT_TYPES, inferEquipmentType } 
 import { createGateway } from './gateway.js';
 import { signToken, verifyToken, hashPassword, verifyPassword } from './auth.js';
 import { runBackup, listBackups, defaultBackupRoot } from './backup.js';
+import { loadMaterials, readMaterialFiles } from './materials.js';   // 자재 v1.0 적재기 (스프린트 3) — BOP 가져오기·시드가 단품·투입을 여기로 넣는다
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -36,6 +37,9 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // 실제 파일이 public/에 놓이면 위 static이 먼저 응답하므로 이 라우트는 자동으로 비활성화된다.
 app.get('/js/analytics.js', (req, res) => res.type('application/javascript').send('// analytics.js 미배치 — public/js/analytics.js 를 추가하면 대체됩니다\n'));
 app.get('/css/analytics.css', (req, res) => res.type('text/css').send('/* analytics.css 미배치 */\n'));
+// 자재 탭 화면 파일(서지안, 인터페이스 §10)도 같은 방식 — public/js/materials.js · public/css/materials.css 가 놓이면 static 이 먼저 응답한다.
+app.get('/js/materials.js', (req, res) => res.type('application/javascript').send('// materials.js 미배치 — public/js/materials.js 를 추가하면 대체됩니다\n'));
+app.get('/css/materials.css', (req, res) => res.type('text/css').send('/* materials.css 미배치 */\n'));
 
 // ── 인증 (사번 + 비밀번호 → JWT, NFR-03) ──────────────
 // admin 초기 비밀번호 시드 — 환경변수 FW_ADMIN_PASSWORD가 있으면 그 값(클라우드 배포용), 없으면 admin1234 (최초 로그인 후 변경 권장)
@@ -370,7 +374,9 @@ app.post('/api/admin/layout', requireAdmin, (req, res) => {
 });
 
 // ── 스프린트 2: 제품 공정(BOP) · 단품(BOM) · 분해도 (인터페이스 §7) ──
-// 원천 JSON(docs/bldc/bldc-500w-48v.json, scripts/bldc/extract.py 생성)을 products/processes/parts/process_inputs 에 upsert.
+// 원천 JSON(docs/bldc/bldc-500w-48v.json, scripts/bldc/extract.py 생성)을 products/processes 에 upsert.
+// 스프린트 3(§10): 단품·투입은 parts/process_inputs 표(이제 호환 뷰)가 아니라 자재 v1.0(item/bom_header/bom_line/process_material)에
+// server/materials.js 의 적재기가 docs/4m/cleansing-v1.json 규칙대로 넣는다. 규칙 파일의 fg_pn 이 이 제품이 아니면 공정만 갱신하고 경고를 남긴다.
 // 분해도 단계(exploded)·라인 밸런스 기준값·사양은 products.spec_json 에 원문 보관(표로 풀지 않음).
 const num = (v) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v))) ? null : Number(v);
 const partImageFor = (...pns) => {
@@ -381,18 +387,16 @@ const partImageFor = (...pns) => {
   return null;
 };
 
-function importBop(json) {
+function importBop(json, { strict = false } = {}) {
   const prod = json?.product;
   if (!prod || !prod.code) throw new Error('product.code 가 필요합니다.');
   const code = String(prod.code).trim().slice(0, 40);
   const name = String(prod.name || code).trim().slice(0, 80);
   const subs = Array.isArray(json.subassemblies) ? json.subassemblies : [];
-  const parts = Array.isArray(json.parts) ? json.parts : [];
   const procs = Array.isArray(json.processes) ? json.processes : [];
   const exploded = Array.isArray(json.exploded) ? json.exploded : [];
   if (!procs.length) throw new Error('processes 가 비어 있습니다.');
-  const result = { product: code, subassemblies: 0, parts: 0, processes: 0, inputs: 0, stages: exploded.length, warnings: [] };
-  const qtyOf = new Map();   // pn → 제품 1대당 수량 (투입 표의 수량)
+  const result = { product: code, subassemblies: subs.filter(s => s?.pn).length, parts: 0, items: 0, processes: 0, inputs: 0, stages: exploded.length, materials: null, warnings: [] };
   db.exec('BEGIN');
   try {
     queries.upsertProduct.run(code, name, JSON.stringify({
@@ -404,36 +408,23 @@ function importBop(json) {
       source: json.source || null,
       importedAt: localTs(new Date()),
     }));
-    // 단품 → 서브어셈블리 순서로 모아 P/N 당 한 행. 같은 P/N이 양쪽에 있으면(FS-7010처럼 축 자체가 어셈블리) L1(분해도 단계·이미지)을 우선하되 단품의 규격은 보존
-    const rows = new Map();
-    for (const p of parts) {
-      if (!p.pn) continue;
-      rows.set(String(p.pn), [String(p.pn), p.name || null, p.spec || null, p.level || 'L2', p.parentPn || null, p.parentName || null,
-        num(p.qtyPerParent), num(p.qtyPerProduct), p.unit || 'EA', partImageFor(p.pn, p.parentPn)]);
-      qtyOf.set(String(p.pn), num(p.qtyPerProduct) ?? num(p.qtyPerParent)); result.parts++;
-    }
-    for (const s of subs) {
-      if (!s.pn) continue;
-      const prev = rows.get(String(s.pn));
-      if (prev) result.warnings.push(`${s.pn}: 서브어셈블리와 단품 양쪽에 있어 L1로 저장 (규격 '${prev[2] || ''}' 유지)`);
-      rows.set(String(s.pn), [String(s.pn), s.name || prev?.[1] || null, prev?.[2] || s.note || null, 'L1', code, name,
-        num(s.qty), num(s.qty), s.unit || prev?.[8] || 'EA', partImageFor(s.pn)]);
-      qtyOf.set(String(s.pn), num(s.qty)); result.subassemblies++;
-    }
-    for (const r of rows.values()) queries.upsertPart.run(...r);
     for (const pr of procs) {
       if (!pr.op) { result.warnings.push('op 없는 공정을 건너뜀'); continue; }
       const op = String(pr.op).trim().slice(0, 20);
       queries.upsertProcess.run(code, op, num(pr.seq), pr.line || null, pr.name || null, pr.equipment || null, pr.inputText || null,
         pr.output || null, num(pr.ctSec), pr.kind || null, pr.qc || null, pr.note || null, pr.stagePn || null);
-      const row = queries.getProcess.get(code, op);
-      queries.deleteProcessInputs.run(row.id);
-      for (const pn of (Array.isArray(pr.inputs) ? pr.inputs : [])) {
-        if (!qtyOf.has(String(pn))) result.warnings.push(`${op}: 투입 ${pn} 이 parts/subassemblies 에 없음`);
-        queries.addProcessInput.run(row.id, String(pn), qtyOf.get(String(pn)) ?? null);
-        result.inputs++;
-      }
       result.processes++;
+    }
+    // 자재 적재 (uom → mat_class → item → bom_header → bom_line → OUT → IN, 멱등 UPSERT) — 공정이 있어야 OUT/IN 을 넣을 수 있어 공정 뒤에
+    const { cleansing, files } = readMaterialFiles();
+    if (cleansing && cleansing.defaults?.fg_pn === code) {
+      const mat = loadMaterials(db, { source: json, cleansing, strict });
+      result.materials = { counts: mat.counts, check: mat.check, expectedMatch: mat.expectedMatch, mismatches: mat.mismatches, tmp: mat.tmp, warnings: mat.warnings };
+      result.items = mat.counts.item; result.parts = mat.counts.compat_parts_rows; result.inputs = mat.counts.process_material_in;
+      result.warnings.push(...mat.warnings);
+      if (!mat.expectedMatch) result.warnings.push(`자재 적재 expected 대조 불일치 ${mat.mismatches.length}건: ${mat.mismatches.map(m => m.key).join(', ')}`);
+    } else {
+      result.warnings.push(`자재 적재 규칙(${cleansing ? `fg_pn ${cleansing.defaults?.fg_pn}` : `${files.cleansing} 없음`})이 제품 ${code} 과 맞지 않아 단품·투입은 갱신하지 않음 — 공정만 갱신`);
     }
     db.exec('COMMIT');
   } catch (e) { db.exec('ROLLBACK'); throw e; }
@@ -529,11 +520,15 @@ function sampleLineFiles(line) {
   const rel = (f) => path.relative(path.join(__dirname, '..'), f);
   return { bopFile, layoutFile, missing: [bopFile, layoutFile].filter(f => !fs.existsSync(f)).map(rel) };
 }
-function applySampleProductLine(line, who) {
+function applySampleProductLine(line, who, { strict = false } = {}) {
   const files = sampleLineFiles(line);
-  const bop = importBop(JSON.parse(fs.readFileSync(files.bopFile, 'utf8')));
+  const bop = importBop(JSON.parse(fs.readFileSync(files.bopFile, 'utf8')), { strict });
   const layout = importLayout(JSON.parse(fs.readFileSync(files.layoutFile, 'utf8')));
-  console.log(`[bop] 제품 라인 적용(${who}) — ${bop.product}: 공정 ${bop.processes}·단품 ${bop.parts}·투입 ${bop.inputs} / 설비 +${layout.equipments.created} 수정 ${layout.equipments.updated} 숨김 ${layout.equipments.hidden} / 존 +${layout.zones.created} 숨김 ${layout.zones.hidden} / 라인 +${layout.links.created}`);
+  const m = bop.materials;
+  console.log(`[bop] 제품 라인 적용(${who}) — ${bop.product}: 공정 ${bop.processes}·품목 ${bop.items}·단품(뷰) ${bop.parts}·투입 ${bop.inputs}`
+    + (m ? ` · 자재 expected ${m.expectedMatch ? '일치' : `불일치 ${m.mismatches.length}건`} · v_chk ${JSON.stringify(m.check)}` : '')
+    + ` / 설비 +${layout.equipments.created} 수정 ${layout.equipments.updated} 숨김 ${layout.equipments.hidden} / 존 +${layout.zones.created} 숨김 ${layout.zones.hidden} / 라인 +${layout.links.created}`);
+  for (const w of bop.warnings) console.log(`[bop]   · ${w}`);
   return { bop, layout };
 }
 
@@ -566,7 +561,7 @@ app.post('/api/admin/bop/apply-sample', requireAdmin, (req, res) => {
         console.error(`[bop] FW_SEED_PRODUCT_LINE=${seedLine} — 샘플 파일이 없어 자동 적용 실패: ${files.missing.join(', ')}`);
       } else {
         try {
-          const r = applySampleProductLine(seedLine, '자동 시드');
+          const r = applySampleProductLine(seedLine, '자동 시드', { strict: true });   // 자재 expected 대조가 어긋나면 적용 전체를 롤백(빈 DB 유지)
           settings.set('seed_product_line', { line: seedLine, appliedAt: localTs(new Date()), processes: r.bop.processes, equipments: r.layout.equipments.created });
         } catch (e) {
           console.error(`[bop] FW_SEED_PRODUCT_LINE=${seedLine} — 자동 적용 실패(서버는 계속 기동):`, e?.message || e);
@@ -1229,6 +1224,25 @@ try {
     console.log('[analytics] server/analytics.js 없음 — 분석 API 미등록 (라운드 2에서 추가 예정)');
   } else {
     console.error('[analytics] server/analytics.js 로드 실패 — 분석 API 미등록:', e?.message || e);
+  }
+}
+
+// ── 자재(Material) API (스프린트 3, 인터페이스 §10) — server/materials.js 의 registerMaterials 를 같은 방식으로 동적 import ──
+// 시그니처: export function registerMaterials(app, { requireAdmin, db, queries, settings, afterChange })
+//   afterChange: BOM·공정 연결이 바뀌면 열려 있는 상태창이 단품 표를 다시 읽도록 world:refresh 를 보낸다
+try {
+  const mod = await import('./materials.js');
+  if (typeof mod.registerMaterials === 'function') {
+    mod.registerMaterials(app, { requireAdmin, db, queries, settings, afterChange: () => io.emit('world:refresh', worldPayload()) });
+    console.log('[materials] server/materials.js 로드 — /api/admin/materials/* 등록');
+  } else {
+    console.warn('[materials] server/materials.js 에 registerMaterials export가 없어 건너뜀');
+  }
+} catch (e) {
+  if (e?.code === 'ERR_MODULE_NOT_FOUND' && /materials\.js/.test(String(e.message))) {
+    console.log('[materials] server/materials.js 없음 — 자재 API 미등록');
+  } else {
+    console.error('[materials] server/materials.js 로드 실패 — 자재 API 미등록:', e?.message || e);
   }
 }
 

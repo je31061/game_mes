@@ -86,8 +86,25 @@
       if (b.dataset.tab === 'alarms') loadAlarmReport().catch(() => {});
       if (b.dataset.tab === 'workorders') loadWorkOrders().catch(() => {});
       if (b.dataset.tab === 'analytics') mountAnalytics();
+      if (b.dataset.tab === 'materials') mountMaterials();
     };
   });
+
+  // ── 자재 탭 훅 (서지안, 인터페이스 §10): js/materials.js 가 window.FWMaterials.mount(container, api) 를 제공 (분석 탭과 같은 방식, 멱등하게 작성) ──
+  function mountMaterials() {
+    const box = $('tab-materials');
+    if (window.FWMaterials && typeof window.FWMaterials.mount === 'function') {
+      try { window.FWMaterials.mount(box, api); }
+      catch (e) { console.error('[materials] mount 실패:', e); box.innerHTML = `<h2>자재</h2><p class="muted">자재 화면을 불러오지 못했습니다: ${esc(e.message)}</p>`; }
+      return;
+    }
+    box.innerHTML = `<h2>자재 <small class="muted">품목 분류 · BOM 트리 · 공정 연결 · 로트 계보</small></h2>
+      <p class="muted">자재 화면 모듈(js/materials.js)이 아직 배치되지 않았습니다. API는 준비되어 있습니다 — <code>GET /api/admin/materials/summary</code> 등(인터페이스 §10).</p>`;
+    api('/api/admin/materials/summary').then(s => {
+      const chk = Object.entries(s.check || {}).map(([k, v]) => `${esc(k)} ${v}`).join(' · ') || '위반 없음';
+      box.insertAdjacentHTML('beforeend', `<p class="muted">품목 ${s.items} · 분류 ${s.classes} · BOM 헤더 ${s.bomHeaders} · 라인 ${s.bomLines} · 로트 ${s.lots} · 점검: ${chk}</p>`);
+    }).catch(() => {});
+  }
 
   // ── 실적 분석 탭 훅 (서지안, 인터페이스 §5): js/analytics.js 가 window.FWAnalytics.mount(container, api) 를 제공 ──
   function mountAnalytics() {

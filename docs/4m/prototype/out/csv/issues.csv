@@ -1,0 +1,36 @@
+﻿code,severity,subject,detail
+COMPOSITE_PARENT,ERROR,HA-3000/EX-5000,부모 칸에 'HA-3000/EX-5000' — P/N 2개가 한 칸에. 자식 10건이 어느 부모 소속인지 판정 불가.
+SELF_PARENT,ERROR,FS-7010,FS-7010 의 부모가 자기 자신이다 (길이 1 순환).
+SELF_PARENT,ERROR,FS-7020,FS-7020 의 부모가 자기 자신이다 (길이 1 순환).
+LEVEL_PARENT_MISMATCH,WARN,SC-1011,SC-1011(L3) 의 부모 SA-1000(L1) — 레벨 차가 1이 아니다.
+QTY_FRACTIONAL,INFO,SC-1011,SA-1000 당 0.85 kg
+QTY_FRACTIONAL,INFO,LC-1080,SA-1000 당 0.5 m
+QTY_FRACTIONAL,INFO,AD-2040,RA-2000 당 0.5 g
+QTY_FRACTIONAL,INFO,SP-4040,PE-6000 당 0.5 g
+UNIT_NONSTANDARD,WARN,매,단위 '매' → 코드 'SHT' 로 치환 필요. 사용 품목: IP-1040
+UNIT_SET_NO_CONTENT,WARN,EX-5000,EX-5000 은 SET 인데 자식 edge가 0건 — 몇 EA인지 알 수 없다.
+PN_DUAL_ROLE,WARN,FS-7010,FS-7010 이 L1 어셈블리이면서 단품 행으로도 있다.
+PN_DUAL_ROLE,WARN,FS-7020,FS-7020 이 L1 어셈블리이면서 단품 행으로도 있다.
+BOP_NO_INPUT,WARN,OP-A20,OP-A20 코어 적층/결합 — 투입 자재 0건 (inputText='블랭킹편 ×80')
+BOP_NO_INPUT,WARN,OP-A50,OP-A50 결선/포밍 — 투입 자재 0건 (inputText='-')
+BOP_NO_INPUT,WARN,OP-A70,OP-A70 절연저항/내전압 — 투입 자재 0건 (inputText='-')
+BOP_NO_INPUT,WARN,OP-A90,OP-A90 큐어링/건조 — 투입 자재 0건 (inputText='-')
+BOP_NO_INPUT,WARN,OP-A100,OP-A100 아마추어 최종검사 — 투입 자재 0건 (inputText='-')
+BOP_NO_INPUT,WARN,OP-B30,OP-B30 마그넷 착자 — 투입 자재 0건 (inputText='-')
+BOP_STAGE_UNKNOWN,WARN,BP-3020,OP-B60 의 단계 P/N BP-3020 이 품목에 없다.
+BOP_STAGE_UNKNOWN,WARN,BP-3020,OP-B80 의 단계 P/N BP-3020 이 품목에 없다.
+BOP_NO_INPUT,WARN,OP-B110,OP-B110 성능/기능 시험 — 투입 자재 0건 (inputText='-')
+BOP_UNCONSUMED,WARN,20건,"어느 공정에서도 투입되지 않는 품목: BB-4070, CP-4050, EX-5000, FS-7010, FS-7020, FS-7021, FS-7022, GB-8000, GD-4040, HA-3000, HK-4060, HS-4020, IP-1040, LC-1080, MO-4030, OR-7025, PC-4010, PC-4011, PL-9000, SP-4040"
+BOP_MIXED_LEVEL,WARN,PE-6000,PE-6000 이 어셈블리로도 투입되고 그 구성품도 따로 투입된다 — process_inputs 단순합은 이중 계상.
+BOP_MIXED_LEVEL,WARN,RA-2000,RA-2000 이 어셈블리로도 투입되고 그 구성품도 따로 투입된다 — process_inputs 단순합은 이중 계상.
+BOP_MIXED_LEVEL,WARN,SA-1000,SA-1000 이 어셈블리로도 투입되고 그 구성품도 따로 투입된다 — process_inputs 단순합은 이중 계상.
+SRC_MISMATCH,ERROR,HS-3010,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,BP-3020F,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,BP-3020R,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,BF-3040,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,BR-3050,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,WW-3060,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,BT-3070,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,NP-5010,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,OR-5020,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'
+SRC_MISMATCH,ERROR,CG-5030,06_BOM_L2_Housing B2 상위 P/N='HA-3000' 인데 09 시트 부모 칸='HA-3000/EX-5000'

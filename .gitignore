@@ -21,3 +21,6 @@ __pycache__/
 
 # 부하 테스트 전용 데이터 폴더 (docs/운영전환-가이드.md §4 — FW_DATA_DIR=data-loadtest)
 data-loadtest/
+
+# 자재 프로토타입·인수 하네스가 만드는 SQLite 산출물 (스크립트로 재생성, 이진 파일 커밋 제외)
+docs/4m/**/*.db

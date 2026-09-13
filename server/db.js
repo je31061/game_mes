@@ -1,7 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA_DIR } from './paths.js';
+import { DATA_DIR, PROJECT_ROOT } from './paths.js';
+import { loadMaterials, readMaterialFiles } from './materials.js';   // 자재 적재기 (materials.js 는 db.js 를 import 하지 않는다)
 
 export { DATA_DIR };
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -288,6 +289,103 @@ if (!db.prepare("PRAGMA table_info(zones)").all().some(c => c.name === 'hidden')
   console.log('[db] zones.hidden 컬럼 추가 (라인 전환 숨김)');
 }
 
+// ── 스프린트 3: 자재(Material) v1.0 스키마 — docs/4m/ddl-v1.sql 을 파일로 읽어 그대로 실행 (원천은 그 파일 하나, 전부 IF NOT EXISTS 라 멱등) ──
+// 선행 테이블(users·equipments·processes·production_records) 뒤에 실행한다. 문 단위로 실행해 실패하면 몇 번째 문인지 로그에 남기고 롤백한다(서버는 계속 뜬다).
+function splitSqlStatements(sql) {
+  // 주석(--)·문자열('…')을 건너뛰고, BEGIN/CASE…END 깊이가 0 인 ';' 에서만 나눈다 (트리거 본문 안의 ';' 보존)
+  const out = []; let cur = '', depth = 0, inStr = false;
+  for (let i = 0; i < sql.length;) {
+    const ch = sql[i];
+    if (inStr) { cur += ch; if (ch === "'") { if (sql[i + 1] === "'") { cur += "'"; i += 2; continue; } inStr = false; } i++; continue; }
+    if (ch === '-' && sql[i + 1] === '-') { const j = sql.indexOf('\n', i); i = j < 0 ? sql.length : j; continue; }
+    if (ch === "'") { inStr = true; cur += ch; i++; continue; }
+    if (/[A-Za-z_]/.test(ch)) {
+      let j = i; while (j < sql.length && /[A-Za-z0-9_]/.test(sql[j])) j++;
+      const word = sql.slice(i, j), up = word.toUpperCase();
+      if (up === 'BEGIN' || up === 'CASE') depth++; else if (up === 'END') depth--;
+      cur += word; i = j; continue;
+    }
+    if (ch === ';' && depth === 0) { const s = cur.trim(); if (s) out.push(s); cur = ''; i++; continue; }
+    cur += ch; i++;
+  }
+  const s = cur.trim(); if (s) out.push(s);
+  return out;
+}
+export const MATERIALS_DDL = path.join(PROJECT_ROOT, 'docs', '4m', 'ddl-v1.sql');
+export const materialsSchema = applyMaterialsDdl();
+function applyMaterialsDdl() {
+  if (!fs.existsSync(MATERIALS_DDL)) { console.warn(`[db] ${MATERIALS_DDL} 없음 — 자재 스키마 미적용`); return { ok: false, reason: 'missing', file: MATERIALS_DDL }; }
+  const stmts = splitSqlStatements(fs.readFileSync(MATERIALS_DDL, 'utf8'));
+  const before = db.prepare("SELECT COUNT(*) AS c FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").get().c;
+  let i = 0;
+  db.exec('BEGIN');
+  try {
+    for (; i < stmts.length; i++) db.exec(stmts[i]);
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    const head = stmts[i].replace(/\s+/g, ' ').slice(0, 90);
+    console.error(`[db] ddl-v1.sql 실행 실패 — 문 #${i + 1}/${stmts.length} "${head}": ${e.message} (자재 스키마 미적용, 서버는 계속 기동)`);
+    return { ok: false, reason: 'error', file: MATERIALS_DDL, statements: stmts.length, failedAt: i + 1, head, error: e.message };
+  }
+  const after = db.prepare("SELECT COUNT(*) AS c FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'").get().c;
+  if (after !== before) console.log(`[db] ddl-v1.sql ${stmts.length}문 실행 — 객체 ${after - before}개 생성 (자재 v1.0 스키마)`);
+  return { ok: true, file: MATERIALS_DDL, statements: stmts.length, created: after - before };
+}
+
+// ── 이행 [3] (DDL 절 H): parts·process_inputs 표 → *_legacy 로 이름을 바꾸고 같은 이름의 호환 뷰(v_parts_compat·v_process_inputs_compat) ──
+// 조회 쿼리(processInputs · listProcesses · countParts)는 무수정 — 뷰가 rowid 컬럼을 내서 ORDER BY i.rowid 도 산다.
+// 기존 DB 에 legacy 데이터가 있고 item 이 비어 있으면 먼저 cleansing-v1.json 적재기로 1회 이행([1]) → expected 대조([2], 어긋나면 롤백·전환 안 함) → 전환([3]).
+// legacy 표는 지우지 않는다(계획서 §9.3 [4][5]). 이미 뷰인 DB 는 건너뛴다. 되돌리기: DROP VIEW 2개 + RENAME 2개.
+export const materialsMigration = migrateMaterials();
+function migrateMaterials() {
+  if (!materialsSchema.ok) return { ok: false, reason: 'schema' };
+  const kind = db.prepare("SELECT type FROM sqlite_master WHERE name = 'parts'").get()?.type;
+  if (kind === 'view') return { ok: true, migrated: false, compat: true };
+  const legacyParts = db.prepare('SELECT COUNT(*) AS c FROM parts').get().c;
+  const legacyInputs = db.prepare('SELECT COUNT(*) AS c FROM process_inputs').get().c;
+  const items = db.prepare('SELECT COUNT(*) AS c FROM item').get().c;
+  let loaded = null;
+  if (items === 0 && (legacyParts || legacyInputs)) {
+    const products = db.prepare('SELECT code FROM products').all().map(r => r.code);
+    const { cleansing, source, files } = readMaterialFiles();
+    if (!cleansing || !source) {
+      console.warn(`[db] 이행 [1] 건너뜀 — 원천 파일 없음(${[!cleansing && files.cleansing, !source && files.source].filter(Boolean).join(', ')}). legacy 표 유지`);
+      return { ok: false, reason: 'files', legacyParts, legacyInputs };
+    }
+    const fg = cleansing.defaults?.fg_pn;
+    if (!products.includes(fg)) {
+      console.warn(`[db] 이행 [1] 건너뜀 — products(${products.join(', ') || '없음'}) 에 적재 규칙의 제품 ${fg} 이 없다. legacy 표 유지`);
+      return { ok: false, reason: 'product', legacyParts, legacyInputs };
+    }
+    try {
+      loaded = loadMaterials(db, { source, cleansing, strict: true });
+      const c = loaded.counts;
+      console.log(`[db] 이행 [1] 자재 적재(${fg}) — item ${c.item}·bom_header ${c.bom_header}·bom_line ${c.bom_line}·IN ${c.process_material_in}·OUT ${c.process_material_out}(완성 ${c.process_material_out_final})`
+        + ` · [2] expected 대조 일치 · v_chk_summary ${JSON.stringify(c.v_chk_summary)}${Object.keys(loaded.tmp).length ? ` · 임시 품번 ${Object.values(loaded.tmp).join(', ')}` : ''}`);
+      for (const w of loaded.warnings) console.log(`[db]   · ${w}`);
+    } catch (e) {
+      console.error(`[db] 이행 [1] 자재 적재 실패 — legacy 표 유지, 뷰 전환 안 함: ${e.message}`);
+      if (e.mismatches?.length) for (const m of e.mismatches) console.error(`[db]   · ${m.key}: 기대 ${JSON.stringify(m.expected)} / 실제 ${JSON.stringify(m.actual)}`);
+      return { ok: false, reason: 'load', error: e.message, mismatches: e.mismatches || [], legacyParts, legacyInputs };
+    }
+  }
+  db.exec('BEGIN');
+  try {
+    db.exec('ALTER TABLE process_inputs RENAME TO process_inputs_legacy');
+    db.exec('ALTER TABLE parts RENAME TO parts_legacy');
+    db.exec('CREATE VIEW process_inputs AS SELECT * FROM v_process_inputs_compat');   // rowid 컬럼 포함
+    db.exec('CREATE VIEW parts AS SELECT * FROM v_parts_compat');
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    console.error(`[db] 이행 [3] 뷰 전환 실패 — legacy 표 유지: ${e.message}`);
+    return { ok: false, reason: 'swap', error: e.message, legacyParts, legacyInputs, loaded };
+  }
+  console.log(`[db] 이행 [3] — parts(${legacyParts}행)·process_inputs(${legacyInputs}행) → parts_legacy·process_inputs_legacy 보존, 같은 이름의 호환 뷰로 전환`);
+  return { ok: true, migrated: true, legacyParts, legacyInputs, loaded };
+}
+
 // 관리자 계정 시드 (idempotent — 매 부팅 시 확인)
 if (!db.prepare("SELECT 1 FROM users WHERE emp_no = 'admin'").get()) {
   db.prepare("INSERT INTO users (emp_no, name, role) VALUES ('admin', '관리자', 'admin')").run();
@@ -462,16 +560,9 @@ export const queries = {
   listProcesses: db.prepare(`
     SELECT p.*, (SELECT COUNT(*) FROM process_inputs i WHERE i.process_id = p.id) AS input_count
     FROM processes p WHERE p.product_code = ? ORDER BY p.line, p.seq, p.op`),
-  upsertPart: db.prepare(`
-    INSERT INTO parts (pn, name, spec, level, parent_pn, parent_name, qty_per_parent, qty_per_product, unit, image)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(pn) DO UPDATE SET
-      name = excluded.name, spec = excluded.spec, level = excluded.level, parent_pn = excluded.parent_pn,
-      parent_name = excluded.parent_name, qty_per_parent = excluded.qty_per_parent, qty_per_product = excluded.qty_per_product,
-      unit = excluded.unit, image = excluded.image`),
+  // 스프린트 3: parts·process_inputs 는 호환 뷰(이행 [3]) — 쓰기 문(upsertPart·deleteProcessInputs·addProcessInput)은 제거, 적재는 server/materials.js loadMaterials.
+  // 아래 조회 쿼리는 뷰 위에서 문자 그대로 동작한다 (qty = 완성품 1대당 전개값, rowid = pm_id, unit = uom.symbol).
   countParts: db.prepare('SELECT COUNT(*) AS c FROM parts'),
-  deleteProcessInputs: db.prepare('DELETE FROM process_inputs WHERE process_id = ?'),
-  addProcessInput: db.prepare('INSERT OR REPLACE INTO process_inputs (process_id, pn, qty) VALUES (?, ?, ?)'),
   processInputs: db.prepare(`
     SELECT i.pn, i.qty, p.name, p.spec, p.unit, p.level, p.parent_pn, p.parent_name, p.image
     FROM process_inputs i LEFT JOIN parts p ON p.pn = i.pn
