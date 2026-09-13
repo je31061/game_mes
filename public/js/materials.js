@@ -423,11 +423,14 @@
               <button class="fwm-bom-go">전개</button>
               <button class="fwm-bom-expand fwm-ghost">모두 펼침</button><button class="fwm-bom-collapse fwm-ghost">모두 접음</button>
               <span class="fwm-bom-status muted"></span>
+              <span class="fwm-layout-bom"></span>
             </div>
-            <div class="fwm-bom-box"></div>
-            <div class="fwm-bom-side">
-              <div class="fwm-line-form"></div>
-              <div class="fwm-headers"></div>
+            <div class="fwm-split fwm-split-bom">
+              <div class="fwm-bom-box"></div>
+              <div class="fwm-bom-side">
+                <div class="fwm-line-form"></div>
+                <div class="fwm-headers"></div>
+              </div>
             </div>
           </section>
           <section class="fwm-sec" data-sec="process" hidden>
@@ -445,10 +448,13 @@
               <button class="fwm-lot-go">조회</button>
               <button class="fwm-new-lot fwm-ghost" title="POST /api/admin/materials/lots">+ 로트</button>
               <span class="fwm-lot-status muted"></span>
+              <span class="fwm-layout-lots"></span>
             </div>
             <div class="fwm-lot-form" hidden></div>
-            <div class="fwm-scroll fwm-lots-box"></div>
-            <div class="fwm-gen-box"></div>
+            <div class="fwm-split fwm-split-lots">
+              <div class="fwm-scroll fwm-lots-box"></div>
+              <div class="fwm-gen-box"></div>
+            </div>
           </section>
         </main>
       </div>
@@ -462,7 +468,8 @@
       status: $('.fwm-status'), msg: $('.fwm-msg'), cards: $('.fwm-cards'), check: $('.fwm-check'), importBtn: $('.fwm-import'), importResult: $('.fwm-import-result'), reload: $('.fwm-reload'), mockflag: $('.fwm-mockflag'),
       ctree: $('.fwm-ctree'), asideSub: $('.fwm-aside-sub'), treeAll: $('.fwm-tree-all'), tabs: [...container.querySelectorAll('.fwm-tabs button')], secs: [...container.querySelectorAll('.fwm-sec')],
       q: $('.fwm-q'), kind: $('.fwm-kind'), statusF: $('.fwm-status-f'), search: $('.fwm-search'), itemsCount: $('.fwm-items-count'), newItem: $('.fwm-new-item'), itemForm: $('.fwm-item-form'), itemsBox: $('.fwm-items-box'), detail: $('.fwm-detail'), split: $('.fwm-split'), layoutSlot: $('.fwm-layout-tg'),
-      bomRoot: $('.fwm-bom-root'), asOf: $('.fwm-asof'), depth: $('.fwm-depth'), bomGo: $('.fwm-bom-go'), bomExpand: $('.fwm-bom-expand'), bomCollapse: $('.fwm-bom-collapse'), bomStatus: $('.fwm-bom-status'), bomBox: $('.fwm-bom-box'), lineForm: $('.fwm-line-form'), headers: $('.fwm-headers'),
+      splitBom: $('.fwm-split-bom'), layoutBom: $('.fwm-layout-bom'), splitLots: $('.fwm-split-lots'), layoutLots: $('.fwm-layout-lots'),
+      bomRoot: $('.fwm-bom-root'), asOf: $('.fwm-asof'), depth: $('.fwm-depth'), bomGo: $('.fwm-bom-go'), bomExpand: $('.fwm-bom-expand'), bomCollapse: $('.fwm-bom-collapse'), bomStatus: $('.fwm-bom-status'), bomBox: $('.fwm-bom-box'), bomSide: $('.fwm-bom-side'), lineForm: $('.fwm-line-form'), headers: $('.fwm-headers'),
       op: $('.fwm-op'), procGo: $('.fwm-proc-go'), procStatus: $('.fwm-proc-status'), procBox: $('.fwm-proc-box'),
       lotPn: $('.fwm-lot-pn'), lotQ: $('.fwm-lot-q'), lotGo: $('.fwm-lot-go'), newLot: $('.fwm-new-lot'), lotForm: $('.fwm-lot-form'), lotStatus: $('.fwm-lot-status'), lotsBox: $('.fwm-lots-box'), genBox: $('.fwm-gen-box'), pnList: $('#fwm-pn-list'),
     };
@@ -486,7 +493,15 @@
     els.kind.onchange = els.statusF.onchange = () => loadItems(container);
     els.newItem.onclick = () => renderItemForm(container, null);
     // 상세 위치(아래/오른쪽) — 공용 토글. 기본은 오른쪽(2단), 폭이 모자라면 CSS 가 아래로 내린다
-    if (window.FWLayout && els.layoutSlot && els.split) window.FWLayout.mount(els.layoutSlot, { key: 'materials', target: els.split, def: 'right' });
+    if (window.FWLayout) {
+      // 자재 탭의 세 섹션 모두 마스터(왼쪽) · 디테일(오른쪽) 2단. 섹션마다 선택을 따로 기억한다
+      if (els.layoutSlot && els.split) window.FWLayout.mount(els.layoutSlot, { key: 'materials', target: els.split, def: 'right' });
+      if (els.layoutBom && els.splitBom) window.FWLayout.mount(els.layoutBom, { key: 'materials-bom', target: els.splitBom, def: 'right' });
+      if (els.layoutLots && els.splitLots) window.FWLayout.mount(els.layoutLots, { key: 'materials-lots', target: els.splitLots, def: 'right' });
+      // 아직 고르기 전에도 오른쪽 칸이 빈 채로 보이지 않게 안내를 넣는다 (데이터가 오면 덮어쓴다)
+      splitHint(els.headers, 'BOM 라인 · 헤더', '왼쪽 트리에서 라인을 누르면 여기서 고칠 수 있고, 부모 품목의 BOM 헤더 목록도 함께 나옵니다.');
+      splitHint(els.genBox, '로트 계보', '왼쪽 로트 표에서 한 줄을 누르면 여기에 역방향(어디서 왔나)·정방향(어디로 갔나) 계보가 나옵니다.');
+    }
     els.bomGo.onclick = () => { st.bom.pn = els.bomRoot.value; st.bom.asOf = els.asOf.value; st.bom.depth = Number(els.depth.value) || 0; loadBom(container); };
     els.bomRoot.onchange = els.bomGo.onclick;
     els.bomExpand.onclick = () => { st.bom.collapsed.clear(); renderBom(container); };
@@ -624,6 +639,12 @@
         <td>${chip('st-' + i.status, STATUS_LABEL[i.status] || i.status)}</td></tr>`).join('')}
     </tbody></table>`;
     els.itemsBox.querySelectorAll('tr[data-pn]').forEach(tr => { tr.onclick = () => loadDetail(st, tr.dataset.pn); });
+  }
+
+  // 2단 오른쪽 칸이 비어 보이지 않게 안내를 채운다 (비어 있을 때만)
+  function splitHint(box, title, text) {
+    if (!box || box.innerHTML.trim()) return;
+    box.innerHTML = `<div class="fwm-panel fwm-detail-empty"><b>${esc(title)}</b><p class="muted fwm-small">${esc(text)}</p></div>`;
   }
 
   // ── 품목 상세: 속성 · where-used · BOM 헤더 · 로트 수 ──
@@ -949,6 +970,7 @@
   async function loadLots(container) {
     const st = states.get(container); const { els } = st; const L = st.lots;
     els.lotStatus.textContent = '조회 중…'; L.sel = null; L.gen = null; els.genBox.innerHTML = '';
+    splitHint(els.genBox, '로트 계보', '왼쪽 로트 표에서 한 줄을 누르면 여기에 역방향(어디서 왔나)·정방향(어디로 갔나) 계보가 나옵니다.');
     try { const r = await call(st, '/api/admin/materials/lots' + qs({ pn: L.pn, q: L.q })); L.list = Array.isArray(r) ? r : (r.lots || []); L.err = ''; }
     catch (e) { if (e.message === 'auth') return; L.list = []; L.err = e.message; }
     els.lotStatus.textContent = L.err ? '' : `${L.list.length}건${L.pn ? ' · ' + L.pn : ''}`;

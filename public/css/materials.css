@@ -134,20 +134,25 @@
 .fwm-split.pos-below { grid-template-columns: minmax(0, 1fr); }
 .fwm-split.pos-right { grid-template-columns: minmax(260px, calc(var(--fwsplit, 50%) - 16px)) 8px minmax(280px, 1fr); }
 .fwm-split.pos-below > .fwi-split-handle { display: none; }   /* 손잡이 모양은 items.css 의 .fwi-split-handle 공용 */
-.fwm-split.pos-right .fwm-items-box { max-height: 70vh; overflow: auto; }
-.fwm-split.pos-right .fwm-detail { position: sticky; top: 8px; max-height: 80vh; overflow: auto; }
-.fwm-split.pos-right .fwm-detail .fwm-panel { margin-top: 0; }
+/* 세 섹션(품목 · BOM 트리 · 로트 계보)이 같은 규칙을 쓴다 — 왼쪽이 마스터, 오른쪽이 디테일 */
+.fwm-split > * { min-width: 0; }
+.fwm-split.pos-right > :first-child { max-height: 70vh; overflow: auto; }
+.fwm-split.pos-right > :last-child { position: sticky; top: 8px; max-height: 80vh; overflow: auto; }
+.fwm-split.pos-right > :last-child .fwm-panel { margin-top: 0; }
+.fwm-split.pos-right > :last-child .fwm-panel + .fwm-panel { margin-top: 10px; }
 .fwm-split.pos-right .fwm-detail .fwm-cols { grid-template-columns: 1fr; }   /* 좁은 단이라 where-used 와 BOM 헤더를 세로로 */
+.fwm-split.pos-right .fwm-grid { grid-template-columns: 1fr; }               /* 라인·로트 편집 폼도 한 줄씩 */
 .fwm-detail-empty { border-style: dashed; }
 .fwm-detail-empty b { font-size: 13px; }
 .fwm-detail-empty p { margin-top: 6px; }
-@container fwm (max-width: 1300px) {   /* 분류 트리(약 230px)를 빼고도 목록이 600px 이상 남을 때만 2단 */
+@container fwm (max-width: 1300px) {   /* 분류 트리(약 230px)를 빼고도 마스터가 600px 이상 남을 때만 2단 */
   .fwm-split.pos-right { grid-template-columns: 1fr; }
   .fwm-split.pos-right > .fwi-split-handle { display: none; }
-  .fwm-split.pos-right .fwm-items-box { max-height: none; }
-  .fwm-split.pos-right .fwm-detail { position: static; max-height: none; }
-  .fwm-split.pos-right .fwm-detail .fwm-panel { margin-top: 12px; }
+  .fwm-split.pos-right > :first-child { max-height: none; }
+  .fwm-split.pos-right > :last-child { position: static; max-height: none; }
+  .fwm-split.pos-right > :last-child .fwm-panel { margin-top: 12px; }
   .fwm-split.pos-right .fwm-detail .fwm-cols { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .fwm-split.pos-right .fwm-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 }
 /* @container 를 모르는 브라우저용 안전장치 — 창이 좁으면 뷰포트 기준으로도 한 단 */
 @media (max-width: 1100px) {
