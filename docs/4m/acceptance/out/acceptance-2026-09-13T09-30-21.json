@@ -1,6 +1,9 @@
 {
  "run": "2026-09-13T09-30-21",
  "url": "http://localhost:3198",
+ "asof": "2026-06-01",
+ "tag": "AT5HRI",
+ "dataDir": "C:\\Users\\je310\\AppData\\Local\\Temp\\claude\\D--factory-world-master\\cf599f60-41cc-444e-840e-c30525cfb9ad\\scratchpad\\data-acc",
  "summary": {
   "PASS": 72,
   "FAIL": 2,

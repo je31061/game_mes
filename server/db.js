@@ -382,6 +382,37 @@ if (materialsSchema.ok) {
   if (!cols.includes('in_qty')) { db.exec('ALTER TABLE item ADD COLUMN in_qty REAL'); added.push('in_qty'); }
   if (!cols.includes('use_to')) { db.exec('ALTER TABLE item ADD COLUMN use_to TEXT'); added.push('use_to'); }
   if (added.length) console.log(`[db] item 컬럼 추가 — ${added.join(', ')} (품목 등록 화면)`);
+
+  // ── 스프린트 4: 품목 × 거래처 (인터페이스 §11.5) ──
+  // item(ddl-v1.sql)과 partners(위 스키마) 를 둘 다 참조하므로 ddl 실행 뒤에 만든다.
+  // 한 품목에 공급사가 여럿인 것이 정상이고 공급사마다 품번·단가·리드타임이 다르다 — 그래서 품목에 컬럼을 박지 않고 별도 표로 둔다.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS item_partner (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id     INTEGER NOT NULL REFERENCES item(item_id),
+      partner_id  INTEGER NOT NULL REFERENCES partners(id),
+      role        TEXT NOT NULL CHECK (role IN ('BUY','SELL')),   -- BUY 이 거래처에서 사 온다 | SELL 이 거래처에 판다
+      partner_pn  TEXT,                                           -- 거래처 쪽 품번 (공급사 품번·고객 품번)
+      price       REAL CHECK (price IS NULL OR price >= 0),        -- 단가. 원가 전개에는 쓰지 않는다(참조값)
+      currency    TEXT NOT NULL DEFAULT 'KRW',
+      price_uom   TEXT,                                            -- 단가 기준 단위. 비우면 품목 기준단위
+      lead_days   INTEGER CHECK (lead_days IS NULL OR lead_days >= 0),
+      moq         REAL CHECK (moq IS NULL OR moq > 0),             -- 최소 발주(주문) 수량
+      order_uom   TEXT,                                            -- 발주 단위 (item.in_uom 과 같은 개념)
+      is_primary  INTEGER NOT NULL DEFAULT 0 CHECK (is_primary IN (0,1)),   -- 주거래처
+      valid_from  TEXT NOT NULL DEFAULT (date('now')),
+      valid_to    TEXT NOT NULL DEFAULT '9999-12-31',
+      note        TEXT,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      CHECK (valid_to >= valid_from)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_item_partner ON item_partner(item_id, partner_id, role);
+    CREATE INDEX IF NOT EXISTS idx_item_partner_item ON item_partner(item_id, role);
+    CREATE INDEX IF NOT EXISTS idx_item_partner_partner ON item_partner(partner_id);
+    -- 주거래처는 품목·역할당 한 곳만
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_item_partner_primary ON item_partner(item_id, role) WHERE is_primary = 1;
+  `);
 }
 
 export const materialsMigration = migrateMaterials();

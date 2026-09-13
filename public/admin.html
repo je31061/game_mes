@@ -26,9 +26,19 @@
   }
   .nav button.active { color: var(--text); background: var(--panel2); border-left-color: var(--accent); }
   .nav button:hover { color: var(--text); }
+  .nav-group + .nav-group { margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px; }
+  .nav button.nav-title {
+    padding: 9px 18px 5px; font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; color: var(--muted);
+    border-left: 3px solid transparent; cursor: pointer; }
+  .nav button.nav-title::after { content: ' ▾'; font-size: 9px; opacity: .6; }
+  .nav-group.collapsed button.nav-title::after { content: ' ▸'; }
+  .nav-group.collapsed button:not(.nav-title) { display: none; }
+  .nav button.sub { padding-left: 34px; font-size: 12.5px; }
+  .nav button.sub::before { content: '└ '; color: var(--border); }
   .sidebar .back { margin: 20px 18px 0; }
   .sidebar .back a { color: var(--muted); font-size: 12px; text-decoration: none; }
-  .content { flex: 1; padding: 24px 28px; max-width: 1100px; min-width: 0; }   /* min-width 0: 넓은 표(📈 라인 밸런스 등)가 .fwa-scroll 안에서 스크롤되고 화면 폭을 밀지 않게 (flex 항목 기본값 auto 방지) */
+  .content { flex: 1; padding: 24px 28px; max-width: 1100px; min-width: 0; }
+  .content.wide { max-width: 1700px; }   /* 시트가 있는 탭(품목·거래처·자재)은 폭 제한을 푼다 — 1100px 에서는 열이 접힌 채로만 보인다 */   /* min-width 0: 넓은 표(📈 라인 밸런스 등)가 .fwa-scroll 안에서 스크롤되고 화면 폭을 밀지 않게 (flex 항목 기본값 auto 방지) */
   .content h2 { font-size: 17px; letter-spacing: 2px; margin-bottom: 16px; }
   .tabview { display: none; }
   .tabview.active { display: block; }
@@ -93,17 +103,29 @@
   <div class="sidebar">
     <div class="logo">FACTORY WORLD<small>관리자 콘솔 (SCR-06)</small></div>
     <div class="nav">
-      <button data-tab="dashboard" class="active">📊 대시보드</button>
-      <button data-tab="logs">💬 대화 로그</button>
-      <button data-tab="alarms">🚨 알람 리포트</button>
-      <button data-tab="workorders">📜 작업지시</button>
-      <button data-tab="analytics">📈 실적 분석</button>
-      <button data-tab="materials">🧩 자재</button>
-      <button data-tab="items">📦 품목 등록</button>
-      <button data-tab="partners">🤝 거래처</button>
-      <button data-tab="mapeditor">🗺 맵 에디터</button>
-      <button data-tab="equipments">🏭 설비 관리</button>
-      <button data-tab="users">👤 사용자 관리</button>
+      <!-- 스프린트 4: 평면 탭 → 3개 묶음. 묶음 제목을 누르면 접힌다(접힘 상태는 localStorage 에 남는다).
+           '품목 세부'는 '품목 등록'의 하위 항목이라 한 칸 들여 쓴다. -->
+      <div class="nav-group" data-group="ops">
+        <button class="nav-title" type="button">운영</button>
+        <button data-tab="dashboard" class="active">📊 대시보드</button>
+        <button data-tab="logs">💬 대화 로그</button>
+        <button data-tab="alarms">🚨 알람 리포트</button>
+        <button data-tab="workorders">📜 작업지시</button>
+        <button data-tab="analytics">📈 실적 분석</button>
+      </div>
+      <div class="nav-group" data-group="master">
+        <button class="nav-title" type="button">기준정보</button>
+        <button data-tab="items">📦 품목 등록</button>
+        <button data-tab="itemdetail" class="sub">품목 세부</button>
+        <button data-tab="partners">🤝 거래처</button>
+        <button data-tab="materials">🧩 자재 (BOM·로트)</button>
+      </div>
+      <div class="nav-group" data-group="setup">
+        <button class="nav-title" type="button">설정</button>
+        <button data-tab="mapeditor">🗺 맵 에디터</button>
+        <button data-tab="equipments">🏭 설비 관리</button>
+        <button data-tab="users">👤 사용자 관리</button>
+      </div>
     </div>
     <div class="back"><a href="/?as=admin">← 공장 맵으로</a></div>
     <div class="back"><a href="#" id="btn-theme">🌓 테마 전환 (다크/흰 바탕)</a></div>
@@ -197,6 +219,9 @@
 
     <!-- 거래처 (스프린트 4, 인터페이스 §12): js/partners.js 의 window.FWPartners.mount(container, api) 가 이 컨테이너를 채운다 (스타일은 items.css 공용) -->
     <div class="tabview" id="tab-partners"></div>
+
+    <!-- 품목 세부 · 거래처 연결 (스프린트 4, 인터페이스 §11.5): js/itemdetail.js 의 window.FWItemDetail.mount(container, api) -->
+    <div class="tabview" id="tab-itemdetail"></div>
 
     <div class="tabview" id="tab-mapeditor">
       <h2>맵 에디터 <small class="muted">설비 드래그로 이동 · 존 영역은 [영역 그리기] 후 드래그</small></h2>
@@ -355,5 +380,6 @@
 <script src="js/materials.js"></script><!-- 자재 탭 (서지안, §10): window.FWMaterials = { mount(container, api) } — 파일이 없으면 서버가 빈 JS 로 대체 -->
 <script src="js/items.js"></script><!-- 품목 등록 (§11): window.FWItems = { mount(container, api) } -->
 <script src="js/partners.js"></script><!-- 거래처 (§12): window.FWPartners = { mount(container, api) } -->
+<script src="js/itemdetail.js"></script><!-- 품목 세부 (§11.5): window.FWItemDetail = { mount(container, api) } -->
 </body>
 </html>

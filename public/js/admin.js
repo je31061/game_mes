@@ -74,13 +74,27 @@
     } catch (e) { $('g-error').textContent = '⚠ ' + e.message; }
   };
 
+  // ── 메뉴 묶음 접기/펴기 (스프린트 4) — 접힘 상태는 브라우저에 남는다 ──
+  document.querySelectorAll('.nav-group').forEach(g => {
+    const key = 'fw.nav.' + g.dataset.group;
+    if (localStorage.getItem(key) === '1') g.classList.add('collapsed');
+    g.querySelector('.nav-title').onclick = () => {
+      g.classList.toggle('collapsed');
+      localStorage.setItem(key, g.classList.contains('collapsed') ? '1' : '0');
+    };
+  });
+
+  // 시트가 있는 탭은 본문 폭 제한을 푼다 (1100px 에서는 열이 접힌 채로만 보인다)
+  const WIDE_TABS = ['items', 'itemdetail', 'partners', 'materials'];
+
   // ── 탭 전환 ────────────────────────────
-  document.querySelectorAll('.nav button').forEach(b => {
+  document.querySelectorAll('.nav button[data-tab]').forEach(b => {
     b.onclick = () => {
-      document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.nav button[data-tab]').forEach(x => x.classList.remove('active'));
       document.querySelectorAll('.tabview').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       $('tab-' + b.dataset.tab).classList.add('active');
+      document.querySelector('.content').classList.toggle('wide', WIDE_TABS.includes(b.dataset.tab));
       if (b.dataset.tab === 'dashboard') { loadDashboard(); loadGateway(); loadBackup().catch(() => {}); }
       if (b.dataset.tab === 'mapeditor') loadEditor();
       if (b.dataset.tab === 'alarms') loadAlarmReport().catch(() => {});
@@ -89,6 +103,7 @@
       if (b.dataset.tab === 'materials') mountMaterials();
       if (b.dataset.tab === 'items') mountItems();
       if (b.dataset.tab === 'partners') mountPartners();
+      if (b.dataset.tab === 'itemdetail') mountItemDetail();
     };
   });
 
@@ -118,6 +133,18 @@
     }
     box.innerHTML = `<h2>품목 등록 <small class="muted">품번 · 품목구분 · 사용기한 · 입고단위 · BOM 연결</small></h2>
       <p class="muted">등록 화면 모듈(js/items.js)이 아직 배치되지 않았습니다. API는 준비되어 있습니다 — <code>GET /api/admin/materials/item-groups</code> 등(인터페이스 §11).</p>`;
+  }
+
+  // ── 품목 세부 탭 훅 (스프린트 4, 인터페이스 §11.5): js/itemdetail.js 가 window.FWItemDetail.mount(container, api) 를 제공 ──
+  function mountItemDetail() {
+    const box = $('tab-itemdetail');
+    if (window.FWItemDetail && typeof window.FWItemDetail.mount === 'function') {
+      try { window.FWItemDetail.mount(box, api); }
+      catch (e) { console.error('[itemdetail] mount 실패:', e); box.innerHTML = `<h2>품목 세부</h2><p class="muted">화면을 불러오지 못했습니다: ${esc(e.message)}</p>`; }
+      return;
+    }
+    box.innerHTML = `<h2>품목 세부 <small class="muted">거래처 연결 · 식별정보</small></h2>
+      <p class="muted">세부 화면 모듈(js/itemdetail.js)이 아직 배치되지 않았습니다 — <code>GET /api/admin/item-partners?pn=</code>(인터페이스 §11.5).</p>`;
   }
 
   // ── 거래처 탭 훅 (스프린트 4, 인터페이스 §12): js/partners.js 가 window.FWPartners.mount(container, api) 를 제공 ──

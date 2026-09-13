@@ -169,4 +169,115 @@ export function registerPartners(app, { requireAdmin, db, afterChange = () => {}
 
   app.delete(`${B}/:code`, requireAdmin, (req, res) =>
     res.status(405).json({ error: '거래처는 삭제하지 않습니다 — 상태를 거래종료(CLOSED)로 바꾸세요. 지우면 과거 전표의 거래처가 사라집니다.' }));
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 품목 × 거래처 (인터페이스 §11.5) — 품목 세부 등록 화면이 쓴다
+  // 한 품목에 공급사가 여럿인 것이 정상이라 품목에 컬럼을 박지 않고 item_partner 표로 둔다.
+  // ──────────────────────────────────────────────────────────────────────────
+  const IP = '/api/admin/item-partners';
+  const hasTable = (n) => !!q(`SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?`).get(n);
+  const itemByPn = (pn) => q('SELECT item_id, pn, name, base_uom, in_uom, in_qty FROM item WHERE pn = ?').get(String(pn));
+  const ipJson = (r) => ({
+    id: r.id, pn: r.pn, itemName: r.item_name, partnerCode: r.partner_code, partnerName: r.partner_name,
+    partnerKind: r.partner_kind, partnerStatus: r.partner_status, role: r.role, roleName: r.role === 'BUY' ? '매입처' : '매출처',
+    partnerPn: r.partner_pn, price: r.price, currency: r.currency, priceUom: r.price_uom || r.base_uom,
+    leadDays: r.lead_days, moq: r.moq, orderUom: r.order_uom, isPrimary: !!r.is_primary,
+    validFrom: r.valid_from, validTo: r.valid_to, note: r.note, updatedAt: r.updated_at,
+  });
+  const IP_SQL = `
+    SELECT ip.*, i.pn, i.name AS item_name, i.base_uom, p.code AS partner_code, p.name AS partner_name,
+           p.kind AS partner_kind, p.status AS partner_status
+      FROM item_partner ip JOIN item i ON i.item_id = ip.item_id JOIN partners p ON p.id = ip.partner_id`;
+
+  app.get(IP, requireAdmin, (req, res) => {
+    try {
+      if (!hasTable('item_partner')) return res.json([]);
+      const where = [], p = [];
+      if (req.query.pn) { where.push('i.pn = ?'); p.push(String(req.query.pn)); }
+      if (req.query.partner) { where.push('p.code = ?'); p.push(String(req.query.partner)); }
+      if (req.query.role) { where.push('ip.role = ?'); p.push(String(req.query.role).toUpperCase()); }
+      const rows = q(`${IP_SQL} ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+                       ORDER BY ip.role, ip.is_primary DESC, p.code`).all(...p);
+      res.json(rows.map(ipJson));
+    } catch (e) { fail(res, e, 500); }
+  });
+
+  function ipUpsert(body, existing) {
+    const b = body || {};
+    const item = existing ? q('SELECT item_id, pn, base_uom FROM item WHERE item_id = ?').get(existing.item_id) : itemByPn(b.pn ?? b.itemPn);
+    if (!item) throw new Error(`품목 ${b.pn ?? b.itemPn} 이(가) 없습니다.`);
+    const partner = existing && !b.partnerCode ? q('SELECT * FROM partners WHERE id = ?').get(existing.partner_id) : byCode(b.partnerCode ?? b.partner);
+    if (!partner) throw new Error(`거래처 ${b.partnerCode ?? b.partner} 이(가) 없습니다.`);
+    const role = String(b.role ?? existing?.role ?? 'BUY').toUpperCase();
+    if (role !== 'BUY' && role !== 'SELL') throw new Error('역할은 BUY(매입처) 또는 SELL(매출처) 입니다.');
+    // 거래구분과 역할이 어긋나면 막는다 — 매출 전용 거래처를 매입처로 붙이는 실수를 여기서 잡는다
+    if (partner.kind !== 'BOTH' && partner.kind !== role) {
+      const want = role === 'BUY' ? '매입' : '매출';
+      throw new Error(`${partner.code} ${partner.name} 은(는) 거래구분이 '${(PARTNER_KINDS.find((k) => k.code === partner.kind) || {}).name}' 입니다 — ${want}처로 쓰려면 거래처의 거래구분을 '${want}' 또는 '매입·매출' 로 바꾸세요.`);
+    }
+    const numOr = (v, prev) => (v === undefined ? prev : (orNull(v) === null ? null : Number(v)));
+    const price = numOr(b.price, existing?.price ?? null);
+    if (price !== null && (!Number.isFinite(price) || price < 0)) throw new Error('단가는 0 이상이어야 합니다.');
+    const lead = numOr(b.leadDays, existing?.lead_days ?? null);
+    if (lead !== null && (!Number.isFinite(lead) || lead < 0)) throw new Error('리드타임(일)은 0 이상이어야 합니다.');
+    const moq = numOr(b.moq, existing?.moq ?? null);
+    if (moq !== null && (!Number.isFinite(moq) || moq <= 0)) throw new Error('최소 발주량은 0 보다 커야 합니다.');
+    const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
+    const from = isDate(b.validFrom) ? b.validFrom : (existing?.valid_from || new Date().toISOString().slice(0, 10));
+    const to = b.validTo !== undefined ? (orNull(b.validTo) === null ? '9999-12-31' : String(b.validTo)) : (existing?.valid_to || '9999-12-31');
+    if (!isDate(to)) throw new Error('종료일은 YYYY-MM-DD 형식입니다.');
+    if (to < from) throw new Error(`종료일(${to})은 시작일(${from})보다 뒤여야 합니다.`);
+    const primary = b.isPrimary === undefined ? (existing?.is_primary ?? 0) : (b.isPrimary === true || b.isPrimary === 1 || b.isPrimary === '1' || b.isPrimary === 'true' ? 1 : 0);
+
+    const v = [item.item_id, partner.id, role, orNull(b.partnerPn ?? existing?.partner_pn), price,
+      (orNull(b.currency ?? existing?.currency) || partner.currency || 'KRW').toUpperCase(),
+      orNull(b.priceUom ?? existing?.price_uom), lead, moq, orNull(b.orderUom ?? existing?.order_uom), primary, from, to,
+      orNull(b.note ?? existing?.note)];
+    // 주거래처를 켜면 같은 품목·역할의 기존 주거래처를 먼저 내린다 (부분 UNIQUE 인덱스와 충돌하지 않게)
+    if (primary) q(`UPDATE item_partner SET is_primary = 0 WHERE item_id = ? AND role = ? AND id <> ?`).run(item.item_id, role, existing?.id ?? -1);
+    if (existing) {
+      q(`UPDATE item_partner SET item_id = ?, partner_id = ?, role = ?, partner_pn = ?, price = ?, currency = ?, price_uom = ?, lead_days = ?, moq = ?,
+                order_uom = ?, is_primary = ?, valid_from = ?, valid_to = ?, note = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(...v, existing.id);
+      return existing.id;
+    }
+    return Number(q(`INSERT INTO item_partner (item_id, partner_id, role, partner_pn, price, currency, price_uom, lead_days, moq, order_uom, is_primary, valid_from, valid_to, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(...v).lastInsertRowid);
+  }
+
+  app.post(IP, requireAdmin, (req, res) => {
+    try {
+      if (!hasTable('item_partner')) return res.status(503).json({ error: '자재 스키마가 올라오지 않아 품목-거래처 연결을 쓸 수 없습니다.' });
+      const id = ipUpsert(req.body, null);
+      afterChange();
+      res.status(201).json({ ok: true, link: ipJson(q(`${IP_SQL} WHERE ip.id = ?`).get(id)) });
+    } catch (e) { fail(res, e); }
+  });
+  app.put(`${IP}/:id`, requireAdmin, (req, res) => {
+    try {
+      const cur = q('SELECT * FROM item_partner WHERE id = ?').get(Number(req.params.id));
+      if (!cur) return res.status(404).json({ error: '연결이 없습니다.' });
+      ipUpsert(req.body, cur);
+      afterChange();
+      res.json({ ok: true, link: ipJson(q(`${IP_SQL} WHERE ip.id = ?`).get(cur.id)) });
+    } catch (e) { fail(res, e); }
+  });
+  app.delete(`${IP}/:id`, requireAdmin, (req, res) => {
+    try {
+      const cur = q('SELECT * FROM item_partner WHERE id = ?').get(Number(req.params.id));
+      if (!cur) return res.status(404).json({ error: '연결이 없습니다.' });
+      q('DELETE FROM item_partner WHERE id = ?').run(cur.id);   // 연결은 전표가 아니라 기준이라 지워도 된다
+      afterChange();
+      res.json({ ok: true, deleted: cur.id });
+    } catch (e) { fail(res, e); }
+  });
+
+  // 그 거래처가 대는(또는 사 가는) 품목 — 거래처 화면에서 쓴다
+  app.get(`${B}/:code/items`, requireAdmin, (req, res) => {
+    try {
+      if (!hasTable('item_partner')) return res.json([]);
+      const p = byCode(req.params.code);
+      if (!p) return res.status(404).json({ error: `거래처 ${req.params.code} 이(가) 없습니다.` });
+      res.json(q(`${IP_SQL} WHERE ip.partner_id = ? ORDER BY ip.role, i.pn`).all(p.id).map(ipJson));
+    } catch (e) { fail(res, e, 500); }
+  });
 }
