@@ -25,8 +25,15 @@
 - 부하 테스트(격리 3001, 시드 DB, 50명 30초): 접속 50/50 · 오류 0 · 이동 수신 9,845 · 손실 0 · p50 6.8ms · **p95 17.5ms** · max 24.8ms / 채팅 5,250 · p50 1.5ms · **p95 13.2ms** · max 18.4ms → NFR-01 통과.
 
 ### 커밋·push·Render
-- 커밋 1: 라운드 5 통합(세 사람 산출물 + PM 정정 + 내 반영). 제외: `data/`, `docs/4m/**/*.db`, `*.log`(노하린 `out/server-2026-09-13.log` 포함), 임시 폴더. `acceptance/out/*.json`·`latest.md` 는 증거로 포함.
-- 커밋 2(`[skip render]`): push 후 Render 폴링 결과를 이 절 아래 "Render 반영 확인" 에 기록.
+- 커밋 1 **`d5d10b7`**: 라운드 5 통합(세 사람 산출물 + PM 정정 + 내 반영, 26파일 — 라운드 4 `d62b607` 과 함께 push `f54e2a8..d5d10b7`). 제외: `data/`, `docs/4m/**/*.db`, `*.log`(노하린 `out/server-2026-09-13.log` 포함), 임시 폴더. `acceptance/out/*.json`·`latest.md` 는 증거로 포함. push 뒤 `git status` 깨끗함.
+- 커밋 2(`[skip render]`): 아래 Render 확인 기록.
+
+### Render 반영 확인 (2026-09-13 12:38, push 약 3분 뒤, 로그인 없이)
+- `https://factory-world.onrender.com/js/materials.js` **200** · `FWMaterials` 문자열 4회 · **110,285 bytes = 로컬 파일과 동일**(이전 배포는 "미배치" 대체 JS 였으므로 새 커밋이 올라간 증거). `/css/materials.css` `fwm-` 158회, `/admin.html` `data-tab="materials"` 1, `/js/app.js` `eq-proc-section` 1.
+- `/api/admin/materials/summary` 비로그인 **401**(자재 라우트 등록됨), `/api/policy` **200**, `/` 200(첫 응답 18초 — 무료 플랜 콜드 스타트).
+- **확인 못 한 것**: 부팅 시드가 새 적재기(`ddl-v1.sql` 85문 → `item 60`)로 돌았는지는 로그인 없이는 DB 내부를 볼 수 없다 — 서비스 정상(200/401)만 확인. 사용자가 관리자로 로그인해 🧩 자재 탭 타일이 `품목 60 · 분류 24 · 헤더 11 · 라인 59` 인지 보면 확정된다(절차는 아래).
+- 사용자 확인 절차: ① https://factory-world.onrender.com → 관리자 계정으로 로그인(사번 `admin`, 비밀번호는 Render 환경변수 `FW_ADMIN_PASSWORD`) ② 우상단 [관리자 콘솔] → 🧩 자재 탭 → 요약 타일·검사 위반 20(황색)·BOM 트리 [전개] 말단 합계 76 EA 확인 ③ 공장 맵으로 돌아가 니들 와인더(OP-A40)를 눌러 "공정 · 단품" 표에 `MW-1030 … 180 g` 이 보이는지 확인.
+- Docker 경로(Koyeb 등)도 `.dockerignore` 가 `docs/4m/` 을 제외하지 않아 `ddl-v1.sql`·`cleansing-v1.json` 이 이미지에 들어간다(확인만, 배포 안 함).
 
 ### 서지안·노하린·PM 에게 (다음)
 - 노하린: AT-22b `contractKinds` → `['FG','SA','PT','RM','CN','PK']` + `isPhantom` 검사로(NOTE → PASS). 9단계는 legacy 0행이면 BLOCK 판정 제안. `out/*.log` 는 `.gitignore` 에 걸린다.
