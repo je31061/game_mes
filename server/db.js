@@ -337,7 +337,37 @@ function applyMaterialsDdl() {
 // 조회 쿼리(processInputs · listProcesses · countParts)는 무수정 — 뷰가 rowid 컬럼을 내서 ORDER BY i.rowid 도 산다.
 // 기존 DB 에 legacy 데이터가 있고 item 이 비어 있으면 먼저 cleansing-v1.json 적재기로 1회 이행([1]) → expected 대조([2], 어긋나면 롤백·전환 안 함) → 전환([3]).
 // legacy 표는 지우지 않는다(계획서 §9.3 [4][5]). 이미 뷰인 DB 는 건너뛴다. 되돌리기: DROP VIEW 2개 + RENAME 2개.
+// ── 스프린트 4: 품목 등록 화면용 컬럼 3종 (품목구분·사용기한·입고단위) ──
+// ddl-v1.sql 의 CREATE TABLE item 에 이미 들어 있다 → 새 DB 는 그대로 생긴다. 기존 DB 만 여기서 붙인다(SQLite 는 ADD COLUMN IF NOT EXISTS 가 없다).
+// 전부 NULL 허용이라 적재기·점검 뷰·호환 뷰·expected 대조에 영향이 없다. item_group 은 표시축일 뿐 계산은 item_type 으로 한다.
+if (materialsSchema.ok) {
+  const cols = db.prepare('PRAGMA table_info(item)').all().map(c => c.name);
+  const added = [];
+  if (!cols.includes('item_group')) { db.exec('ALTER TABLE item ADD COLUMN item_group TEXT'); added.push('item_group'); }
+  if (!cols.includes('shelf_life_days')) { db.exec('ALTER TABLE item ADD COLUMN shelf_life_days INTEGER'); added.push('shelf_life_days'); }
+  if (!cols.includes('in_uom')) { db.exec('ALTER TABLE item ADD COLUMN in_uom TEXT'); added.push('in_uom'); }
+  if (!cols.includes('in_qty')) { db.exec('ALTER TABLE item ADD COLUMN in_qty REAL'); added.push('in_qty'); }
+  if (added.length) console.log(`[db] item 컬럼 추가 — ${added.join(', ')} (품목 등록 화면)`);
+}
+
 export const materialsMigration = migrateMaterials();
+
+// 품목구분 채우기: 비어 있는 행만. item_type + source_type 에서 유도한다 (등록 화면에서 고른 값이 있으면 건드리지 않는다).
+// 이행 적재([1]) 뒤에 돌려야 갓 적재된 60행도 함께 채워진다.
+if (materialsSchema.ok && db.prepare('PRAGMA table_info(item)').all().some(c => c.name === 'item_group')) {
+  const filled = db.prepare(`
+    UPDATE item SET item_group = CASE
+        WHEN item_type = 'FG' AND source_type = 'BUY' THEN 'GOODS'
+        WHEN item_type = 'FG' THEN 'PROD'
+        WHEN item_type = 'SA' THEN 'SEMI'
+        WHEN item_type = 'PT' THEN 'PART'
+        WHEN item_type = 'RM' THEN 'RAW'
+        WHEN item_type = 'CN' THEN 'SUB'
+        WHEN item_type = 'PK' THEN 'PACK'
+      END
+     WHERE item_group IS NULL`).run().changes;
+  if (filled) console.log(`[db] item.item_group 유도 채움 ${filled}행 (품목구분 미지정 → item_type 기준)`);
+}
 function migrateMaterials() {
   if (!materialsSchema.ok) return { ok: false, reason: 'schema' };
   const kind = db.prepare("SELECT type FROM sqlite_master WHERE name = 'parts'").get()?.type;

@@ -1,0 +1,84 @@
+/* 품목 등록 화면 (스프린트 4) — 테마 변수만 쓴다: --text --muted --accent --run --idle --stop --panel --border --input
+ * 자재 탭(.fwm-*)과 같은 규칙, 클래스 접두만 .fwi-* 로 분리한다. 외부 라이브러리 없음. */
+.fwi { color: var(--text); }
+.fwi h2 small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+.fwi code { font-size: 11px; background: color-mix(in srgb, var(--text) 8%, transparent); padding: 1px 4px; border-radius: 4px; }
+.fwi .muted { color: var(--muted); }
+.fwi button { font: inherit; cursor: pointer; }
+.fwi button:disabled { opacity: .5; cursor: default; }
+
+.fwi-wrap { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .fwi-wrap { grid-template-columns: 1fr; } }
+
+/* ── 왼쪽: 검색 · 구분 칩 · 목록 ── */
+.fwi-side { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+.fwi-search { display: flex; gap: 6px; }
+.fwi-search input { flex: 1; min-width: 0; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12.5px; }
+.fwi-search button, .fwi-foot button, .fwi-attach button {
+  padding: 7px 12px; border-radius: 7px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.fwi button.ghost { border-color: var(--border); background: transparent; color: var(--muted); font-weight: 600; }
+.fwi button.ghost:hover { color: var(--accent); border-color: var(--accent); }
+.fwi button.sm { padding: 3px 9px; font-size: 11.5px; }
+
+.fwi-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 9px 0; }
+.fwi-chip { font-size: 11.5px; padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--muted); }
+.fwi-chip i { font-style: normal; font-variant-numeric: tabular-nums; opacity: .7; margin-left: 2px; }
+.fwi-chip.on, .fwi-chip:hover { color: var(--accent); border-color: var(--accent); }
+
+.fwi-list { max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.fwi-row { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto; gap: 6px; align-items: baseline; text-align: left;
+  padding: 6px 8px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--text); font-size: 12.5px; }
+.fwi-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.fwi-row.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.fwi-row .pn { font-weight: 700; font-variant-numeric: tabular-nums; }
+.fwi-row .nm { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fwi-row .tag { font-size: 10.5px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; white-space: nowrap; }
+.fwi-row .st { font-size: 10.5px; color: var(--idle); }
+.fwi-none { padding: 18px 10px; text-align: center; color: var(--muted); font-size: 12.5px; }
+
+/* ── 가운데: 폼 ── */
+.fwi-main { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.fwi-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.fwi-head b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.fwi-sub { font-size: 11.5px; color: var(--muted); }
+
+.fwi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 16px; margin: 14px 0; }
+.fwi-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.fwi-grid label.req { color: var(--text); }   /* 필수 세 칸만 흰 글씨 */
+.fwi-grid input, .fwi-grid select { padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 13px; font-family: inherit; }
+.fwi-grid input:focus, .fwi-grid select:focus { outline: none; border-color: var(--accent); }
+.fwi-grid small { font-size: 10.5px; color: var(--muted); font-weight: 400; line-height: 1.45; }
+.fwi-grid small b { color: var(--text); font-weight: 700; }
+.fwi-inline { display: flex; align-items: center; gap: 6px; }
+.fwi-inline input { min-width: 0; flex: 1; }
+.fwi-inline span, .fwi-inline b { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.fwi-inline b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+.fwi-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--border); }
+.fwi-msg { font-size: 12px; line-height: 1.4; }
+.fwi-msg.ok { color: var(--run); }
+.fwi-msg.bad { color: var(--stop); }
+
+/* ── 아래: BOM 연결 ── */
+.fwi-bom { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.fwi-bomhead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.fwi-bomhead b { font-size: 13px; }
+.fwi-bomhead span { font-size: 11.5px; color: var(--muted); }
+.fwi-bomtable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.fwi-bomtable th { text-align: left; font-size: 10.5px; letter-spacing: .5px; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.fwi-bomtable td { padding: 6px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.fwi-bomtable .r { text-align: right; font-variant-numeric: tabular-nums; }
+.fwi-badge { font-size: 10.5px; border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; color: var(--muted); }
+.fwi-badge.on { color: var(--run); border-color: var(--run); }
+.fwi-attach { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.fwi-attach input { padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12.5px; }
+.fwi-attach input#fwi-parent { min-width: 180px; }
+.fwi-attach input#fwi-qty { width: 100px; }
+.fwi-attach span, .fwi-attach b { font-size: 12px; color: var(--muted); }
+.fwi-attach b { color: var(--text); }
+.fwi-hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.fwi-hint b { color: var(--text); }
+.fwi-warn { font-size: 11.5px; color: var(--idle); border-left: 3px solid var(--idle); padding: 6px 10px; margin-top: 8px; line-height: 1.5;
+  background: color-mix(in srgb, var(--idle) 8%, transparent); border-radius: 0 6px 6px 0; }
+.fwi-warn b { color: var(--text); }

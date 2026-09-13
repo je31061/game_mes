@@ -87,6 +87,7 @@
       if (b.dataset.tab === 'workorders') loadWorkOrders().catch(() => {});
       if (b.dataset.tab === 'analytics') mountAnalytics();
       if (b.dataset.tab === 'materials') mountMaterials();
+      if (b.dataset.tab === 'items') mountItems();
     };
   });
 
@@ -104,6 +105,18 @@
       const chk = Object.entries(s.check || {}).map(([k, v]) => `${esc(k)} ${v}`).join(' · ') || '위반 없음';
       box.insertAdjacentHTML('beforeend', `<p class="muted">품목 ${s.items} · 분류 ${s.classes} · BOM 헤더 ${s.bomHeaders} · 라인 ${s.bomLines} · 로트 ${s.lots} · 점검: ${chk}</p>`);
     }).catch(() => {});
+  }
+
+  // ── 품목 등록 탭 훅 (스프린트 4, 인터페이스 §11): js/items.js 가 window.FWItems.mount(container, api) 를 제공 ──
+  function mountItems() {
+    const box = $('tab-items');
+    if (window.FWItems && typeof window.FWItems.mount === 'function') {
+      try { window.FWItems.mount(box, api); }
+      catch (e) { console.error('[items] mount 실패:', e); box.innerHTML = `<h2>품목 등록</h2><p class="muted">화면을 불러오지 못했습니다: ${esc(e.message)}</p>`; }
+      return;
+    }
+    box.innerHTML = `<h2>품목 등록 <small class="muted">품번 · 품목구분 · 사용기한 · 입고단위 · BOM 연결</small></h2>
+      <p class="muted">등록 화면 모듈(js/items.js)이 아직 배치되지 않았습니다. API는 준비되어 있습니다 — <code>GET /api/admin/materials/item-groups</code> 등(인터페이스 §11).</p>`;
   }
 
   // ── 실적 분석 탭 훅 (서지안, 인터페이스 §5): js/analytics.js 가 window.FWAnalytics.mount(container, api) 를 제공 ──

@@ -104,6 +104,13 @@ CREATE TABLE IF NOT EXISTS item (
                  -- 참조 단가(₩, xlsx 04~08 시트 보존용). **전개 합산에 쓰지 말 것** — 04시트 합계는 SC-1010 과 그 원소재 SC-1011 을
                  -- 둘 다 더한 값이다(노하린 V12-9). 원가 계산은 이 기준의 범위 밖.
   image        TEXT,                                 -- public/assets/parts/<file> — 현행 parts.image 그대로 이관
+  -- ── 현장 등록 화면용 3종 (스프린트 4). 전부 NULL 허용 — 기존 60행과 적재기·점검 뷰에 영향 없다 ──
+  item_group   TEXT,                                 -- 품목구분: PROD 제품 · GOODS 상품 · SEMI 반제품 · WIP 재공품 · PART 부품 · RAW 원자재 · SUB 부자재 · CONS 소모품 · PACK 포장재
+                 -- item_type + source_type 을 현장 용어 한 칸으로 묶은 표시축. 계산·전개는 전부 item_type 으로 한다. NULL 이면 item_type 에서 유도해 보여준다
+  shelf_life_days INTEGER CHECK (shelf_life_days IS NULL OR shelf_life_days > 0),
+                 -- 사용기한(일). NULL = 무기한 또는 분류(mat_class.shelf_life_days) 기본값 상속. 로트 유효일 = 입고일 + 이 값
+  in_uom       TEXT,                                 -- 입고단위 표기(BOX·CAN·ROLL·PLT…). 재고·BOM·로트는 언제나 base_uom 으로만 돈다 — 이건 발주·입고 화면 표기용
+  in_qty       REAL CHECK (in_qty IS NULL OR in_qty > 0),   -- 입고단위 1 = base_uom 몇 개인가. 예) 1 BOX = 100 EA → in_uom 'BOX', in_qty 100
   eff_from     TEXT NOT NULL DEFAULT (date('now')),
   obsoleted_at TEXT,
   created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime')),

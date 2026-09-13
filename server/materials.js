@@ -338,6 +338,28 @@ export function verifyLoad(db, { cleansing, code, tmp = {} } = {}) {
 // 관리자 API (인터페이스 §10)
 // ────────────────────────────────────────────────────────────────────────────
 const KIND_ALIAS = { PART: 'PT', RAW: 'RM', PKG: 'PK', CONSUMABLE: 'CN' };   // §10 표기 → DDL item_type
+
+// ── 품목구분 (스프린트 4 · 품목 등록 화면) ──────────────────────────────────
+// ERP/MES 품목 마스터가 공통으로 쓰는 구분을 현장 용어 9개로 줄인 **표시축**이다. 전개·소요량·점검은 전부 item_type 으로 계산한다.
+// 참조한 관행: SAP 자재유형(FERT 제품 · HAWA 상품 · HALB 반제품 · ROH 원자재 · VERP 포장재 · HIBE 소모자재)
+//              국내 ERP 품목구분(제품 · 상품 · 반제품 · 원재료 · 부재료 · 저장품) — 둘 다 "구분 하나로 조달·재고·원가 기본값이 정해진다" 는 점이 같다.
+// 재공품(WIP): 표준 ERP 는 품목이 아니라 재고 상태로 본다. 여기서도 별도 품번을 쓰는 경우에만 쓰라고 안내만 하고 SA 로 저장한다.
+export const ITEM_GROUPS = [
+  { code: 'PROD',  name: '제품',   itemType: 'FG', sourceType: 'MAKE', classCode: 'FG', trace: 'SERIAL', hint: '우리가 만들어서 파는 완성품' },
+  { code: 'GOODS', name: '상품',   itemType: 'FG', sourceType: 'BUY',  classCode: 'FG', trace: 'LOT',    hint: '사서 그대로 파는 것 — 가공하지 않는다' },
+  { code: 'SEMI',  name: '반제품', itemType: 'SA', sourceType: 'MAKE', classCode: 'SA', trace: 'LOT',    hint: '중간 조립·가공품. 자기 BOM 을 가진다' },
+  { code: 'WIP',   name: '재공품', itemType: 'SA', sourceType: 'MAKE', classCode: 'SA', trace: 'LOT',    hint: '공정 진행 중인 물건. 품번을 따로 딸 때만 쓴다 — 보통은 반제품의 공정 상태로 충분하다' },
+  { code: 'PART',  name: '부품',   itemType: 'PT', sourceType: 'BUY',  classCode: 'PT', trace: 'NONE',   hint: '사 오는 단품 — 베어링·볼트·커넥터' },
+  { code: 'RAW',   name: '원자재', itemType: 'RM', sourceType: 'BUY',  classCode: 'RM', trace: 'LOT',    hint: '가공 전 소재 — 강판 코일·권선 동선. 원재료도 이 칸' },
+  { code: 'SUB',   name: '부자재', itemType: 'CN', sourceType: 'BUY',  classCode: 'CN', trace: 'NONE',   hint: '제품에 남지만 주자재가 아닌 것 — 절연지·접착제' },
+  { code: 'CONS',  name: '소모품', itemType: 'CN', sourceType: 'BUY',  classCode: 'CN', trace: 'LOT',    hint: '쓰면 없어지는 것 — 그리스·용제. 사용기한 관리 대상이 많다', shelfLifeDays: 365 },
+  { code: 'PACK',  name: '포장재', itemType: 'PK', sourceType: 'BUY',  classCode: 'PK', trace: 'NONE',   hint: '박스·라벨·완충재' },
+];
+const GROUP_BY_CODE = Object.fromEntries(ITEM_GROUPS.map(g => [g.code, g]));
+// item_group 이 비어 있는 행(옛 데이터·적재기 산출)은 읽을 때 item_type 에서 유도해 보여준다
+const groupFromType = (itemType, sourceType) => itemType === 'FG'
+  ? (sourceType === 'BUY' ? 'GOODS' : 'PROD')
+  : ({ SA: 'SEMI', PT: 'PART', RM: 'RAW', CN: 'SUB', PK: 'PACK' }[itemType] || null);
 const HEADER_STATUS = ['DRAFT', 'APPROVED', 'ACTIVE', 'OBSOLETE'];
 const ITEM_STATUS = ['DRAFT', 'APPROVED', 'ACTIVE', 'BLOCKED', 'OBSOLETE'];
 
@@ -347,13 +369,23 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
   const tx = (fn) => { db.exec('SAVEPOINT fw_api'); try { const r = fn(); db.exec('RELEASE fw_api'); return r; } catch (e) { db.exec('ROLLBACK TO fw_api'); db.exec('RELEASE fw_api'); throw e; } };
   const asOf = (v) => isDate(v) ? String(v) : today();
   const itemRow = (pn) => q(`
-    SELECT i.*, c.class_code, c.name AS class_name, COALESCE(u.symbol, u.uom_code) AS uom_symbol
+    SELECT i.*, c.class_code, c.name AS class_name, c.shelf_life_days AS class_shelf_life, COALESCE(u.symbol, u.uom_code) AS uom_symbol
       FROM item i JOIN mat_class c ON c.class_id = i.class_id JOIN uom u ON u.uom_code = i.base_uom WHERE i.pn = ?`).get(String(pn));
-  const itemJson = (r) => r && ({
-    itemId: r.item_id, pn: r.pn, name: r.name, nameKo: r.name_ko, spec: r.spec, kind: r.item_type, classId: r.class_id, classCode: r.class_code, className: r.class_name,
-    uom: r.base_uom, uomSymbol: r.uom_symbol, status: r.status, traceKind: r.trace_mode, isTmp: /^TMP-/.test(r.pn), isPhantom: !!r.is_phantom, phantom: !!r.is_phantom,
-    sourceType: r.source_type, image: r.image, gtin: r.gtin, drawingNo: r.drawing_no, stdCost: r.std_cost, effFrom: r.eff_from, obsoletedAt: r.obsoleted_at, createdAt: r.created_at, updatedAt: r.updated_at,
-  });
+  const itemJson = (r) => {
+    if (!r) return r;
+    const group = r.item_group || groupFromType(r.item_type, r.source_type);
+    const shelf = r.shelf_life_days ?? null;
+    return {
+      itemId: r.item_id, pn: r.pn, name: r.name, nameKo: r.name_ko, spec: r.spec, kind: r.item_type, classId: r.class_id, classCode: r.class_code, className: r.class_name,
+      uom: r.base_uom, uomSymbol: r.uom_symbol, status: r.status, traceKind: r.trace_mode, isTmp: /^TMP-/.test(r.pn), isPhantom: !!r.is_phantom, phantom: !!r.is_phantom,
+      sourceType: r.source_type, image: r.image, gtin: r.gtin, drawingNo: r.drawing_no, stdCost: r.std_cost, effFrom: r.eff_from, obsoletedAt: r.obsoleted_at, createdAt: r.created_at, updatedAt: r.updated_at,
+      // 스프린트 4 (품목 등록 화면). group 은 표시축 — 계산은 kind(item_type) 로 한다
+      group, groupName: GROUP_BY_CODE[group]?.name || null, groupDerived: !r.item_group,
+      shelfLifeDays: shelf, shelfLifeSource: shelf !== null ? 'item' : (r.class_shelf_life ? 'class' : null),
+      shelfLifeEffective: shelf ?? r.class_shelf_life ?? null,
+      inUom: r.in_uom || null, inQty: r.in_qty ?? null,
+    };
+  };
   const headerJson = (h) => ({
     id: h.bom_id, pn: h.parent_pn, parentPn: h.parent_pn, parentName: h.parent_name, bomType: h.bom_type, altNo: h.alt_no, rev: h.rev, baseQty: h.base_qty, baseUom: h.base_uom,
     status: h.status, effFrom: h.valid_from, effTo: h.valid_to, ecoNo: h.eco_no, approvedBy: h.approved_by, approvedAt: h.approved_at, note: h.note, lineCount: h.line_count,
@@ -429,6 +461,27 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
     })));
   });
 
+  // ── 품목구분 (등록 화면 드롭다운) ──
+  // 구분 하나를 고르면 분류 후보·조달구분·추적단위·사용기한 기본값이 정해진다. 화면은 이 응답만 보고 폼을 그린다.
+  app.get(`${B}/item-groups`, requireAdmin, (req, res) => {
+    const leaves = q(`SELECT c.class_id, c.class_code, c.name, p.class_code AS top_code, c.shelf_life_days, c.def_trace_mode
+                        FROM mat_class c JOIN mat_class p ON p.class_id = c.parent_class_id
+                       WHERE c.is_leaf = 1 ORDER BY c.sort_no, c.class_id`).all();
+    const counts = Object.fromEntries(q(`SELECT COALESCE(item_group, '') g, COUNT(*) c FROM item GROUP BY 1`).all().map(r => [r.g, r.c]));
+    const derived = Object.fromEntries(q(`SELECT item_type t, source_type s, COUNT(*) c FROM item WHERE item_group IS NULL GROUP BY 1, 2`).all()
+      .map(r => [groupFromType(r.t, r.s), r.c]).filter(([g]) => g));
+    res.json(ITEM_GROUPS.map(g => {
+      const classes = leaves.filter(c => c.top_code === g.classCode)
+        .map(c => ({ id: c.class_id, code: c.class_code, name: c.name, shelfLifeDays: c.shelf_life_days, defTraceMode: c.def_trace_mode }));
+      return {
+        code: g.code, name: g.name, kind: g.itemType, sourceType: g.sourceType, traceKind: g.trace, shelfLifeDays: g.shelfLifeDays ?? null,
+        // 기본 분류는 '기타' 성격의 말단이 있으면 그쪽 — 모르고 저장했을 때 엉뚱한 분류로 박히는 것보다 낫다
+        hint: g.hint, classes, itemCount: (counts[g.code] || 0) + (derived[g.code] || 0),
+        defaultClassId: (classes.find(c => /ETC$/.test(c.code) || /^기타/.test(c.name)) || classes[0])?.id ?? null,
+      };
+    }));
+  });
+
   // ── 품목 ──
   app.get(`${B}/items`, requireAdmin, (req, res) => {
     const { q: text, classId, status, kind } = req.query;
@@ -441,8 +494,12 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
       if (k === 'PHANTOM') where.push('i.is_phantom = 1');
       else { where.push('i.item_type = ?'); p.push(KIND_ALIAS[k] || k); }
     }
+    if (req.query.group) {   // 품목구분 필터 (등록 화면). 옛 행은 item_group 이 비어 있을 수 있어 item_type 유도값도 함께 받는다
+      const gc = String(req.query.group).toUpperCase(), g = GROUP_BY_CODE[gc];
+      if (g) { where.push(`(i.item_group = ? OR (i.item_group IS NULL AND i.item_type = ? AND i.source_type = ?))`); p.push(gc, g.itemType, g.sourceType); }
+    }
     const rows = q(`
-      SELECT i.*, c.class_code, c.name AS class_name, COALESCE(u.symbol, u.uom_code) AS uom_symbol
+      SELECT i.*, c.class_code, c.name AS class_name, c.shelf_life_days AS class_shelf_life, COALESCE(u.symbol, u.uom_code) AS uom_symbol
         FROM item i JOIN mat_class c ON c.class_id = i.class_id JOIN uom u ON u.uom_code = i.base_uom
        ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY i.item_type, i.pn`).all(...p);
     res.json(rows.map(itemJson));
@@ -463,34 +520,70 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
     const b = body || {};
     const pn = String(b.pn ?? existing?.pn ?? '').trim();
     if (!pn) throw new Error('pn 이 필요합니다.');
+    // 품목구분(등록 화면) — 고르면 item_type · source_type · 분류 · 추적단위 기본값이 따라온다. 몸체가 이들을 직접 주면 그쪽이 이긴다
+    const bodyGroup = b.group ?? b.itemGroup;
+    const groupCode = orNull(bodyGroup) !== null ? String(bodyGroup).toUpperCase() : (existing?.item_group || null);
+    if (groupCode && !GROUP_BY_CODE[groupCode]) throw new Error(`품목구분 ${groupCode} 은 없습니다 — ${ITEM_GROUPS.map(g => `${g.code}(${g.name})`).join(' · ')}`);
+    const grp = groupCode ? GROUP_BY_CODE[groupCode] : null;
+    const groupGiven = orNull(bodyGroup) !== null;
+
     let classId = b.classId !== undefined ? Number(b.classId) : existing?.class_id;
     if (b.classCode) classId = q('SELECT class_id FROM mat_class WHERE class_code = ?').get(String(b.classCode))?.class_id;
-    if (!classId) throw new Error('classId(또는 classCode) 가 필요합니다.');
-    const kind = String(b.kind ?? b.itemType ?? existing?.item_type ?? 'PT').toUpperCase();
+    // 분류를 안 주고 품목구분만 준 경우: 그 구분의 최상위 분류 밑 첫 말단 분류로 넣는다 (품번·품명·구분 3칸만으로 등록되게)
+    if (!classId && grp) classId = q(`SELECT class_id FROM mat_class
+        WHERE is_leaf = 1 AND parent_class_id = (SELECT class_id FROM mat_class WHERE class_code = ?)
+        ORDER BY sort_no, class_id LIMIT 1`).get(grp.classCode)?.class_id;
+    if (!classId) throw new Error('classId(또는 classCode·group) 가 필요합니다.');
+
+    const kindSrc = b.kind ?? b.itemType ?? (groupGiven ? grp.itemType : null) ?? existing?.item_type ?? grp?.itemType ?? 'PT';
+    const kind = String(kindSrc).toUpperCase();
     const itemType = KIND_ALIAS[kind] || kind;
-    const sourceType = String(b.sourceType ?? existing?.source_type ?? (['FG', 'SA'].includes(itemType) ? 'MAKE' : 'BUY')).toUpperCase();
+    const sourceType = String(b.sourceType ?? (groupGiven ? grp.sourceType : null) ?? existing?.source_type
+      ?? grp?.sourceType ?? (['FG', 'SA'].includes(itemType) ? 'MAKE' : 'BUY')).toUpperCase();
     const uom = String(b.uom ?? b.baseUom ?? existing?.base_uom ?? 'EA');
     const status = String(b.status ?? existing?.status ?? 'ACTIVE').toUpperCase();
     if (!ITEM_STATUS.includes(status)) throw new Error(`status 는 ${ITEM_STATUS.join('/')} 중 하나입니다.`);
     const isPhantom = bool01(b.isPhantom ?? b.phantom, existing?.is_phantom ?? 0);
-    const trace = String(b.traceKind ?? b.traceMode ?? existing?.trace_mode ?? 'NONE').toUpperCase();
+    const trace = String(b.traceKind ?? b.traceMode ?? (groupGiven && !existing ? grp.trace : null) ?? existing?.trace_mode ?? 'NONE').toUpperCase();
+
+    // 사용기한(일) — 빈 값이면 NULL(무기한 또는 분류 기본값 상속). 0·음수는 거른다
+    const shelfRaw = b.shelfLifeDays ?? b.shelfLife;
+    let shelfLife = existing?.shelf_life_days ?? null;
+    if (shelfRaw !== undefined) {
+      if (orNull(shelfRaw) === null) shelfLife = null;
+      else {
+        shelfLife = Math.trunc(Number(shelfRaw));
+        if (!Number.isFinite(shelfLife) || shelfLife <= 0) throw new Error('사용기한(shelfLifeDays)은 1 이상의 일수이거나 비워 둡니다.');
+      }
+    } else if (!existing && grp?.shelfLifeDays) shelfLife = grp.shelfLifeDays;
+    // 입고단위 — 표기 그대로 저장한다(uom 표에 없어도 된다). 재고·BOM·로트는 base_uom 으로만 돈다
+    let inUom = existing?.in_uom ?? null, inQty = existing?.in_qty ?? null;
+    if (b.inUom !== undefined) inUom = orNull(b.inUom) === null ? null : String(b.inUom).trim().slice(0, 16);
+    if (b.inQty !== undefined) inQty = orNull(b.inQty) === null ? null : Number(b.inQty);
+    if (inUom === null) inQty = null;                       // 입고단위가 없으면 입수량도 의미가 없다
+    else if (inQty === null) inQty = 1;                     // 입고단위만 적었으면 1:1
+    if (inQty !== null && (!Number.isFinite(inQty) || inQty <= 0)) throw new Error('입수량(inQty)은 0 보다 커야 합니다 — 입고단위 1 = 기준단위 몇 개인가.');
+
     const vals = {
       name: String(b.name ?? existing?.name ?? pn).trim(), name_ko: orNull(b.nameKo ?? existing?.name_ko), spec: orNull(b.spec ?? existing?.spec),
       class_id: classId, item_type: itemType, source_type: sourceType, base_uom: uom, is_phantom: isPhantom, trace_mode: trace, status,
       gtin: orNull(b.gtin ?? existing?.gtin), drawing_no: orNull(b.drawingNo ?? existing?.drawing_no), std_cost: num(b.stdCost ?? existing?.std_cost),
       image: orNull(b.image ?? existing?.image),
+      item_group: groupCode ?? groupFromType(itemType, sourceType), shelf_life_days: shelfLife, in_uom: inUom, in_qty: inQty,
     };
     if (existing) {
       q(`UPDATE item SET pn = ?, name = ?, name_ko = ?, spec = ?, class_id = ?, item_type = ?, source_type = ?, base_uom = ?, is_phantom = ?, trace_mode = ?, status = ?,
-                gtin = ?, drawing_no = ?, std_cost = ?, image = ?, obsoleted_at = CASE WHEN ? = 'OBSOLETE' THEN COALESCE(obsoleted_at, datetime('now','localtime')) ELSE NULL END,
+                gtin = ?, drawing_no = ?, std_cost = ?, image = ?, item_group = ?, shelf_life_days = ?, in_uom = ?, in_qty = ?,
+                obsoleted_at = CASE WHEN ? = 'OBSOLETE' THEN COALESCE(obsoleted_at, datetime('now','localtime')) ELSE NULL END,
                 updated_at = datetime('now','localtime') WHERE item_id = ?`)
         .run(pn, vals.name, vals.name_ko, vals.spec, vals.class_id, vals.item_type, vals.source_type, vals.base_uom, vals.is_phantom, vals.trace_mode, vals.status,
-          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.status, existing.item_id);
+          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.item_group, vals.shelf_life_days, vals.in_uom, vals.in_qty, vals.status, existing.item_id);
     } else {
-      q(`INSERT INTO item (pn, name, name_ko, spec, class_id, item_type, source_type, base_uom, is_phantom, trace_mode, status, gtin, drawing_no, std_cost, image, eff_from)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      q(`INSERT INTO item (pn, name, name_ko, spec, class_id, item_type, source_type, base_uom, is_phantom, trace_mode, status, gtin, drawing_no, std_cost, image,
+                           item_group, shelf_life_days, in_uom, in_qty, eff_from)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run(pn, vals.name, vals.name_ko, vals.spec, vals.class_id, vals.item_type, vals.source_type, vals.base_uom, vals.is_phantom, vals.trace_mode, vals.status,
-          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, isDate(b.effFrom) ? b.effFrom : today());
+          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.item_group, vals.shelf_life_days, vals.in_uom, vals.in_qty, isDate(b.effFrom) ? b.effFrom : today());
     }
     return itemRow(pn);
   }
@@ -514,6 +607,60 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
     } catch (e) { fail(res, e); }
   });
   app.delete(`${B}/items/:pn`, requireAdmin, (req, res) => res.status(405).json({ error: 'R-11: item 은 삭제하지 않는다 — PUT 으로 status=OBSOLETE 로 전환' }));
+
+  // ── BOM 붙이기 (등록 화면 전용 한 방 API) ──────────────────────────────────
+  // 화면은 "이 품목을 어느 상위 품목에 몇 개 넣는가" 만 묻는다. 헤더가 없으면 만들고, 있으면 그 헤더에 라인을 덧붙인다.
+  // 이미 승인·운영 중인 BOM 에도 붙는다 — 라인 valid_from 이 오늘이라 과거 전개 결과는 그대로다(§7.3 "덮어쓰지 않는다").
+  app.post(`${B}/bom-attach`, requireAdmin, (req, res) => {
+    try {
+      const b = req.body || {};
+      const parent = itemRow(b.parentPn ?? b.parent);
+      if (!parent) return res.status(404).json({ error: `상위 품목 ${b.parentPn ?? b.parent} 이 없습니다.` });
+      const child = itemRow(b.childPn ?? b.pn);
+      if (!child) return res.status(404).json({ error: `품목 ${b.childPn ?? b.pn} 이 없습니다.` });
+      if (parent.item_id === child.item_id) return res.status(400).json({ error: 'R-1: 자기 자신을 자기 BOM 에 넣을 수 없습니다.' });
+      const qtyPer = num(b.qtyPer ?? b.qty);
+      if (qtyPer === null || qtyPer <= 0) return res.status(400).json({ error: '소요량은 0 보다 커야 합니다.' });
+
+      const out = tx(() => {
+        // 쓸 헤더 고르기: 운영(ACTIVE) > 승인(APPROVED) > 작성중(DRAFT). 하나도 없으면 만든다
+        const pick = q(`SELECT * FROM bom_header WHERE parent_item_id = ? AND status <> 'OBSOLETE'
+                         ORDER BY CASE status WHEN 'ACTIVE' THEN 0 WHEN 'APPROVED' THEN 1 ELSE 2 END, bom_id DESC LIMIT 1`).get(parent.item_id);
+        let header = pick, created = false;
+        if (!header) {
+          const id = Number(q(`INSERT INTO bom_header (parent_item_id, bom_type, alt_no, rev, base_qty, base_uom, status, valid_from, valid_to, approved_by, approved_at, note)
+            VALUES (?, 'PROD', '00', 'A', 1, ?, 'ACTIVE', ?, '9999-12-31', ?, ?, ?)`)
+            .run(parent.item_id, parent.base_uom, today(), req.user.id, new Date().toISOString().slice(0, 19).replace('T', ' '), '품목 등록 화면에서 생성').lastInsertRowid);
+          header = q('SELECT * FROM bom_header WHERE bom_id = ?').get(id);
+          created = true;
+        }
+        const dup = q(`SELECT line_id FROM bom_line WHERE bom_id = ? AND child_item_id = ? AND valid_to >= date('now')`).get(header.bom_id, child.item_id);
+        if (dup) throw new Error(`이미 ${parent.pn} BOM 에 ${child.pn} 이 들어 있습니다 — 소요량을 고치려면 그 줄을 수정하세요.`);
+        const lineNo = (q('SELECT COALESCE(MAX(line_no), 0) m FROM bom_line WHERE bom_id = ?').get(header.bom_id).m) + 10;
+        // 라인 valid_from: 작성중 BOM 이면 헤더와 같은 날, 운영·승인 BOM 이면 오늘부터 (과거 전개 결과를 바꾸지 않는다)
+        const from = header.status === 'DRAFT' ? header.valid_from : (header.valid_from > today() ? header.valid_from : today());
+        const lineId = Number(q(`INSERT INTO bom_line (bom_id, line_no, child_item_id, qty_per, uom_code, qty_basis, scrap_pct, is_optional, bop_link, valid_from, valid_to, note)
+          VALUES (?, ?, ?, ?, ?, 'NET', 0, 0, ?, ?, '9999-12-31', ?)`)
+          .run(header.bom_id, lineNo, child.item_id, qtyPer, String(b.uom || child.base_uom), String(b.bopLink || 'REQUIRED').toUpperCase(), from,
+            // 승인·운영 BOM 에 오늘부터 붙는 줄은 언제 왜 붙었는지 남긴다
+            header.status === 'DRAFT' ? orNull(b.note) : (orNull(b.note) ?? `품목 등록 화면에서 ${today()} 추가`)).lastInsertRowid);
+        // 투입 공정(선택) — 고르면 BOP 에도 바로 연결한다. 안 고르면 미배정으로 남아 자재 점검(D-8·R-10)에 뜬다
+        let linkedOp = null;
+        if (orNull(b.op) !== null) {
+          const prs = q('SELECT id, op, product_code FROM processes WHERE op = ? ORDER BY id').all(String(b.op).trim());
+          if (!prs.length) throw new Error(`공정 ${b.op} 이 없습니다.`);
+          const pr = prs.find(x => !b.productCode || x.product_code === b.productCode) || prs[0];
+          const issue = q('SELECT c.def_issue_method m FROM item i JOIN mat_class c ON c.class_id = i.class_id WHERE i.item_id = ?').get(child.item_id)?.m || 'BACKFLUSH';
+          q(`INSERT INTO process_material (process_id, io, line_id, split_pct, issue_method, note) VALUES (?, 'IN', ?, 100, ?, ?)`)
+            .run(pr.id, lineId, issue, `품목 등록 화면에서 ${today()} 연결`);
+          linkedOp = pr.op;
+        }
+        return { header: headerJson(q(`${HEADER_SQL} WHERE h.bom_id = ?`).get(header.bom_id)), line: lineJson(lineById(lineId)), createdHeader: created, linkedOp };
+      });
+      afterChange();
+      res.status(201).json({ ok: true, ...out });
+    } catch (e) { fail(res, e); }
+  });
 
   // ── BOM 정전개 (Q-1, as-of · 트리 중첩) ──
   const uomBase = () => Object.fromEntries(q('SELECT uom_code, symbol, dim, base_uom, to_base FROM v_uom_base').all().map(u => [u.uom_code, u]));
