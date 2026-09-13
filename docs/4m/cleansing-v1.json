@@ -83,9 +83,9 @@
 
   "pn_pending": {
     "_note": "품번은 설계 권한. PM 이 쟁점 1·2 를 승인하기 전에는 tmp 로 적재한다. 승인 후 approved=true 로 바꾸고 적재기를 다시 돌리면 UPDATE item SET pn 만 일어난다",
-    "SC-1010P": { "tmp": "TMP-SC1010P", "issue": 2, "approved": false, "alt": null },
-    "FS-7023":  { "tmp": "TMP-FS7023",  "issue": 1, "approved": false, "alt": "FS-7020B" },
-    "PK-0010":  { "tmp": "TMP-PK0010",  "issue": 2, "approved": false, "alt": null }
+    "SC-1010P": { "tmp": "TMP-SC1010P", "issue": 2, "approved": true, "alt": null },
+    "FS-7023":  { "tmp": "TMP-FS7023",  "issue": 1, "approved": true, "alt": "FS-7020B" },
+    "PK-0010":  { "tmp": "TMP-PK0010",  "issue": 2, "approved": true, "alt": null }
   },
   "new_items": [
     { "pn": "SC-1010P", "name": "Stator Lamination (블랭킹편)", "name_ko": "스테이터 편", "spec": "규소강판 50W470 0.5t 낱장",
