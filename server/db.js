@@ -133,6 +133,39 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
   );
 
+  -- ── 스프린트 4: 거래처 마스터 (인터페이스 §12) ──
+  -- 매입처·매출처를 한 표로 둔다. 둘 다인 곳이 흔해서 구분을 BOTH 로 받는다(ERP 공통 관행).
+  -- 품목 연동(주거래처·공급사 품번·단가)은 품목 세부 등록 화면에서 item_partner 로 붙인다.
+  CREATE TABLE IF NOT EXISTS partners (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    code        TEXT NOT NULL UNIQUE,              -- 거래처 코드. 비우고 등록하면 P0001 부터 자동 채번
+    name        TEXT NOT NULL,                     -- 상호
+    kind        TEXT NOT NULL DEFAULT 'BUY' CHECK (kind IN ('BUY','SELL','BOTH','ETC')),
+                  -- BUY 매입 | SELL 매출 | BOTH 매입·매출 | ETC 기타(외주·운송·용역 등)
+    biz_no      TEXT,                              -- 사업자등록번호 000-00-00000 (검증: 형식 + 국세청 검증식)
+    ceo         TEXT,                              -- 대표자
+    biz_type    TEXT,                              -- 업태
+    biz_item    TEXT,                              -- 종목
+    tel         TEXT,
+    fax         TEXT,
+    email       TEXT,
+    zipcode     TEXT,
+    addr        TEXT,
+    mgr_name    TEXT,                              -- 우리 쪽이 상대하는 담당자
+    mgr_tel     TEXT,
+    mgr_email   TEXT,
+    pay_terms   TEXT,                              -- 결제조건 (현금 · 월말마감 익월말 등 자유 텍스트)
+    currency    TEXT NOT NULL DEFAULT 'KRW',
+    status      TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','HOLD','CLOSED')),
+                  -- ACTIVE 거래중 | HOLD 거래보류 | CLOSED 거래종료. 지우지 않고 상태로 관리한다(품목과 같은 규칙)
+    note        TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_partners_kind   ON partners(kind, status);
+  CREATE INDEX IF NOT EXISTS idx_partners_name   ON partners(name);
+  CREATE UNIQUE INDEX IF NOT EXISTS ux_partners_bizno ON partners(biz_no) WHERE biz_no IS NOT NULL AND biz_no <> '';
+
   -- ── 스프린트 2: 제품 공정(BOP) · 단품(BOM) (docs/team/인터페이스.md §7) ──
   -- 원천은 docs/bldc/bldc-500w-48v.json — POST /api/admin/bop/import 로 upsert. 설비는 equipments.op 로 공정에 연결.
   CREATE TABLE IF NOT EXISTS products (

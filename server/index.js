@@ -1246,6 +1246,23 @@ try {
   }
 }
 
+// ── 거래처 마스터 API (스프린트 4, 인터페이스 §12) — server/partners.js 의 registerPartners ──
+try {
+  const mod = await import('./partners.js');
+  if (typeof mod.registerPartners === 'function') {
+    mod.registerPartners(app, { requireAdmin, db });
+    console.log('[partners] server/partners.js 로드 — /api/admin/partners/* 등록');
+  } else {
+    console.warn('[partners] server/partners.js 에 registerPartners export가 없어 건너뜀');
+  }
+} catch (e) {
+  if (e?.code === 'ERR_MODULE_NOT_FOUND' && /partners\.js/.test(String(e.message))) {
+    console.log('[partners] server/partners.js 없음 — 거래처 API 미등록');
+  } else {
+    console.error('[partners] server/partners.js 로드 실패 — 거래처 API 미등록:', e?.message || e);
+  }
+}
+
 // ── 게임 상태 (메모리) ────────────────────────────────
 const players = new Map(); // socketId -> {userId, name, empNo, color, badge, x, y, moving}
 const CHAT_RADIUS = 2.4;   // 타일 단위 근접 반경

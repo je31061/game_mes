@@ -88,6 +88,7 @@
       if (b.dataset.tab === 'analytics') mountAnalytics();
       if (b.dataset.tab === 'materials') mountMaterials();
       if (b.dataset.tab === 'items') mountItems();
+      if (b.dataset.tab === 'partners') mountPartners();
     };
   });
 
@@ -117,6 +118,18 @@
     }
     box.innerHTML = `<h2>품목 등록 <small class="muted">품번 · 품목구분 · 사용기한 · 입고단위 · BOM 연결</small></h2>
       <p class="muted">등록 화면 모듈(js/items.js)이 아직 배치되지 않았습니다. API는 준비되어 있습니다 — <code>GET /api/admin/materials/item-groups</code> 등(인터페이스 §11).</p>`;
+  }
+
+  // ── 거래처 탭 훅 (스프린트 4, 인터페이스 §12): js/partners.js 가 window.FWPartners.mount(container, api) 를 제공 ──
+  function mountPartners() {
+    const box = $('tab-partners');
+    if (window.FWPartners && typeof window.FWPartners.mount === 'function') {
+      try { window.FWPartners.mount(box, api); }
+      catch (e) { console.error('[partners] mount 실패:', e); box.innerHTML = `<h2>거래처</h2><p class="muted">화면을 불러오지 못했습니다: ${esc(e.message)}</p>`; }
+      return;
+    }
+    box.innerHTML = `<h2>거래처 <small class="muted">매입 · 매출 · 매입/매출 · 기타</small></h2>
+      <p class="muted">거래처 화면 모듈(js/partners.js)이 아직 배치되지 않았습니다. API는 준비되어 있습니다 — <code>GET /api/admin/partners</code> 등(인터페이스 §12).</p>`;
   }
 
   // ── 실적 분석 탭 훅 (서지안, 인터페이스 §5): js/analytics.js 가 window.FWAnalytics.mount(container, api) 를 제공 ──
