@@ -1,5 +1,6 @@
 /* 품목 등록 화면 (스프린트 4) — 테마 변수만 쓴다: --text --muted --accent --run --idle --stop --panel --border --input
- * 자재 탭(.fwm-*)과 같은 규칙, 클래스 접두만 .fwi-* 로 분리한다. 외부 라이브러리 없음. */
+ * 자재 탭(.fwm-*)과 같은 규칙, 클래스 접두만 .fwi-* 로 분리한다. 외부 라이브러리 없음.
+ * 위쪽은 엑셀 같은 품목 시트(고정 머리글·격자선·정렬), 아래쪽은 행을 눌렀을 때 열리는 등록 폼이다. */
 .fwi { color: var(--text); }
 .fwi h2 small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; }
 .fwi code { font-size: 11px; background: color-mix(in srgb, var(--text) 8%, transparent); padding: 1px 4px; border-radius: 4px; }
@@ -7,40 +8,58 @@
 .fwi button { font: inherit; cursor: pointer; }
 .fwi button:disabled { opacity: .5; cursor: default; }
 
-.fwi-wrap { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 14px; align-items: start; }
-@media (max-width: 900px) { .fwi-wrap { grid-template-columns: 1fr; } }
-
-/* ── 왼쪽: 검색 · 구분 칩 · 목록 ── */
-.fwi-side { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-.fwi-search { display: flex; gap: 6px; }
-.fwi-search input { flex: 1; min-width: 0; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12.5px; }
-.fwi-search button, .fwi-foot button, .fwi-attach button {
+/* ── 상단 도구줄 · 구분 칩 ── */
+.fwi-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fwi-bar input { width: 260px; max-width: 100%; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12.5px; }
+.fwi-bar button, .fwi-foot button, .fwi-attach button {
   padding: 7px 12px; border-radius: 7px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
 .fwi button.ghost { border-color: var(--border); background: transparent; color: var(--muted); font-weight: 600; }
 .fwi button.ghost:hover { color: var(--accent); border-color: var(--accent); }
 .fwi button.sm { padding: 3px 9px; font-size: 11.5px; }
+.fwi-count { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; }
 
 .fwi-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 9px 0; }
 .fwi-chip { font-size: 11.5px; padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--muted); }
 .fwi-chip i { font-style: normal; font-variant-numeric: tabular-nums; opacity: .7; margin-left: 2px; }
 .fwi-chip.on, .fwi-chip:hover { color: var(--accent); border-color: var(--accent); }
 
-.fwi-list { max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.fwi-row { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto; gap: 6px; align-items: baseline; text-align: left;
-  padding: 6px 8px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--text); font-size: 12.5px; }
-.fwi-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
-.fwi-row.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.fwi-row .pn { font-weight: 700; font-variant-numeric: tabular-nums; }
-.fwi-row .nm { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fwi-row .tag { font-size: 10.5px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; white-space: nowrap; }
-.fwi-row .st { font-size: 10.5px; color: var(--idle); }
-.fwi-none { padding: 18px 10px; text-align: center; color: var(--muted); font-size: 12.5px; }
+/* ── 품목 시트 ── */
+.fwi-sheetwrap { border: 1px solid var(--border); border-radius: 10px; overflow: auto; max-height: 60vh; background: var(--panel); }
+.fwi-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+.fwi-sheet th, .fwi-sheet td { padding: 5px 9px; border-right: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); white-space: nowrap; }
+.fwi-sheet th:last-child, .fwi-sheet td:last-child { border-right: 0; }
+.fwi-sheet thead th { position: sticky; top: 0; z-index: 2; background: var(--panel2, var(--panel)); color: var(--muted);
+  font-size: 11px; font-weight: 700; letter-spacing: .3px; text-align: left; cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border); box-shadow: 0 1px 0 var(--border); }
+.fwi-sheet thead th:hover { color: var(--accent); }
+.fwi-sheet thead th.on { color: var(--accent); }
+.fwi-sheet thead th i { font-style: normal; font-size: 9px; margin-left: 3px; }
+.fwi-sheet td.no, .fwi-sheet th.no { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; width: 1%;
+  position: sticky; left: 0; background: var(--panel); z-index: 1; }
+.fwi-sheet thead th.no { z-index: 3; background: var(--panel2, var(--panel)); }
+.fwi-sheet tbody tr { cursor: pointer; }
+.fwi-sheet tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--text) 3%, transparent); }
+.fwi-sheet tbody tr:nth-child(even) td.no { background: color-mix(in srgb, var(--text) 3%, var(--panel)); }
+.fwi-sheet tbody tr:hover td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.fwi-sheet tbody tr:hover td.no { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+.fwi-sheet tbody tr.on td { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.fwi-sheet tbody tr.on td.no { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+.fwi-sheet tbody tr.off td { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.fwi-sheet td.mono { font-variant-numeric: tabular-nums; }
+.fwi-sheet td.b { font-weight: 700; }
+.fwi-sheet td.c { text-align: center; }
+.fwi-sheet td.r { text-align: right; font-variant-numeric: tabular-nums; }
+.fwi-sheet td.dim { color: var(--muted); }
+.fwi-ph { font-size: 10px; color: var(--idle); border: 1px solid var(--idle); border-radius: 4px; padding: 0 3px; }
+.fwi-none { padding: 22px 12px; text-align: center; color: var(--muted); font-size: 12.5px; white-space: normal; }
 
-/* ── 가운데: 폼 ── */
-.fwi-main { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+/* ── 등록 폼 (행을 누르면 열린다) ── */
+.fwi-main { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 14px; }
 .fwi-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
 .fwi-head b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.fwi-head button { margin-left: auto; align-self: center; }
 .fwi-sub { font-size: 11.5px; color: var(--muted); }
 
 .fwi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 16px; margin: 14px 0; }
@@ -60,7 +79,7 @@
 .fwi-msg.ok { color: var(--run); }
 .fwi-msg.bad { color: var(--stop); }
 
-/* ── 아래: BOM 연결 ── */
+/* ── BOM 연결 ── */
 .fwi-bom { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
 .fwi-bomhead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .fwi-bomhead b { font-size: 13px; }
@@ -72,7 +91,7 @@
 .fwi-badge { font-size: 10.5px; border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; color: var(--muted); }
 .fwi-badge.on { color: var(--run); border-color: var(--run); }
 .fwi-attach { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-.fwi-attach input { padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12.5px; }
+.fwi-attach input, .fwi-attach select { padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 12.5px; font-family: inherit; }
 .fwi-attach input#fwi-parent { min-width: 180px; }
 .fwi-attach input#fwi-qty { width: 100px; }
 .fwi-attach span, .fwi-attach b { font-size: 12px; color: var(--muted); }

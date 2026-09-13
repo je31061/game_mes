@@ -1,17 +1,18 @@
 /* 품목 등록 (스프린트 4) — window.FWItems = { mount(container, api) }
  *
- * 자재 탭(js/materials.js)은 이미 있는 기준을 보는 화면이다. 이 화면은 그 반대 — 품번 하나를 새로 만들고 BOM 에 붙이는 일만 한다.
- * 그래서 필수는 세 칸(품번·품명·품목구분)뿐이고, 품목구분을 고르면 분류·조달·추적·사용기한 기본값이 서버(GET item-groups)가 준 값으로 따라온다.
+ * 자재 탭(js/materials.js)은 이미 있는 기준을 보는 화면이다. 이 화면은 반대 — 품번 하나를 새로 만들고 BOM 에 붙인다.
+ * 구성: 위쪽 **품목 시트**(엑셀처럼 한 화면에 전부 — 고정 머리글·머리글 클릭 정렬·CSV 내보내기) + 행을 누르면 아래에 등록/수정 폼과 BOM 연결.
+ * 필수는 세 칸(품번·품명·품목구분)뿐이고, 품목구분을 고르면 분류·조달·추적·사용기한 기본값이 서버(GET item-groups)가 준 값으로 따라온다.
  * 사용자가 직접 건드린 칸은 다시 덮어쓰지 않는다(touched).
  *
  * 쓰는 API (인터페이스 §11):
  *   GET  /api/admin/materials/item-groups     품목구분 9종 + 각 구분의 분류 후보·기본값
- *   GET  /api/admin/materials/uom             기준단위
- *   GET  /api/admin/materials/items?q=&group= 목록
+ *   GET  /api/admin/materials/uom · /process  기준단위 · 공정 목록
+ *   GET  /api/admin/materials/items?q=&group= 시트 (usedIn·hasBom 포함)
  *   GET  /api/admin/materials/items/:pn       상세 (whereUsed 포함)
  *   POST /api/admin/materials/items           등록·수정(품번 기준 upsert)
  *   PUT  /api/admin/materials/items/:pn       품번을 바꿀 때
- *   POST /api/admin/materials/bom-attach      상위 품목 BOM 에 이 품목을 한 줄 붙인다
+ *   POST /api/admin/materials/bom-attach      상위 품목 BOM 에 이 품목을 한 줄 붙인다 (+ 선택 시 투입 공정)
  *   PUT/DELETE /api/admin/materials/bom-lines/:id   BOM 에서 빼기 (운영 BOM 은 유효일로 끊는다)
  */
 (function () {
@@ -21,6 +22,7 @@
   const TRACE = [['NONE', '관리 안 함'], ['LOT', '로트(묶음) 관리'], ['SERIAL', '시리얼(개체) 관리']];
   const SOURCE = [['BUY', '구매'], ['MAKE', '생산'], ['BOTH', '구매·생산 둘 다']];
   const STATUS = [['ACTIVE', '사용'], ['DRAFT', '작성중'], ['BLOCKED', '사용중지'], ['OBSOLETE', '단종']];
+  const SHORT = { NONE: '—', LOT: '로트', SERIAL: '시리얼', BUY: '구매', MAKE: '생산', BOTH: '구매·생산' };
   const num = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
 
   // 서버(트리거)가 내는 규칙 위반 메시지를 현장 말로 바꾼다. 원문은 뒤에 괄호로 남겨 근거를 잃지 않는다.
@@ -38,8 +40,29 @@
     return hit ? `${hit[1]} (${m})` : m;
   };
 
+  const fmt = (n) => (n === null || n === undefined ? '' : String(Number(n)));
+  const statusName = (c) => (STATUS.find((s) => s[0] === c) || [c, c])[1];
+
+  // 시트 열 정의 — 이 배열 하나가 화면·정렬·CSV 를 동시에 정한다
+  const COLS = [
+    { key: 'pn', label: '품번', cls: 'mono b', get: (i) => i.pn },
+    { key: 'name', label: '품명', get: (i) => i.nameKo || i.name },
+    { key: 'group', label: '품목구분', cls: 'c', get: (i) => i.groupName || i.kind },
+    { key: 'className', label: '분류', cls: 'dim', get: (i) => i.className },
+    { key: 'spec', label: '규격·재질', cls: 'dim', get: (i) => i.spec || '' },
+    { key: 'uom', label: '기준단위', cls: 'c', get: (i) => i.uomSymbol || i.uom },
+    { key: 'inUom', label: '입고단위', cls: 'c dim', get: (i) => (i.inUom ? `${i.inUom} = ${fmt(i.inQty)} ${i.uomSymbol || i.uom}` : '') },
+    { key: 'shelfLifeEffective', label: '사용기한', cls: 'r', sort: (i) => i.shelfLifeEffective ?? -1,
+      get: (i) => (i.shelfLifeEffective ? `${i.shelfLifeEffective}일${i.shelfLifeSource === 'class' ? '*' : ''}` : '') },
+    { key: 'traceKind', label: '추적', cls: 'c dim', get: (i) => SHORT[i.traceKind] || i.traceKind },
+    { key: 'sourceType', label: '조달', cls: 'c dim', get: (i) => SHORT[i.sourceType] || i.sourceType },
+    { key: 'usedIn', label: '쓰이는 곳', cls: 'r', sort: (i) => i.usedIn ?? -1, get: (i) => (i.usedIn ? `${i.usedIn}곳` : '') },
+    { key: 'hasBom', label: '자체 BOM', cls: 'c dim', sort: (i) => (i.hasBom ? 1 : 0), get: (i) => (i.hasBom ? '있음' : '') },
+    { key: 'status', label: '상태', cls: 'c', get: (i) => statusName(i.status) },
+  ];
+
   let api = null, root = null;
-  const S = { groups: [], uoms: [], procs: [], items: [], sel: null, filter: '', group: '', touched: new Set(), busy: false };
+  const S = { groups: [], uoms: [], procs: [], items: [], sel: null, filter: '', group: '', sort: { key: 'pn', dir: 1 }, touched: new Set(), busy: false };
 
   function mount(container, apiFn) {
     api = apiFn; root = container;
@@ -51,35 +74,37 @@
   function skeleton() {
     root.innerHTML = `
       <div class="fwi">
-        <h2>품목 등록 <small>품번을 만들고 BOM 에 붙인다 · 보기·전개는 🧩 자재 탭</small></h2>
-        <div class="fwi-wrap">
-          <aside class="fwi-side">
-            <div class="fwi-search">
-              <input id="fwi-q" placeholder="품번·품명 검색" autocomplete="off">
-              <button id="fwi-new" type="button">+ 새 품목</button>
-            </div>
-            <div class="fwi-chips" id="fwi-chips"></div>
-            <div class="fwi-list" id="fwi-list"></div>
-          </aside>
-          <section class="fwi-main">
-            <div class="fwi-head">
-              <b id="fwi-title">새 품목</b>
-              <span class="fwi-sub" id="fwi-sub">필수는 품번 · 품명 · 품목구분 세 칸입니다. 나머지는 구분을 고르면 채워집니다.</span>
-            </div>
-            <div class="fwi-grid" id="fwi-grid"></div>
-            <div class="fwi-foot">
-              <button id="fwi-save" type="button">저장</button>
-              <button id="fwi-reset" type="button" class="ghost">되돌리기</button>
-              <span id="fwi-msg" class="fwi-msg"></span>
-            </div>
-            <div class="fwi-bom" id="fwi-bom"></div>
-          </section>
+        <h2>품목 등록 <small>품번을 만들고 BOM 에 붙인다 · 전개·로트 계보는 🧩 자재 탭</small></h2>
+        <div class="fwi-bar">
+          <input id="fwi-q" placeholder="품번·품명·규격 검색" autocomplete="off">
+          <button id="fwi-new" type="button">+ 새 품목</button>
+          <button id="fwi-csv" type="button" class="ghost">⬇ 엑셀(CSV)</button>
+          <span class="fwi-count" id="fwi-count"></span>
         </div>
+        <div class="fwi-chips" id="fwi-chips"></div>
+        <div class="fwi-sheetwrap"><table class="fwi-sheet" id="fwi-sheet"></table></div>
+        <p class="fwi-hint" id="fwi-sheethint">머리글을 누르면 그 열로 정렬합니다. 행을 누르면 아래에서 고칠 수 있습니다. 사용기한의 <b>*</b> 는 분류 기본값을 상속한 값입니다.</p>
+        <section class="fwi-main" id="fwi-editor" hidden>
+          <div class="fwi-head">
+            <b id="fwi-title">새 품목</b>
+            <span class="fwi-sub" id="fwi-sub"></span>
+            <button id="fwi-close" type="button" class="ghost sm">닫기</button>
+          </div>
+          <div class="fwi-grid" id="fwi-grid"></div>
+          <div class="fwi-foot">
+            <button id="fwi-save" type="button">저장</button>
+            <button id="fwi-reset" type="button" class="ghost">되돌리기</button>
+            <span id="fwi-msg" class="fwi-msg"></span>
+          </div>
+          <div class="fwi-bom" id="fwi-bom"></div>
+        </section>
       </div>`;
-    root.querySelector('#fwi-q').addEventListener('input', (e) => { S.filter = e.target.value.trim(); loadList(); });
-    root.querySelector('#fwi-new').onclick = () => { S.sel = null; S.touched.clear(); renderForm(); renderBom(); msg(''); };
-    root.querySelector('#fwi-reset').onclick = () => { S.touched.clear(); renderForm(); msg(''); };
-    root.querySelector('#fwi-save').onclick = save;
+    $('fwi-q').addEventListener('input', (e) => { S.filter = e.target.value.trim(); loadList(); });
+    $('fwi-new').onclick = () => { S.sel = null; S.touched.clear(); openEditor(); msg(''); };
+    $('fwi-close').onclick = () => { S.sel = null; $('fwi-editor').hidden = true; renderSheet(); };
+    $('fwi-csv').onclick = exportCsv;
+    $('fwi-reset').onclick = () => { S.touched.clear(); renderForm(); msg(''); };
+    $('fwi-save').onclick = save;
   }
 
   async function reload() {
@@ -88,7 +113,7 @@
       api('/api/admin/materials/process').catch(() => []),
     ]);
     S.groups = groups; S.uoms = uoms; S.procs = Array.isArray(procs) ? procs : [];
-    renderChips(); renderForm(); renderBom();
+    renderChips();
     await loadList();
   }
 
@@ -99,7 +124,7 @@
     el.textContent = text || ''; el.className = 'fwi-msg' + (text ? (bad ? ' bad' : ' ok') : '');
   }
 
-  // ── 왼쪽: 구분 칩 + 목록 ──────────────────────────────────────────────────
+  // ── 구분 칩 ───────────────────────────────────────────────────────────────
   function renderChips() {
     $('fwi-chips').innerHTML = [`<button type="button" class="fwi-chip${S.group ? '' : ' on'}" data-g="">전체</button>`]
       .concat(S.groups.map((g) => `<button type="button" class="fwi-chip${S.group === g.code ? ' on' : ''}" data-g="${esc(g.code)}" title="${esc(g.hint)}">${esc(g.name)} <i>${g.itemCount}</i></button>`))
@@ -109,6 +134,7 @@
     });
   }
 
+  // ── 품목 시트 ─────────────────────────────────────────────────────────────
   async function loadList() {
     const qs = new URLSearchParams();
     if (S.filter) qs.set('q', S.filter);
@@ -116,37 +142,82 @@
     try {
       S.items = await api('/api/admin/materials/items' + (qs.toString() ? '?' + qs : ''));
     } catch (e) { S.items = []; msg(plain(e.message), true); }
-    const box = $('fwi-list');
-    if (!S.items.length) { box.innerHTML = `<p class="fwi-none">해당하는 품목이 없습니다.</p>`; return; }
-    box.innerHTML = S.items.map((i) => `
-      <button type="button" class="fwi-row${S.sel && S.sel.pn === i.pn ? ' on' : ''}" data-pn="${esc(i.pn)}">
-        <span class="pn">${esc(i.pn)}</span>
-        <span class="nm">${esc(i.nameKo || i.name)}</span>
-        <span class="tag">${esc(i.groupName || i.kind)}</span>
-        ${i.status === 'ACTIVE' ? '' : `<span class="st">${esc(statusName(i.status))}</span>`}
-      </button>`).join('');
-    box.querySelectorAll('.fwi-row').forEach((b) => { b.onclick = () => select(b.dataset.pn); });
+    renderSheet();
+  }
+
+  function sorted() {
+    const c = COLS.find((x) => x.key === S.sort.key) || COLS[0];
+    const key = c.sort || ((i) => String(c.get(i) ?? '').toLowerCase());
+    return S.items.slice().sort((a, b) => {
+      const x = key(a), y = key(b);
+      if (x === y) return String(a.pn).localeCompare(String(b.pn));
+      return (x > y ? 1 : -1) * S.sort.dir;
+    });
+  }
+
+  function renderSheet() {
+    const rows = sorted();
+    $('fwi-count').textContent = S.items.length
+      ? `${S.items.length}건${S.group ? ` · ${S.groups.find((g) => g.code === S.group)?.name || ''}` : ''}${S.filter ? ` · "${S.filter}"` : ''}`
+      : '';
+    const head = `<thead><tr><th class="no">#</th>${COLS.map((c) =>
+      `<th data-k="${c.key}" class="${S.sort.key === c.key ? 'on' : ''}">${esc(c.label)}<i>${S.sort.key === c.key ? (S.sort.dir > 0 ? '▲' : '▼') : ''}</i></th>`).join('')}</tr></thead>`;
+    const body = rows.length
+      ? `<tbody>${rows.map((i, n) => `
+          <tr data-pn="${esc(i.pn)}" class="${S.sel && S.sel.pn === i.pn ? 'on' : ''}${i.status === 'OBSOLETE' || i.status === 'BLOCKED' ? ' off' : ''}">
+            <td class="no">${n + 1}</td>
+            ${COLS.map((c) => `<td class="${c.cls || ''}">${esc(c.get(i) ?? '')}${c.key === 'pn' && i.isPhantom ? ' <span class="fwi-ph">팬텀</span>' : ''}</td>`).join('')}
+          </tr>`).join('')}</tbody>`
+      : `<tbody><tr><td class="fwi-none" colspan="${COLS.length + 1}">해당하는 품목이 없습니다. 위 [+ 새 품목]으로 등록하세요.</td></tr></tbody>`;
+    $('fwi-sheet').innerHTML = head + body;
+    $('fwi-sheet').querySelectorAll('th[data-k]').forEach((th) => {
+      th.onclick = () => {
+        const k = th.dataset.k;
+        S.sort = { key: k, dir: S.sort.key === k ? -S.sort.dir : 1 };
+        renderSheet();
+      };
+    });
+    $('fwi-sheet').querySelectorAll('tr[data-pn]').forEach((tr) => { tr.onclick = () => select(tr.dataset.pn); });
     datalistParents();
   }
-  const statusName = (c) => (STATUS.find((s) => s[0] === c) || [c, c])[1];
 
-  // keepMsg: 저장·붙이기 직후에는 방금 띄운 안내를 지우지 않는다 (상세를 다시 읽어도 결과 문구가 남아야 한다)
+  // 엑셀에서 바로 열리도록 UTF-8 BOM 을 붙인다 (한글 깨짐 방지)
+  function exportCsv() {
+    if (!S.items.length) return;
+    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [['#'].concat(COLS.map((c) => c.label)).map(cell).join(',')]
+      .concat(sorted().map((i, n) => [n + 1].concat(COLS.map((c) => c.get(i) ?? '')).map(cell).join(',')));
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `품목목록-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // keepMsg: 저장·붙이기 직후에는 방금 띄운 안내를 지우지 않는다
   async function select(pn, keepMsg) {
     try {
       const d = await api('/api/admin/materials/items/' + encodeURIComponent(pn));
       S.sel = d.item; S.sel.whereUsed = d.whereUsed || []; S.sel.headers = d.headers || [];
-      S.touched.clear(); renderForm(); renderBom();
+      S.touched.clear(); openEditor();
       if (!keepMsg) msg('');
       loadList();
     } catch (e) { msg(plain(e.message), true); }
   }
 
-  // ── 가운데: 등록 폼 ────────────────────────────────────────────────────────
+  function openEditor() {
+    $('fwi-editor').hidden = false;
+    renderForm(); renderBom();
+    if (!S.sel) { $('fwi-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); setTimeout(() => $('fwi-pn') && $('fwi-pn').focus(), 250); }
+  }
+
+  // ── 등록 폼 ───────────────────────────────────────────────────────────────
   const opts = (pairs, sel) => pairs.map(([v, t]) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(t)}</option>`).join('');
 
   function renderForm() {
     const it = S.sel, g = groupOf(it ? it.group : (S.groups[0] || {}).code);
-    $('fwi-title').textContent = it ? `${it.pn}` : '새 품목';
+    $('fwi-title').textContent = it ? it.pn : '새 품목';
     $('fwi-sub').textContent = it
       ? `${it.groupName || it.kind} · 등록 ${String(it.createdAt || '').slice(0, 10)}${it.isTmp ? ' · 임시 품번(TMP-)' : ''}`
       : '필수는 품번 · 품명 · 품목구분 세 칸입니다. 나머지는 구분을 고르면 채워집니다.';
@@ -176,7 +247,7 @@
           <input id="fwi-inqty" type="number" min="0" step="any" value="${it && it.inQty != null ? it.inQty : ''}" placeholder="1">
           <b id="fwi-inbase"></b>
         </div>
-        <small id="fwi-inprev">사는 단위와 쓰는 단위가 다를 때만 적습니다. 예) 1 BOX = 100 EA</small>
+        <small id="fwi-inprev"></small>
         <datalist id="fwi-inuoms"><option value="BOX"><option value="CASE"><option value="ROLL"><option value="CAN"><option value="BAG"><option value="PLT"><option value="DRUM"></datalist></label>
       <label>사용기한
         <div class="fwi-inline"><input id="fwi-shelf" type="number" min="1" step="1" value="${it && it.shelfLifeDays != null ? it.shelfLifeDays : ''}" placeholder="무기한"><span>일</span></div>
@@ -198,6 +269,7 @@
     $('fwi-uom').addEventListener('change', inPreview);
     $('fwi-inuom').addEventListener('input', inPreview);
     $('fwi-inqty').addEventListener('input', inPreview);
+    $('fwi-shelf').addEventListener('input', shelfHint);
     $('fwi-pn').addEventListener('input', () => { const e = $('fwi-pn'); e.value = e.value.replace(/\s+/g, ''); });
     inPreview(); shelfHint();
   }
@@ -263,7 +335,7 @@
     finally { S.busy = false; const b = $('fwi-save'); if (b) b.disabled = false; }
   }
 
-  // ── 아래: BOM 연결 ────────────────────────────────────────────────────────
+  // ── BOM 연결 ──────────────────────────────────────────────────────────────
   function datalistParents() {
     const dl = root.querySelector('#fwi-parents');
     if (dl) dl.innerHTML = S.items.map((i) => `<option value="${esc(i.pn)}">${esc(i.nameKo || i.name)}</option>`).join('');
@@ -315,7 +387,7 @@
       const r = await api('/api/admin/materials/bom-attach', {
         method: 'POST', body: JSON.stringify({ parentPn, childPn: S.sel.pn, qtyPer: qty, uom: S.sel.uom, op: op || null }),
       });
-      // 작성중이던 품목은 BOM 에 자리를 잡는 순간 사용으로 올린다 (쓰이지 않는 ACTIVE 품목은 자재 점검에서 고아 R-4 로 잡힌다)
+      // 작성중이던 품목은 BOM 에 자리를 잡는 순간 사용으로 올린다 (쓰이지 않는 ACTIVE 품목은 점검 R-4 로 잡힌다)
       let promoted = false;
       if (S.sel.status === 'DRAFT') {
         await api('/api/admin/materials/items/' + encodeURIComponent(S.sel.pn), { method: 'PUT', body: JSON.stringify({ status: 'ACTIVE' }) });

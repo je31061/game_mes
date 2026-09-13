@@ -384,6 +384,8 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
       shelfLifeDays: shelf, shelfLifeSource: shelf !== null ? 'item' : (r.class_shelf_life ? 'class' : null),
       shelfLifeEffective: shelf ?? r.class_shelf_life ?? null,
       inUom: r.in_uom || null, inQty: r.in_qty ?? null,
+      // 시트에서 쓰는 요약 2개 (목록 쿼리에서만 채워진다)
+      ...(r.used_in === undefined ? {} : { usedIn: r.used_in, hasBom: !!r.own_bom }),
     };
   };
   const headerJson = (h) => ({
@@ -499,7 +501,9 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
       if (g) { where.push(`(i.item_group = ? OR (i.item_group IS NULL AND i.item_type = ? AND i.source_type = ?))`); p.push(gc, g.itemType, g.sourceType); }
     }
     const rows = q(`
-      SELECT i.*, c.class_code, c.name AS class_name, c.shelf_life_days AS class_shelf_life, COALESCE(u.symbol, u.uom_code) AS uom_symbol
+      SELECT i.*, c.class_code, c.name AS class_name, c.shelf_life_days AS class_shelf_life, COALESCE(u.symbol, u.uom_code) AS uom_symbol,
+             (SELECT COUNT(*) FROM bom_line l WHERE l.child_item_id = i.item_id AND l.valid_to >= date('now')) AS used_in,
+             (SELECT COUNT(*) FROM bom_header h WHERE h.parent_item_id = i.item_id AND h.status <> 'OBSOLETE') AS own_bom
         FROM item i JOIN mat_class c ON c.class_id = i.class_id JOIN uom u ON u.uom_code = i.base_uom
        ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY i.item_type, i.pn`).all(...p);
     res.json(rows.map(itemJson));
