@@ -1,7 +1,7 @@
 /* 품목 등록 화면 (스프린트 4) — 테마 변수만 쓴다: --text --muted --accent --run --idle --stop --panel --border --input
  * 자재 탭(.fwm-*)과 같은 규칙, 클래스 접두만 .fwi-* 로 분리한다. 외부 라이브러리 없음.
  * 위쪽은 엑셀 같은 품목 시트(고정 머리글·격자선·정렬), 아래쪽은 행을 눌렀을 때 열리는 등록 폼이다. */
-.fwi { color: var(--text); }
+.fwi { color: var(--text); container-type: inline-size; container-name: fwi; }
 .fwi h2 small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; }
 .fwi code { font-size: 11px; background: color-mix(in srgb, var(--text) 8%, transparent); padding: 1px 4px; border-radius: 4px; }
 .fwi .muted { color: var(--muted); }
@@ -54,6 +54,28 @@
 .fwi-sheet td.dim { color: var(--muted); }
 .fwi-ph { font-size: 10px; color: var(--idle); border: 1px solid var(--idle); border-radius: 4px; padding: 0 3px; }
 .fwi-none { padding: 22px 12px; text-align: center; color: var(--muted); font-size: 12.5px; white-space: normal; }
+
+/* 번호(#)와 품번은 가로로 밀어도 붙어 있는다 — 어느 줄을 보고 있는지 잃지 않게 */
+.fwi-sheet .no { width: 38px; min-width: 38px; }
+.fwi-sheet td.stick, .fwi-sheet th.stick { position: sticky; left: 38px; z-index: 1; background: var(--panel); }
+.fwi-sheet thead th.stick { z-index: 3; background: var(--panel2, var(--panel)); }
+.fwi-sheet tbody tr:nth-child(even) td.stick { background: color-mix(in srgb, var(--text) 3%, var(--panel)); }
+.fwi-sheet tbody tr:hover td.stick { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+.fwi-sheet tbody tr.on td.stick { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+
+/* 화면(정확히는 탭 폭)에 따라 덜 중요한 열부터 숨는다. pri1 = 품번·품명·품목구분·상태는 항상 남는다.
+ * 뷰포트가 아니라 컨테이너 기준이라 사이드바가 접히거나 창을 반으로 나눠도 맞게 동작한다. */
+@container fwi (max-width: 1340px) { .fwi-sheet .pri4 { display: none; } }
+@container fwi (max-width: 1080px) { .fwi-sheet .pri3 { display: none; } }
+@container fwi (max-width: 820px)  { .fwi-sheet .pri2 { display: none; } }
+@container fwi (max-width: 620px) {
+  .fwi-sheet th, .fwi-sheet td { padding: 5px 6px; font-size: 12px; }
+  .fwi-sheet td.stick, .fwi-sheet th.stick { position: static; }   /* 좁으면 고정이 오히려 자리를 먹는다 */
+  .fwi-bar input { width: 100%; }
+  .fwi-count { margin-left: 0; }
+}
+/* @container 를 모르는 브라우저용 최소 안전장치 — 아주 좁으면 뷰포트 기준으로도 숨긴다 */
+@media (max-width: 900px) { .fwi-sheet .pri4 { display: none; } }
 
 /* ── 등록 폼 (행을 누르면 열린다) ── */
 .fwi-main { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 14px; }

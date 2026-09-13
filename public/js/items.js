@@ -41,25 +41,34 @@
   };
 
   const fmt = (n) => (n === null || n === undefined ? '' : String(Number(n)));
+  // 사용기간 날짜 계산 (서버와 같은 규칙 — UTC 정오 기준)
+  const DAY = 86400000;
+  const asUtc = (d) => Date.parse(String(d).slice(0, 10) + 'T12:00:00Z');
+  const addDays = (from, days) => new Date(asUtc(from) + days * DAY).toISOString().slice(0, 10);
+  const diffDays = (from, to) => Math.round((asUtc(to) - asUtc(from)) / DAY);
+  const today = () => new Date().toISOString().slice(0, 10);
   const statusName = (c) => (STATUS.find((s) => s[0] === c) || [c, c])[1];
 
-  // 시트 열 정의 — 이 배열 하나가 화면·정렬·CSV 를 동시에 정한다
+  // 시트 열 정의 — 이 배열 하나가 화면·정렬·CSV 를 동시에 정한다.
+  // pri: 화면이 좁아질 때 지워지는 순서(4 가 가장 먼저 숨는다). 1 은 어떤 폭에서도 남는다 — CSS 의 @container 와 짝이다.
   const COLS = [
-    { key: 'pn', label: '품번', cls: 'mono b', get: (i) => i.pn },
-    { key: 'name', label: '품명', get: (i) => i.nameKo || i.name },
-    { key: 'group', label: '품목구분', cls: 'c', get: (i) => i.groupName || i.kind },
-    { key: 'className', label: '분류', cls: 'dim', get: (i) => i.className },
-    { key: 'spec', label: '규격·재질', cls: 'dim', get: (i) => i.spec || '' },
-    { key: 'uom', label: '기준단위', cls: 'c', get: (i) => i.uomSymbol || i.uom },
-    { key: 'inUom', label: '입고단위', cls: 'c dim', get: (i) => (i.inUom ? `${i.inUom} = ${fmt(i.inQty)} ${i.uomSymbol || i.uom}` : '') },
-    { key: 'shelfLifeEffective', label: '사용기한', cls: 'r', sort: (i) => i.shelfLifeEffective ?? -1,
-      get: (i) => (i.shelfLifeEffective ? `${i.shelfLifeEffective}일${i.shelfLifeSource === 'class' ? '*' : ''}` : '') },
-    { key: 'traceKind', label: '추적', cls: 'c dim', get: (i) => SHORT[i.traceKind] || i.traceKind },
-    { key: 'sourceType', label: '조달', cls: 'c dim', get: (i) => SHORT[i.sourceType] || i.sourceType },
-    { key: 'usedIn', label: '쓰이는 곳', cls: 'r', sort: (i) => i.usedIn ?? -1, get: (i) => (i.usedIn ? `${i.usedIn}곳` : '') },
-    { key: 'hasBom', label: '자체 BOM', cls: 'c dim', sort: (i) => (i.hasBom ? 1 : 0), get: (i) => (i.hasBom ? '있음' : '') },
-    { key: 'status', label: '상태', cls: 'c', get: (i) => statusName(i.status) },
+    { key: 'pn', label: '품번', cls: 'mono b stick', pri: 1, get: (i) => i.pn },
+    { key: 'name', label: '품명', pri: 1, get: (i) => i.nameKo || i.name },
+    { key: 'group', label: '품목구분', cls: 'c', pri: 1, get: (i) => i.groupName || i.kind },
+    { key: 'className', label: '분류', cls: 'dim', pri: 4, get: (i) => i.className },
+    { key: 'spec', label: '규격·재질', cls: 'dim', pri: 4, get: (i) => i.spec || '' },
+    { key: 'uom', label: '기준단위', cls: 'c', pri: 2, get: (i) => i.uomSymbol || i.uom },
+    { key: 'inUom', label: '입고단위', cls: 'c dim', pri: 3, get: (i) => (i.inUom ? `${i.inUom} = ${fmt(i.inQty)} ${i.uomSymbol || i.uom}` : '') },
+    { key: 'useFrom', label: '사용 시작일', cls: 'c dim', pri: 3, get: (i) => i.useFrom || '' },
+    { key: 'useToEffective', label: '사용 종료일', cls: 'c', pri: 2, sort: (i) => i.useToEffective || '9999-99-99',
+      get: (i) => (i.useToEffective ? `${i.useToEffective}${i.useToSource === 'class' ? '*' : ''}` : '무기한') },
+    { key: 'traceKind', label: '추적', cls: 'c dim', pri: 4, get: (i) => SHORT[i.traceKind] || i.traceKind },
+    { key: 'sourceType', label: '조달', cls: 'c dim', pri: 3, get: (i) => SHORT[i.sourceType] || i.sourceType },
+    { key: 'usedIn', label: '쓰이는 곳', cls: 'r', pri: 2, sort: (i) => i.usedIn ?? -1, get: (i) => (i.usedIn ? `${i.usedIn}곳` : '') },
+    { key: 'hasBom', label: '자체 BOM', cls: 'c dim', pri: 4, sort: (i) => (i.hasBom ? 1 : 0), get: (i) => (i.hasBom ? '있음' : '') },
+    { key: 'status', label: '상태', cls: 'c', pri: 1, get: (i) => statusName(i.status) },
   ];
+  const colCls = (c, extra) => [c.cls || '', 'pri' + (c.pri || 1), extra || ''].filter(Boolean).join(' ');
 
   let api = null, root = null;
   const S = { groups: [], uoms: [], procs: [], items: [], sel: null, filter: '', group: '', sort: { key: 'pn', dir: 1 }, touched: new Set(), busy: false };
@@ -83,7 +92,7 @@
         </div>
         <div class="fwi-chips" id="fwi-chips"></div>
         <div class="fwi-sheetwrap"><table class="fwi-sheet" id="fwi-sheet"></table></div>
-        <p class="fwi-hint" id="fwi-sheethint">머리글을 누르면 그 열로 정렬합니다. 행을 누르면 아래에서 고칠 수 있습니다. 사용기한의 <b>*</b> 는 분류 기본값을 상속한 값입니다.</p>
+        <p class="fwi-hint" id="fwi-sheethint">머리글을 누르면 그 열로 정렬합니다. 행을 누르면 아래에서 고칠 수 있습니다. 사용 종료일의 <b>*</b> 는 저장된 값이 아니라 분류 기본 일수로 계산해 보여 주는 날짜입니다. 화면이 좁아지면 덜 중요한 열부터 숨습니다.</p>
         <section class="fwi-main" id="fwi-editor" hidden>
           <div class="fwi-head">
             <b id="fwi-title">새 품목</b>
@@ -161,12 +170,12 @@
       ? `${S.items.length}건${S.group ? ` · ${S.groups.find((g) => g.code === S.group)?.name || ''}` : ''}${S.filter ? ` · "${S.filter}"` : ''}`
       : '';
     const head = `<thead><tr><th class="no">#</th>${COLS.map((c) =>
-      `<th data-k="${c.key}" class="${S.sort.key === c.key ? 'on' : ''}">${esc(c.label)}<i>${S.sort.key === c.key ? (S.sort.dir > 0 ? '▲' : '▼') : ''}</i></th>`).join('')}</tr></thead>`;
+      `<th data-k="${c.key}" class="${colCls(c, S.sort.key === c.key ? 'on' : '')}">${esc(c.label)}<i>${S.sort.key === c.key ? (S.sort.dir > 0 ? '▲' : '▼') : ''}</i></th>`).join('')}</tr></thead>`;
     const body = rows.length
       ? `<tbody>${rows.map((i, n) => `
           <tr data-pn="${esc(i.pn)}" class="${S.sel && S.sel.pn === i.pn ? 'on' : ''}${i.status === 'OBSOLETE' || i.status === 'BLOCKED' ? ' off' : ''}">
             <td class="no">${n + 1}</td>
-            ${COLS.map((c) => `<td class="${c.cls || ''}">${esc(c.get(i) ?? '')}${c.key === 'pn' && i.isPhantom ? ' <span class="fwi-ph">팬텀</span>' : ''}</td>`).join('')}
+            ${COLS.map((c) => `<td class="${colCls(c)}">${esc(c.get(i) ?? '')}${c.key === 'pn' && i.isPhantom ? ' <span class="fwi-ph">팬텀</span>' : ''}</td>`).join('')}
           </tr>`).join('')}</tbody>`
       : `<tbody><tr><td class="fwi-none" colspan="${COLS.length + 1}">해당하는 품목이 없습니다. 위 [+ 새 품목]으로 등록하세요.</td></tr></tbody>`;
     $('fwi-sheet').innerHTML = head + body;
@@ -249,8 +258,12 @@
         </div>
         <small id="fwi-inprev"></small>
         <datalist id="fwi-inuoms"><option value="BOX"><option value="CASE"><option value="ROLL"><option value="CAN"><option value="BAG"><option value="PLT"><option value="DRUM"></datalist></label>
-      <label>사용기한
-        <div class="fwi-inline"><input id="fwi-shelf" type="number" min="1" step="1" value="${it && it.shelfLifeDays != null ? it.shelfLifeDays : ''}" placeholder="무기한"><span>일</span></div>
+      <label>사용기간
+        <div class="fwi-inline">
+          <input id="fwi-usefrom" type="date" value="${esc(it ? it.useFrom || '' : today())}">
+          <span>~</span>
+          <input id="fwi-useto" type="date" value="${esc(it ? it.useTo || '' : '')}">
+        </div>
         <small id="fwi-shelfhint"></small></label>
       <label>추적 단위
         <select id="fwi-trace">${opts(TRACE, it ? it.traceKind : g.traceKind)}</select>
@@ -262,14 +275,15 @@
         <small>새 품목은 <b>작성중</b>으로 시작합니다. 아래에서 BOM 에 붙이면 <b>사용</b>으로 바뀝니다. 품목은 지우지 않고 <b>단종</b>으로 바꿉니다.</small></label>`;
 
     fillClasses(it ? it.group : g.code, it ? it.classId : null);
-    ['fwi-class', 'fwi-uom', 'fwi-trace', 'fwi-source', 'fwi-shelf', 'fwi-inuom', 'fwi-inqty'].forEach((id) => {
+    ['fwi-class', 'fwi-uom', 'fwi-trace', 'fwi-source', 'fwi-usefrom', 'fwi-useto', 'fwi-inuom', 'fwi-inqty'].forEach((id) => {
       const el = $(id); if (el) el.addEventListener('change', () => S.touched.add(id));
     });
     $('fwi-group').onchange = onGroupChange;
     $('fwi-uom').addEventListener('change', inPreview);
     $('fwi-inuom').addEventListener('input', inPreview);
     $('fwi-inqty').addEventListener('input', inPreview);
-    $('fwi-shelf').addEventListener('input', shelfHint);
+    $('fwi-usefrom').addEventListener('change', shelfHint);
+    $('fwi-useto').addEventListener('change', shelfHint);
     $('fwi-pn').addEventListener('input', () => { const e = $('fwi-pn'); e.value = e.value.replace(/\s+/g, ''); });
     inPreview(); shelfHint();
   }
@@ -289,16 +303,27 @@
     // 사용자가 손대지 않은 칸만 구분 기본값으로 맞춘다
     if (!S.touched.has('fwi-trace')) $('fwi-trace').value = g.traceKind || 'NONE';
     if (!S.touched.has('fwi-source')) $('fwi-source').value = g.sourceType || 'BUY';
-    if (!S.touched.has('fwi-shelf')) $('fwi-shelf').value = g.shelfLifeDays ?? '';
+    if (!S.touched.has('fwi-useto')) {
+      const from = val('fwi-usefrom') || today();
+      $('fwi-useto').value = g.shelfLifeDays ? addDays(from, g.shelfLifeDays) : '';
+    }
     shelfHint();
   }
 
   function shelfHint() {
     const g = groupOf(val('fwi-group')), c = g.classes.find((x) => String(x.id) === val('fwi-class'));
     const el = $('fwi-shelfhint'); if (!el) return;
-    el.innerHTML = val('fwi-shelf')
-      ? `입고일 + ${esc(val('fwi-shelf'))}일 이 그 로트의 유효일이 됩니다.`
-      : (c && c.shelfLifeDays ? `비우면 분류 기본값 <b>${c.shelfLifeDays}일</b>을 씁니다.` : '비우면 기한 관리를 하지 않습니다.');
+    const from = val('fwi-usefrom'), to = val('fwi-useto');
+    if (from && to) {
+      const d = diffDays(from, to);
+      el.innerHTML = d > 0
+        ? `<b>${d}일</b>짜리 기간입니다. 이 길이가 로트 유효일 계산(입고일 + ${d}일)에 그대로 쓰입니다.`
+        : `<span class="bad">종료일은 시작일보다 뒤여야 합니다.</span>`;
+    } else if (c && c.shelfLifeDays) {
+      el.innerHTML = `종료일을 비우면 분류 기본값 <b>${c.shelfLifeDays}일</b>로 계산해 보여 줍니다(저장은 안 합니다).`;
+    } else {
+      el.textContent = '종료일을 비우면 무기한입니다.';
+    }
   }
 
   function inPreview() {
@@ -321,7 +346,8 @@
     const body = {
       pn, name, group: val('fwi-group'), classId: num(val('fwi-class')), spec: val('fwi-spec') || null,
       uom: val('fwi-uom'), traceKind: val('fwi-trace'), sourceType: val('fwi-source'), status: val('fwi-status'),
-      shelfLifeDays: val('fwi-shelf') || null, inUom: val('fwi-inuom') || null, inQty: val('fwi-inqty') || null,
+      useFrom: val('fwi-usefrom') || null, useTo: val('fwi-useto') || null,
+      inUom: val('fwi-inuom') || null, inQty: val('fwi-inqty') || null,
     };
     S.busy = true; $('fwi-save').disabled = true;
     try {

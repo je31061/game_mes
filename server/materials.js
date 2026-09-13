@@ -357,6 +357,12 @@ export const ITEM_GROUPS = [
 ];
 const GROUP_BY_CODE = Object.fromEntries(ITEM_GROUPS.map(g => [g.code, g]));
 // item_group 이 비어 있는 행(옛 데이터·적재기 산출)은 읽을 때 item_type 에서 유도해 보여준다
+// 사용기간 날짜 계산 — 로컬 타임존에 걸리지 않게 UTC 정오 기준으로 더하고 뺀다
+const DAY = 86400000;
+const asUtc = (d) => Date.parse(String(d).slice(0, 10) + 'T12:00:00Z');
+const addDays = (from, days) => new Date(asUtc(from) + days * DAY).toISOString().slice(0, 10);
+const diffDays = (from, to) => Math.round((asUtc(to) - asUtc(from)) / DAY);
+
 const groupFromType = (itemType, sourceType) => itemType === 'FG'
   ? (sourceType === 'BUY' ? 'GOODS' : 'PROD')
   : ({ SA: 'SEMI', PT: 'PART', RM: 'RAW', CN: 'SUB', PK: 'PACK' }[itemType] || null);
@@ -383,6 +389,12 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
       group, groupName: GROUP_BY_CODE[group]?.name || null, groupDerived: !r.item_group,
       shelfLifeDays: shelf, shelfLifeSource: shelf !== null ? 'item' : (r.class_shelf_life ? 'class' : null),
       shelfLifeEffective: shelf ?? r.class_shelf_life ?? null,
+      // 사용기간 — 화면은 날짜 두 개로 본다. 시작일은 eff_from, 종료일은 use_to.
+      // 종료일이 비어 있고 분류 기본 일수가 있으면 시작일 + 그 일수를 계산해 보여 준다(useToSource='class').
+      useFrom: r.eff_from,
+      useTo: r.use_to || null,
+      useToEffective: r.use_to || (r.class_shelf_life && r.eff_from ? addDays(r.eff_from, r.class_shelf_life) : null),
+      useToSource: r.use_to ? 'item' : (r.class_shelf_life ? 'class' : null),
       inUom: r.in_uom || null, inQty: r.in_qty ?? null,
       // 시트에서 쓰는 요약 2개 (목록 쿼리에서만 채워진다)
       ...(r.used_in === undefined ? {} : { usedIn: r.used_in, hasBom: !!r.own_bom }),
@@ -550,16 +562,32 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
     const isPhantom = bool01(b.isPhantom ?? b.phantom, existing?.is_phantom ?? 0);
     const trace = String(b.traceKind ?? b.traceMode ?? (groupGiven && !existing ? grp.trace : null) ?? existing?.trace_mode ?? 'NONE').toUpperCase();
 
-    // 사용기한(일) — 빈 값이면 NULL(무기한 또는 분류 기본값 상속). 0·음수는 거른다
+    // 사용기간 — 화면은 날짜 두 개(시작일·종료일)로 받는다. 시작일은 eff_from, 종료일은 use_to,
+    // 기간의 길이(일)는 shelf_life_days 에 계산해 넣는다(로트 유효일 = 입고일 + 이 값).
+    const fromRaw = b.useFrom ?? b.effFrom;
+    const useFrom = isDate(fromRaw) ? String(fromRaw) : (existing?.eff_from || today());
+    let useTo = existing?.use_to ?? null;
+    if (b.useTo !== undefined) {
+      if (orNull(b.useTo) === null) useTo = null;
+      else if (!isDate(b.useTo)) throw new Error('사용기간 종료일은 YYYY-MM-DD 형식입니다.');
+      else useTo = String(b.useTo);
+    }
+    if (useTo && diffDays(useFrom, useTo) <= 0) throw new Error(`사용기간 종료일(${useTo})은 시작일(${useFrom})보다 뒤여야 합니다.`);
+
+    let shelfLife = useTo ? diffDays(useFrom, useTo) : null;
+    // 일수로 직접 주는 옛 경로(인수 테스트·스크립트)도 그대로 받는다 — 날짜를 안 줬을 때만
     const shelfRaw = b.shelfLifeDays ?? b.shelfLife;
-    let shelfLife = existing?.shelf_life_days ?? null;
-    if (shelfRaw !== undefined) {
+    if (!useTo && shelfRaw !== undefined) {
       if (orNull(shelfRaw) === null) shelfLife = null;
       else {
         shelfLife = Math.trunc(Number(shelfRaw));
         if (!Number.isFinite(shelfLife) || shelfLife <= 0) throw new Error('사용기한(shelfLifeDays)은 1 이상의 일수이거나 비워 둡니다.');
+        useTo = addDays(useFrom, shelfLife);
       }
-    } else if (!existing && grp?.shelfLifeDays) shelfLife = grp.shelfLifeDays;
+    } else if (!useTo && b.useTo === undefined && shelfRaw === undefined) {
+      if (existing) { shelfLife = existing.shelf_life_days ?? null; useTo = existing.use_to ?? null; }
+      else if (grp?.shelfLifeDays) { shelfLife = grp.shelfLifeDays; useTo = addDays(useFrom, shelfLife); }
+    }
     // 입고단위 — 표기 그대로 저장한다(uom 표에 없어도 된다). 재고·BOM·로트는 base_uom 으로만 돈다
     let inUom = existing?.in_uom ?? null, inQty = existing?.in_qty ?? null;
     if (b.inUom !== undefined) inUom = orNull(b.inUom) === null ? null : String(b.inUom).trim().slice(0, 16);
@@ -574,20 +602,22 @@ export function registerMaterials(app, { requireAdmin, db, queries, settings, af
       gtin: orNull(b.gtin ?? existing?.gtin), drawing_no: orNull(b.drawingNo ?? existing?.drawing_no), std_cost: num(b.stdCost ?? existing?.std_cost),
       image: orNull(b.image ?? existing?.image),
       item_group: groupCode ?? groupFromType(itemType, sourceType), shelf_life_days: shelfLife, in_uom: inUom, in_qty: inQty,
+      eff_from: useFrom, use_to: useTo,
     };
     if (existing) {
       q(`UPDATE item SET pn = ?, name = ?, name_ko = ?, spec = ?, class_id = ?, item_type = ?, source_type = ?, base_uom = ?, is_phantom = ?, trace_mode = ?, status = ?,
-                gtin = ?, drawing_no = ?, std_cost = ?, image = ?, item_group = ?, shelf_life_days = ?, in_uom = ?, in_qty = ?,
+                gtin = ?, drawing_no = ?, std_cost = ?, image = ?, item_group = ?, shelf_life_days = ?, in_uom = ?, in_qty = ?, eff_from = ?, use_to = ?,
                 obsoleted_at = CASE WHEN ? = 'OBSOLETE' THEN COALESCE(obsoleted_at, datetime('now','localtime')) ELSE NULL END,
                 updated_at = datetime('now','localtime') WHERE item_id = ?`)
         .run(pn, vals.name, vals.name_ko, vals.spec, vals.class_id, vals.item_type, vals.source_type, vals.base_uom, vals.is_phantom, vals.trace_mode, vals.status,
-          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.item_group, vals.shelf_life_days, vals.in_uom, vals.in_qty, vals.status, existing.item_id);
+          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.item_group, vals.shelf_life_days, vals.in_uom, vals.in_qty, vals.eff_from, vals.use_to,
+          vals.status, existing.item_id);
     } else {
       q(`INSERT INTO item (pn, name, name_ko, spec, class_id, item_type, source_type, base_uom, is_phantom, trace_mode, status, gtin, drawing_no, std_cost, image,
-                           item_group, shelf_life_days, in_uom, in_qty, eff_from)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                           item_group, shelf_life_days, in_uom, in_qty, eff_from, use_to)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .run(pn, vals.name, vals.name_ko, vals.spec, vals.class_id, vals.item_type, vals.source_type, vals.base_uom, vals.is_phantom, vals.trace_mode, vals.status,
-          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.item_group, vals.shelf_life_days, vals.in_uom, vals.in_qty, isDate(b.effFrom) ? b.effFrom : today());
+          vals.gtin, vals.drawing_no, vals.std_cost, vals.image, vals.item_group, vals.shelf_life_days, vals.in_uom, vals.in_qty, vals.eff_from, vals.use_to);
     }
     return itemRow(pn);
   }

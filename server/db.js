@@ -347,6 +347,7 @@ if (materialsSchema.ok) {
   if (!cols.includes('shelf_life_days')) { db.exec('ALTER TABLE item ADD COLUMN shelf_life_days INTEGER'); added.push('shelf_life_days'); }
   if (!cols.includes('in_uom')) { db.exec('ALTER TABLE item ADD COLUMN in_uom TEXT'); added.push('in_uom'); }
   if (!cols.includes('in_qty')) { db.exec('ALTER TABLE item ADD COLUMN in_qty REAL'); added.push('in_qty'); }
+  if (!cols.includes('use_to')) { db.exec('ALTER TABLE item ADD COLUMN use_to TEXT'); added.push('use_to'); }
   if (added.length) console.log(`[db] item 컬럼 추가 — ${added.join(', ')} (품목 등록 화면)`);
 }
 
