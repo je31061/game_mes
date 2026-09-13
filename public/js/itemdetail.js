@@ -21,12 +21,24 @@
   const plain = (m) => (/UNIQUE constraint failed: item_partner/.test(m) ? `이미 연결된 거래처입니다 — 같은 역할로는 한 번만 붙습니다. (${m})` : m);
 
   let api = null, root = null;
-  const S = { pn: '', item: null, links: [], partners: [], items: [], busy: false };
+  const S = { pn: '', item: null, links: [], partners: [], items: [], pending: null, busy: false };
 
   function mount(container, apiFn) {
     api = apiFn; root = container;
     if (!root.dataset.fwdReady) { skeleton(); root.dataset.fwdReady = '1'; }
     reload().catch((e) => msg(plain(e.message), true));
+  }
+
+  // 다른 화면(거래처 역조회 등)이 "이 품번을 열어라" 하고 부른다.
+  // 탭을 방금 누른 참이면 mount 가 아직 안 끝났을 수 있어 예약해 두고 reload 뒤에 연다.
+  function openFrom(pn) {
+    if (!pn) return;
+    S.pending = String(pn);
+    if (root && api) applyPending();
+  }
+  function applyPending() {
+    const pn = S.pending; S.pending = null;
+    if (pn) open(pn);
   }
 
   const $ = (id) => root.querySelector('#' + id);
@@ -60,7 +72,9 @@
     ]);
     S.items = items; S.partners = Array.isArray(partners) ? partners : [];
     $('fwd-pns').innerHTML = S.items.map((i) => `<option value="${esc(i.pn)}">${esc(i.nameKo || i.name)}</option>`).join('');
-    if (S.pn) await open(S.pn); else renderEmpty();
+    if (S.pending) applyPending();
+    else if (S.pn) await open(S.pn);
+    else renderEmpty();
   }
 
   function renderEmpty() {
@@ -204,5 +218,5 @@
     } catch (e) { msg(plain(e.message), true); }
   }
 
-  window.FWItemDetail = { mount };
+  window.FWItemDetail = { mount, open: openFrom };
 })();

@@ -42,6 +42,7 @@ export function registerPartners(app, { requireAdmin, db, afterChange = () => {}
   const B = '/api/admin/partners';
 
   const json = (r) => r && ({
+    ...(r.buy_items === undefined ? {} : { buyItems: r.buy_items, sellItems: r.sell_items, linkedItems: r.buy_items + r.sell_items }),
     id: r.id, code: r.code, name: r.name, kind: r.kind,
     kindName: (PARTNER_KINDS.find((k) => k.code === r.kind) || {}).name || r.kind,
     bizNo: r.biz_no, ceo: r.ceo, bizType: r.biz_type, bizItem: r.biz_item,
@@ -94,7 +95,11 @@ export function registerPartners(app, { requireAdmin, db, afterChange = () => {}
         else { where.push('kind = ?'); p.push(k); }
       }
       if (status) { where.push('status = ?'); p.push(String(status).toUpperCase()); }
-      const rows = q(`SELECT * FROM partners ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      // 연결 품목 건수 — item_partner 가 아직 없는 DB(자재 스키마 미적용)에서는 열을 내지 않는다
+      const linked = q(`SELECT 1 FROM sqlite_master WHERE type='table' AND name='item_partner'`).get()
+        ? `, (SELECT COUNT(*) FROM item_partner ip WHERE ip.partner_id = partners.id AND ip.role = 'BUY')  AS buy_items
+           , (SELECT COUNT(*) FROM item_partner ip WHERE ip.partner_id = partners.id AND ip.role = 'SELL') AS sell_items` : '';
+      const rows = q(`SELECT *${linked} FROM partners ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
                        ORDER BY CASE status WHEN 'ACTIVE' THEN 0 WHEN 'HOLD' THEN 1 ELSE 2 END, code`).all(...p);
       res.json(rows.map(json));
     } catch (e) { fail(res, e, 500); }

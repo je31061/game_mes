@@ -28,6 +28,8 @@
     { key: 'bizItem', label: '종목', cls: 'dim', pri: 4, get: (p) => p.bizItem || '' },
     { key: 'tel', label: '전화', cls: 'c mono', pri: 2, get: (p) => p.tel || '' },
     { key: 'mgrName', label: '담당자', cls: 'c dim', pri: 3, get: (p) => p.mgrName || '' },
+    { key: 'linkedItems', label: '연결 품목', cls: 'r', pri: 2, sort: (p) => p.linkedItems ?? -1,
+      get: (p) => (p.linkedItems == null ? '' : p.linkedItems ? `${p.linkedItems}건` : '') },
     { key: 'payTerms', label: '결제조건', cls: 'dim', pri: 4, get: (p) => p.payTerms || '' },
     { key: 'currency', label: '통화', cls: 'c dim', pri: 4, get: (p) => p.currency || '' },
     { key: 'status', label: '상태', cls: 'c', pri: 1, get: (p) => p.statusName || p.status },
@@ -69,6 +71,7 @@
             <button id="fwp-reset" type="button" class="ghost">되돌리기</button>
             <span id="fwp-msg" class="fwi-msg"></span>
           </div>
+          <div class="fwi-bom" id="fwp-items"></div>
         </section>
       </div>`;
     $('fwp-q').addEventListener('input', (e) => { S.filter = e.target.value.trim(); load(); });
@@ -111,7 +114,7 @@
 
   function sorted() {
     const c = COLS.find((x) => x.key === S.sort.key) || COLS[0];
-    const key = (p) => String(c.get(p) ?? '').toLowerCase();
+    const key = c.sort || ((p) => String(c.get(p) ?? '').toLowerCase());
     return S.rows.slice().sort((a, b) => {
       const x = key(a), y = key(b);
       if (x === y) return String(a.code).localeCompare(String(b.code));
@@ -155,7 +158,9 @@
   async function select(code, keepMsg) {
     try {
       const d = await api('/api/admin/partners/' + encodeURIComponent(code));
-      S.sel = d.partner; openEditor();
+      S.sel = d.partner;
+      S.sel.links = await api('/api/admin/partners/' + encodeURIComponent(code) + '/items').catch(() => []);
+      openEditor();
       if (!keepMsg) msg('');
       load();
     } catch (e) { msg(plain(e.message), true); }
@@ -163,7 +168,7 @@
 
   function openEditor() {
     $('fwp-editor').hidden = false;
-    renderForm();
+    renderForm(); renderLinks();
     if (!S.sel) { $('fwp-editor').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); setTimeout(() => $('fwp-name') && $('fwp-name').focus(), 250); }
   }
 
@@ -221,6 +226,45 @@
         <input id="fwp-note" value="${v('note')}" autocomplete="off"></label>`;
     $('fwp-kind').onchange = kindHint;
     kindHint();
+  }
+
+  // ── 역조회: 이 거래처와 연결된 품목 (인터페이스 §11.5 GET /partners/:code/items) ──
+  function renderLinks() {
+    const box = $('fwp-items'), p = S.sel;
+    if (!p) { box.innerHTML = ''; return; }
+    const rows = p.links || [];
+    const buy = rows.filter((l) => l.role === 'BUY'), sell = rows.filter((l) => l.role === 'SELL');
+    box.innerHTML = `
+      <div class="fwi-bomhead"><b>연결된 품목</b><span>${esc(p.code)} 이(가) 대는 품목과 사 가는 품목 — 연결을 고치는 곳은 <b>품목 세부</b>입니다</span></div>
+      ${rows.length ? `${table('이 거래처에서 사 오는 품목(매입)', buy)}${table('이 거래처에 파는 품목(매출)', sell)}`
+        : `<p class="fwi-none">연결된 품목이 없습니다. <b>기준정보 › 품목 세부</b>에서 품번을 고른 뒤 이 거래처를 붙이세요.</p>`}`;
+    box.querySelectorAll('[data-pn]').forEach((b) => { b.onclick = () => openItem(b.dataset.pn); });
+  }
+
+  function table(title, rows) {
+    if (!rows.length) return '';
+    return `<h4 class="fwd-h">${esc(title)} <span class="fwd-cnt">${rows.length}건</span></h4>
+      <table class="fwi-bomtable fwd-links">
+        <tr><th>품번</th><th>품명</th><th>거래처 품번</th><th class="r">단가</th><th class="r">리드타임</th><th class="r">최소발주</th><th>주거래</th><th></th></tr>
+        ${rows.map((l) => `<tr>
+          <td><b>${esc(l.pn)}</b></td>
+          <td class="muted">${esc(l.itemName || '')}</td>
+          <td class="mono">${esc(l.partnerPn || '')}</td>
+          <td class="r">${l.price == null ? '' : esc(Number(l.price).toLocaleString('ko-KR') + ' ' + (l.currency || 'KRW'))}</td>
+          <td class="r">${l.leadDays == null ? '' : esc(l.leadDays) + '일'}</td>
+          <td class="r">${l.moq == null ? '' : esc(l.moq) + (l.orderUom ? ' ' + esc(l.orderUom) : '')}</td>
+          <td class="c">${l.isPrimary ? '<span class="fwi-badge on">주거래</span>' : ''}</td>
+          <td class="r"><button type="button" class="ghost sm" data-pn="${esc(l.pn)}">품목 세부 →</button></td>
+        </tr>`).join('')}
+      </table>`;
+  }
+
+  // 품목 세부 탭으로 넘긴다 — 탭 버튼을 눌러 모듈을 띄우고 그 품번을 열게 한다
+  function openItem(pn) {
+    const btn = document.querySelector('.nav button[data-tab="itemdetail"]');
+    if (!btn) return;
+    btn.click();
+    if (window.FWItemDetail && typeof window.FWItemDetail.open === 'function') window.FWItemDetail.open(pn);
   }
 
   function kindHint() {
